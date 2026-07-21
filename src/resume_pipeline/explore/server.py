@@ -6,9 +6,10 @@ ceiling on how many options were worth generating. Rendering HTML is
 sub-millisecond, so the ceiling disappears and PDF becomes an export step for the
 one layout you actually chose.
 
-State lives in a JSON file next to the resume, not in `localStorage`: it survives a
-browser profile, it is diffable, and the CLI can read it. Marking a layout is the
-input to `space.steer`, so the next batch is a response to the last one.
+State lives in a JSON file in the cache directory, not in `localStorage`: it
+survives a browser profile, it is diffable, and the CLI can read it. Marking a
+layout is the input to `space.steer`, so the next batch is a response to the last
+one.
 
 Stdlib only — `http.server` is unglamorous but this binds to loopback for one user.
 """
@@ -27,7 +28,7 @@ from .ui import PAGE
 
 
 class Session:
-    """Verdicts on layouts, persisted beside the resume."""
+    """Verdicts on layouts, persisted to disk."""
 
     def __init__(self, path: Path):
         self.path = path
@@ -207,13 +208,14 @@ class Handler(BaseHTTPRequestHandler):
 def serve(resume_path: Path, out_dir: Path, stem: str, batch_size: int = 12,
           port: int = 8765, open_browser: bool = True) -> None:
     resume = model.load(resume_path)
+    out_dir.mkdir(parents=True, exist_ok=True)
     ctx = {
         "resume": resume,
         "resume_path": resume_path,
         "out_dir": out_dir,
         "stem": stem,
         "batch_size": batch_size,
-        "session": Session(resume_path.parent / ".explore-session.json"),
+        "session": Session(out_dir / "explore-session.json"),
     }
     httpd = ThreadingHTTPServer(("127.0.0.1", port), partial(Handler, ctx=ctx))
     url = f"http://127.0.0.1:{port}/"

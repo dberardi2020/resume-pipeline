@@ -43,6 +43,20 @@ def find_resume(explicit: str | None) -> Path:
     )
 
 
+def cache_dir(resume_path: Path) -> Path:
+    """Scratch renders go outside the resume folder, deliberately.
+
+    Builds are cheap and disposable, but they pile up — every theme, every
+    explored variant, in HTML and PDF. Writing them beside the resume buries the
+    one authored file under hundreds of derived ones, and if that folder is
+    synced (it usually is, resumes being personal), it churns megabytes of output
+    that a single command reproduces. So the default is a cache, and putting a
+    render somewhere permanent is an explicit act: see `publish`.
+    """
+    root = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
+    return root / "resume-pipeline" / resume_path.resolve().parent.name
+
+
 def _resolve_themes(name: str):
     if name == "all":
         return list(themes.registry().values())
@@ -63,7 +77,7 @@ def _load(path: str):
 def cmd_build(args) -> int:
     args.resume = str(find_resume(args.resume))
     resume = _load(args.resume)
-    out_dir = Path(args.out or Path(args.resume).parent)
+    out_dir = Path(args.out) if args.out else cache_dir(Path(args.resume))
     stem = args.name or Path(args.resume).stem
     formats = set(args.formats.split(","))
 
@@ -177,7 +191,7 @@ def cmd_lint(args) -> int:
 def cmd_explore(args) -> int:
     args.resume = str(find_resume(args.resume))
     resume = _load(args.resume)
-    out_dir = Path(args.out or (Path(args.resume).parent / "explore"))
+    out_dir = Path(args.out) if args.out else cache_dir(Path(args.resume)) / "explore"
     out_dir.mkdir(parents=True, exist_ok=True)
     specs = compose.sample(args.count, seed=args.seed)
     total = len(compose.all_specs())
@@ -207,12 +221,40 @@ def cmd_serve(args) -> int:
     resume_path = find_resume(args.resume)
     serve(
         resume_path,
-        out_dir=Path(args.out) if args.out else resume_path.parent / "out",
+        out_dir=Path(args.out) if args.out else cache_dir(resume_path),
         stem=args.name or resume_path.stem,
         batch_size=args.batch,
         port=args.port,
         open_browser=not args.no_open,
     )
+    return 0
+
+
+def cmd_publish(args) -> int:
+    """Write the chosen layout beside the resume as *the* deliverable.
+
+    A resume folder should answer one question instantly: which file do I send?
+    So publish writes a single fixed set of names, overwriting in place, rather
+    than accumulating theme-suffixed variants.
+    """
+    args.resume = str(find_resume(args.resume))
+    resume = _load(args.resume)
+    theme = themes.get(args.theme)
+    out_dir = Path(args.resume).parent
+    stem = args.name or f"{resume.name.split()[-1]}_Resume".replace(" ", "_")
+
+    html = theme.render(resume)
+    (out_dir / f"{stem}.html").write_text(html, encoding="utf-8")
+    (out_dir / f"{stem}.md").write_text(markdown.render(resume), encoding="utf-8")
+    try:
+        pdf.write(html, out_dir / f"{stem}.pdf")
+    except (pdf.BrowserNotFound, RuntimeError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(f"published {stem}.pdf / .html / .md to {out_dir}  (theme: {theme.name})")
+    if not theme.ats_safe:
+        print(f"note: {theme.name!r} is not ATS-safe - do not submit it through a portal.",
+              file=sys.stderr)
     return 0
 
 
@@ -267,6 +309,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--name", help="export basename (default: input stem)")
     p.add_argument("--no-open", action="store_true", help="do not open a browser")
     p.set_defaults(func=cmd_serve)
+
+    p = sub.add_parser("publish",
+                       help="write the deliverable beside the resume")
+    p.add_argument("resume", nargs="?")
+    p.add_argument("--theme", default="slate", help="theme to publish (default: slate)")
+    p.add_argument("--name", help="output basename (default: <Lastname>_Resume)")
+    p.set_defaults(func=cmd_publish)
 
     p = sub.add_parser("themes", help="list available themes")
     p.set_defaults(func=cmd_themes)
