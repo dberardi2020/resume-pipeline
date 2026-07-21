@@ -1,17 +1,11 @@
 """Command line entry point.
 
-    resume-pipeline init        scaffold a career workspace
-    resume-pipeline lint        ATS + content checks
-    resume-pipeline catalogue   a static page of layout options
-    resume-pipeline serve       interactive layout explorer, with steering
-    resume-pipeline publish     write the deliverable beside the resume
-    resume-pipeline blocks      copy/paste blocks for LinkedIn and forms
-    resume-pipeline build       scratch renders
-    resume-pipeline themes      list built-in themes
+    python -m resume_pipeline build   resume.json --theme all
+    python -m resume_pipeline lint    resume.json --theme ats
+    python -m resume_pipeline themes
 
-The resume document is never a hardcoded path: commands take one, fall back to
-`RESUME_PIPELINE_RESUME`, then to the nearest `resume.json` above the working
-directory. The tool holds no content; the content holds no code.
+The resume document is always an argument, never a hardcoded path — the tool
+lives in `Code/`, the content lives wherever you keep it.
 """
 from __future__ import annotations
 
@@ -20,7 +14,6 @@ import os
 import sys
 from pathlib import Path
 
-from . import blocks as blocks_mod
 from . import catalogue, compose, scaffold, space
 from . import lint as lint_mod
 from . import markdown, model, pdf, themes
@@ -170,22 +163,6 @@ def cmd_serve(args) -> int:
     return 0
 
 
-def cmd_blocks(args) -> int:
-    args.resume = str(find_resume(args.resume))
-    resume = _load(args.resume)
-    target = (Path(args.out) if args.out
-              else cache_dir(Path(args.resume)) / "copy-blocks.html")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(blocks_mod.page(resume), encoding="utf-8")
-
-    over = [b for b in blocks_mod.build(resume) if b.over]
-    for b in over:
-        print(f"warning: {b.label!r} is {b.length:,} chars, over the "
-              f"{b.limit:,} limit - it will truncate on paste.", file=sys.stderr)
-    print(f"open: file://{target}")
-    return 0
-
-
 def cmd_publish(args) -> int:
     """Write the chosen layout beside the resume as *the* deliverable.
 
@@ -282,12 +259,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--theme", default="slate", help="theme to publish (default: slate)")
     p.add_argument("--name", help="output basename (default: <Lastname>_Resume)")
     p.set_defaults(func=cmd_publish)
-
-    p = sub.add_parser("blocks",
-                       help="copy/paste blocks for LinkedIn and application forms")
-    p.add_argument("resume", nargs="?")
-    p.add_argument("--out", help="output file (default: cache)")
-    p.set_defaults(func=cmd_blocks)
 
     p = sub.add_parser("init", help="scaffold a career workspace")
     p.add_argument("directory", nargs="?", help="where to create it (default: here)")
