@@ -66,7 +66,7 @@ class Spec:
 
     @property
     def name(self) -> str:
-        """Stable, readable id — gallery favourites key off this."""
+        """Stable, readable id — the catalogue and explorer key off this."""
         return (f"{PALETTES[self.palette][0]}-{HEADERS.index(self.header)}"
                 f"{SKILLS.index(self.skills)}{PROMOS.index(self.promo)}"
                 f"-{TYPEFACES[self.typeface][0]}-{DENSITIES[self.density][0]}")

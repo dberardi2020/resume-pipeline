@@ -14,7 +14,7 @@ import os
 import sys
 from pathlib import Path
 
-from . import compose, gallery, scaffold, space
+from . import catalogue, compose, scaffold, space
 from . import lint as lint_mod
 from . import markdown, model, pdf, themes
 
@@ -110,61 +110,8 @@ def cmd_build(args) -> int:
             print(f"note: theme {theme.name!r} is not ATS-safe — use 'ats' for "
                   f"anything submitted through a portal.", file=sys.stderr)
 
-    # Comparing themes by opening four PDFs in turn is tedious, so when several
-    # are built put them side by side on one page.
-    if len(selected) > 1 and "pdf" in formats:
-        target = out_dir / "index.html"
-        target.write_text(_contact_sheet(selected, stem), encoding="utf-8")
-        print(f"wrote {target}")
-        target = out_dir / "gallery.html"
-        target.write_text(gallery.render(selected, stem), encoding="utf-8")
-        print(f"wrote {target}")
     return 0
 
-
-def _contact_sheet(themes_, stem: str) -> str:
-    cards = []
-    for theme in themes_:
-        badge = ("<span class='ok'>ATS-safe</span>" if theme.ats_safe
-                 else "<span class='warn'>not ATS-safe</span>")
-        pdf = f"{stem}.{theme.name}.pdf"
-        cards.append(f"""
-    <figure>
-      <figcaption><b>{theme.name}</b> {badge}
-        <span class='desc'>{theme.description}</span>
-        <a href="{pdf}">open PDF</a>
-      </figcaption>
-      <iframe src="{pdf}#toolbar=0&navpanes=0&view=FitH" title="{theme.name}"></iframe>
-    </figure>""")
-    return f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Resume themes</title><style>
-  body {{ font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-         margin: 0; padding: 28px; background: #f6f7f9; color: #16181d; }}
-  h1 {{ font-size: 20px; margin: 0 0 4px; }}
-  p.sub {{ margin: 0 0 22px; color: #5b6577; }}
-  .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 22px; }}
-  figure {{ margin: 0; background: #fff; border: 1px solid #dfe3e8; border-radius: 10px;
-            overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06); }}
-  figcaption {{ padding: 11px 14px; border-bottom: 1px solid #eceef1; display: flex;
-                align-items: center; gap: 9px; flex-wrap: wrap; }}
-  .desc {{ color: #6b7280; font-size: 13px; flex: 1; }}
-  .ok, .warn {{ font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }}
-  .ok {{ background: #e3f5ea; color: #1a7f42; }}
-  .warn {{ background: #fdecec; color: #b3261e; }}
-  a {{ color: #0b6fa4; font-size: 13px; text-decoration: none; }}
-  iframe {{ width: 100%; height: 660px; border: 0; display: block; background: #fff; }}
-  @media (prefers-color-scheme: dark) {{
-    body {{ background: #14161a; color: #e6e8ec; }}
-    figure {{ background: #1c1f25; border-color: #2b3038; }}
-    figcaption {{ border-color: #2b3038; }}
-  }}
-</style></head><body>
-  <h1>Resume themes</h1>
-  <p class="sub">Same data, {len(themes_)} layouts. Generated from resume.json.</p>
-  <div class="grid">{''.join(cards)}
-  </div>
-</body></html>
-"""
 
 
 def cmd_lint(args) -> int:
@@ -188,31 +135,17 @@ def cmd_lint(args) -> int:
     return 1 if (errors or (args.strict and warnings)) else 0
 
 
-def cmd_explore(args) -> int:
+def cmd_catalogue(args) -> int:
     args.resume = str(find_resume(args.resume))
     resume = _load(args.resume)
-    out_dir = Path(args.out) if args.out else cache_dir(Path(args.resume)) / "explore"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    specs = compose.sample(args.count, seed=args.seed)
-    total = len(compose.all_specs())
-    print(f"sampling {len(specs)} of {total:,} possible layouts (seed {args.seed})")
-
-    built = []
+    out_dir = (Path(args.out) if args.out
+               else cache_dir(Path(args.resume)) / "catalogue")
+    index, specs = catalogue.build(resume, args.count, out_dir, seed=args.seed)
+    print(f"built {len(specs)} layouts of {space.TOTAL:,}")
     for n, spec in enumerate(specs, 1):
-        theme = compose.as_theme(spec)
-        html = theme.render(resume)
-        (out_dir / f"{args.name}.{spec.name}.html").write_text(html, encoding="utf-8")
-        try:
-            pdf.write(html, out_dir / f"{args.name}.{spec.name}.pdf")
-        except (pdf.BrowserNotFound, RuntimeError) as exc:
-            print(f"error: {exc}", file=sys.stderr)
-            return 1
-        built.append(theme)
-        print(f"  [{n}/{len(specs)}] {spec.name}")
-
-    target = out_dir / "gallery.html"
-    target.write_text(gallery.render(built, args.name), encoding="utf-8")
-    print(f"\nwrote {target}")
+        print(f"  {n:>2}. {spec.name:<34} {spec.description}")
+    print(f"\nopen: file://{index}")
+    print("publish one with: resume-pipeline publish --theme <name>")
     return 0
 
 
@@ -300,15 +233,15 @@ def build_parser() -> argparse.ArgumentParser:
                    help="treat warnings as failures")
     p.set_defaults(func=cmd_lint)
 
-    p = sub.add_parser("explore", help="generate many layout variants to flip through")
+    p = sub.add_parser("catalogue",
+                       help="build a static, browsable page of layout options")
     p.add_argument("resume", nargs="?")
-    p.add_argument("--count", type=int, default=24,
-                   help="how many variants to generate (default: 24)")
+    p.add_argument("--count", type=int, default=20,
+                   help="how many layouts to generate (default: 20)")
     p.add_argument("--seed", type=int, default=0,
-                   help="sampling seed - same seed gives the same catalogue")
-    p.add_argument("--out", help="output directory (default: <resume dir>/explore)")
-    p.add_argument("--name", default="v", help="output basename (default: v)")
-    p.set_defaults(func=cmd_explore)
+                   help="sampling seed - the same seed gives the same catalogue")
+    p.add_argument("--out", help="output directory (default: cache)")
+    p.set_defaults(func=cmd_catalogue)
 
     p = sub.add_parser("serve", help="open the interactive layout explorer")
     p.add_argument("resume", nargs="?")

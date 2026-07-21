@@ -44,8 +44,24 @@ def registry() -> dict[str, Theme]:
 
 
 def get(name: str) -> Theme:
+    """Resolve a theme by name.
+
+    Hand-built themes are looked up first, then generated layouts by their spec
+    name. Without this, a layout you found in the catalogue could be previewed but
+    never published — the interesting half of the space would be unreachable from
+    every other command.
+    """
     themes = registry()
-    if name not in themes:
-        available = ", ".join(sorted(themes))
-        raise KeyError(f"Unknown theme {name!r}. Available: {available}")
-    return themes[name]
+    if name in themes:
+        return themes[name]
+
+    from .. import compose, space
+    if spec := space.parse(name):
+        return compose.as_theme(spec)
+
+    available = ", ".join(sorted(themes))
+    raise KeyError(
+        f"Unknown layout {name!r}. Built-in themes: {available}. "
+        f"Generated layouts look like 'moss-111-charter-airy' - "
+        f"run `resume-pipeline catalogue` to browse them."
+    )
