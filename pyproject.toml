@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "resume-pipeline"
+version = "0.1.0"
+description = "Explore a design space of resume layouts, lint them for ATS parsing, and render to PDF."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Dimitri Berardi" }]
+keywords = ["resume", "cv", "json-resume", "ats", "pdf"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Topic :: Text Processing :: Markup :: HTML",
+]
+# Deliberately zero runtime dependencies: the only external requirement is a
+# Chromium-family browser, which is used for PDF export and located at runtime.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pymupdf>=1.24"]
+
+[project.scripts]
+resume-pipeline = "resume_pipeline.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
