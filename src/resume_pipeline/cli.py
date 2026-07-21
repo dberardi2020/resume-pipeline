@@ -14,7 +14,7 @@ import os
 import sys
 from pathlib import Path
 
-from . import compose, gallery, space
+from . import compose, gallery, scaffold, space
 from . import lint as lint_mod
 from . import markdown, model, pdf, themes
 
@@ -258,6 +258,16 @@ def cmd_publish(args) -> int:
     return 0
 
 
+def cmd_init(args) -> int:
+    root = Path(args.directory or ".").expanduser().resolve()
+    print(f"scaffolding career workspace in {root}")
+    for line in scaffold.init(root, skill_only=args.skill_only):
+        print(line)
+    if not args.skill_only:
+        print("\nnext: edit Resume/resume.json, then `cd Resume && resume-pipeline lint`")
+    return 0
+
+
 def cmd_themes(args) -> int:
     for name, theme in sorted(themes.registry().items()):
         flag = "ATS-safe" if theme.ats_safe else "not ATS-safe"
@@ -316,6 +326,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--theme", default="slate", help="theme to publish (default: slate)")
     p.add_argument("--name", help="output basename (default: <Lastname>_Resume)")
     p.set_defaults(func=cmd_publish)
+
+    p = sub.add_parser("init", help="scaffold a career workspace")
+    p.add_argument("directory", nargs="?", help="where to create it (default: here)")
+    p.add_argument("--skill-only", action="store_true",
+                   help="install just the Claude Code skill into an existing workspace")
+    p.set_defaults(func=cmd_init)
 
     p = sub.add_parser("themes", help="list available themes")
     p.set_defaults(func=cmd_themes)
