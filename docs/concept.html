@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>resume-pipeline — Concept</title><style>
+:root{--bg:#f7f8fa;--fg:#181820;--muted:#565666;--line:#e5e7ec;--code-bg:#eef0f4;--accent:#4577d1;--link:#3a67b8}
+@media(prefers-color-scheme:dark){:root{--bg:#080a0e;--fg:#e9ecf3;--muted:#a2a7b8;--line:#232735;--code-bg:#12141b;--accent:#5b8de0;--link:#6f9ae6}}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:64px 28px 120px}
+h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
+h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
+h3{font-size:1.08rem;margin:1.8em 0 .4em}
+p{margin:.7em 0}
+a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
+a:hover{border-bottom-color:var(--link)}
+code{background:var(--code-bg);padding:.12em .4em;border-radius:4px;font:.86em/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
+pre{background:var(--code-bg);padding:16px 18px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:.85em}
+ul,ol{padding-left:1.4em;margin:.7em 0}
+li{margin:.3em 0}
+blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
+blockquote strong{color:var(--fg)}
+table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+th{background:var(--code-bg);font-weight:600}
+hr{border:none;border-top:1px solid var(--line);margin:2em 0}
+strong{font-weight:650}
+</style></head><body><main class="wrap">
+<h1>resume-pipeline — Concept</h1>
+<p><em>An agent-first way to edit, store, browse and export a resume.</em></p>
+<p>This is a <strong>target</strong> concept, not an as-built one: it describes what v1 is, and what the tool is growing toward. Where something does not exist yet it says so. The <a href="#as-built--what-actually-exists-today">As-built</a> section at the end is the honest ledger.</p>
+<h2>The idea, in one paragraph</h2>
+<p>Your resume is data, not a document. Keep it that way: one structured <strong>profile</strong> that is the only thing you ever edit, a <strong>space</strong> of layouts you browse rather than design, and a single <strong>deliverable</strong> you publish when you find one you like. The editing happens through a coding agent — you describe the change and it makes it — so the tool's job is not to be a text editor. Its job is to make agent edits <strong>visible and safe</strong>, and to make the resulting document <strong>findable</strong> among thousands of possible presentations of it.</p>
+<p><strong>The architecture, in one line.</strong> Rendering is a pure function — <code>render(profile, spec)</code> — so every surface (the agent skill, the inspector, the explorer, the publisher) is a different way of calling it, and none of them owns the data.</p>
+<hr>
+<h2>Model, in six words</h2>
+<h3>Profile</h3>
+<p>The structured resume data — one file, <a href="https://jsonresume.org/schema">JSON Resume</a> schema. <strong>The only thing you edit.</strong> Everything else in this document is derived from it.</p>
+<p>A profile is a <strong>master superset</strong>, not a finished document: it holds every skill, every role, every bullet you have ever written, including things no single resume would show. Curating down to what one employer sees is a <em>rendering</em> decision, made per variant. <strong>Nothing is ever deleted from the profile to make a document shorter.</strong></p>
+<h3>Axis</h3>
+<p>One independent presentation choice. Six of them today:</p>
+<table><thead><tr><th>Axis</th><th>What it varies</th></tr></thead><tbody><tr><td><code>palette</code></td><td>Colour scheme</td></tr><tr><td><code>typeface</code></td><td>Type pairing</td></tr><tr><td><code>header</code></td><td>Name/contact block treatment</td></tr><tr><td><code>skills</code></td><td>How the skills section is laid out</td></tr><tr><td><code>promo</code></td><td>How in-role progression is shown</td></tr><tr><td><code>density</code></td><td>Vertical rhythm — compact through airy</td></tr></tbody></table>
+<p>Axes are <strong>independent and categorical</strong>: changing one changes exactly one thing. That property is what makes the space browsable instead of chaotic, and it is worth protecting when adding a seventh.</p>
+<h3>Spec</h3>
+<p>One point in the space — a value on every axis — named by spelling out each axis value in a fixed order, <code>palette-typeface-header-skills-promo-density</code>:</p>
+<pre><code>harbor-grotesk-band-pills-ladder-compact
+ink-charter-masthead-inline-stacked-airy</code></pre>
+<p>A spec is <strong>pure data</strong>: no rendering, no IO. It is what you save, share, and publish against — and that is exactly why the name is written out in full rather than encoded. A spec name must be <strong>decodable without a legend</strong> and <strong>stable forever</strong>: adding a new value to an axis must never change what an existing name refers to, or every saved and published spec silently starts pointing somewhere else.</p>
+<h3>Space</h3>
+<p>The product of all axes: <strong>5,040 specs today</strong>. Not a gallery someone curated — a combinatorial space, enumerated exhaustively and browsed with facets. The axes <em>are</em> the facets, so "show me every layout in this palette" and "this layout in any palette but this one" are the same operation.</p>
+<h3>Variant</h3>
+<p>A profile rendered through a spec. The thing you actually look at. Variants are cheap and disposable — HTML, generated on demand, never stored as source.</p>
+<h3>Deliverable</h3>
+<p>The one published output you send to someone: PDF, HTML and Markdown of a single chosen variant. There is exactly one current deliverable at a time, and it is regenerated, never hand-edited.</p>
+<blockquote>
+<p><strong>And one container:</strong> a <strong>Workspace</strong> is the folder holding your profile, your deliverables and your applications. <code>init</code> scaffolds an empty one; the tool never stores your content itself.</p>
+</blockquote>
+<hr>
+<h2>The four surfaces</h2>
+<p>Each surface serves one verb, and they all sit on the same pure render function.</p>
+<h3>1. The skill — <em>edit</em></h3>
+<p>The primary interface. A packaged Claude Code slash command shipped with this repo (the same pattern as <code>terminal-launcher</code>'s <code>/restore</code>) that installs into a workspace and teaches an agent the rules: where the profile lives, what it may change, and what it must never invent.</p>
+<p><strong>Editing is conversational.</strong> You say what you want; the agent edits the profile. You do not type structured data by hand, and you should not have to remember a command to make something happen — if a turn ends by telling you to run a command, the surface has failed.</p>
+<h3>2. The inspector — <em>see what changed</em></h3>
+<p>A <strong>read-only</strong> live view of the profile, in a browser, that updates as the profile changes and shows <strong>what just changed</strong> — a diff, not a dump.</p>
+<p>This exists for one reason: watching an agent rewrite your career history is unnerving when you cannot see it happening. The inspector is the antidote. It is deliberately <strong>not</strong> a formatted render and <strong>not</strong> an editor — it sits <em>before</em> presentation, and writes stay with the agent so there is never a question of who owns the file.</p>
+<p>This is also where the <strong>safety net</strong> is visible: the pre-edit archive, the diff, and (later) per-claim provenance.</p>
+<h3>3. The explorer — <em>browse</em></h3>
+<p>A faceted catalogue over the whole space. You do not design a layout and you do not generate a fixed batch of them — you <strong>browse</strong>, filtering and grouping by axis, until something looks right.</p>
+<p>Two consequences worth stating, because they are what makes this simple:</p>
+<ul><li><strong>No search, no steering, no favourites.</strong> The space is finite, enumerable and deterministic. A catalogue with facets answers every question a recommender would, and needs no session state.</li><li><strong>"I like this layout but not that colour" is a filter,</strong> not a feature. Hold five axes, clear the sixth.</li></ul>
+<p>One viewer serves both the live and exported cases; there is no second UI.</p>
+<h3>4. Publish — <em>export</em></h3>
+<p>Take one spec, write the deliverable — PDF, HTML, Markdown — into the workspace. Every spec in the space is publishable; nothing is browsable-but-unreachable.</p>
+<h3>Running through all four: the lint gate</h3>
+<p>A layout linter (parse-safety) and a content linter (structure, vagueness, gaps) that any surface can call. It <strong>reports</strong>; it never edits. See <a href="#guardrails">Guardrails</a>.</p>
+<hr>
+<h2>Where things live</h2>
+<p>The tool holds <strong>no content</strong>. The workspace holds <strong>no code</strong>. This split is what lets the tool be published while your resume stays private.</p>
+<pre><code>resume-pipeline/                 your workspace/
+  the tool. generic.               your content. private.
+  ─────────────────                ──────────────────────
+  render / lint / browse           profile   (the data you edit)
+  the axes and the space           renders   (the current deliverable)
+  the packaged skill        ──▶    archive   (pre-edit snapshots)
+  the workspace template           letters, applications</code></pre>
+<p>The tool is installed into the workspace and finds the profile by walking up from the working directory. Nothing in the tool knows your name; nothing in the workspace is code.</p>
+<p><strong>Three artifacts, deliberately distinct</strong> — conflating them is the failure mode this section exists to prevent:</p>
+<ol><li><strong>The tool</strong> — generic, public, zero personal content.</li><li><strong>The workspace template</strong> that <code>init</code> scaffolds — generic; a starting point, not anyone's actual resume.</li><li><strong>Someone's workspace</strong> — personal, private, never in this repo.</li></ol>
+<hr>
+<h2>Guardrails</h2>
+<p>These are constraints on the product, not features of it.</p>
+<h3>Never invent a fact about someone's career</h3>
+<p>No metric, no date, no scope claim, no technology they did not use. <strong>The tooling itself creates the pressure to break this rule</strong> — the content linter flags unquantified bullets, and the obvious way to satisfy it is to supply a number. Supplying that number is misrepresentation, and the person who has to defend it in an interview is not the one who wrote it.</p>
+<p>Flagging a missing number is useful. Filling it in is not. <strong>Ask instead</strong>, and leave the bullet unquantified until it is answered. Rewriting someone's own facts into stronger prose is fine and is the point; introducing new facts is not.</p>
+<h3>Never delete from the profile</h3>
+<p>The profile is a superset built over years. Rendering a shorter document is selection, not deletion. Any curation feature operates on the <em>variant</em>.</p>
+<h3>Justify layout rules by mechanism, never by magnitude</h3>
+<p>The evidence base for applicant-tracking-system advice is polluted. The ubiquitous "75% of resumes never reach a human" traces to a vendor that folded in 2013 without ever publishing a study, and the skeptical counter-statistics are no better sourced.</p>
+<p>What survives is <strong>mechanism</strong>: parsers extract text top-to-bottom, left-to-right, so a two-column layout demonstrably scrambles reading order. That is verifiable and sufficient. Every generated layout is single-column and ≥10pt <strong>by construction</strong>, and the linter explains <em>what</em> breaks, never <em>how often</em>.</p>
+<h3>Archive before writing</h3>
+<p>Every edit that touches the profile snapshots it first. Cheap, and it is the difference between an agent you supervise and an agent you fear.</p>
+<hr>
+<h2>v1 — what "done" means</h2>
+<p>v1 is <strong>the version that can be published</strong>. Two tests, both from the outside:</p>
+<blockquote>
+<p>Someone who has never seen this repo can find out what it is, install it, and use it — and the answer to each is easy and agent-installable.</p>
+</blockquote>
+<blockquote>
+<p>Every piece fits together in a way that can be explained on one page. If it can't be, the scope is wrong, not the explanation.</p>
+</blockquote>
+<p>In scope:</p>
+<ul><li>The four surfaces above, working end to end, driven by an agent rather than by hand-run commands.</li><li>The explorer browsing <strong>the whole space</strong> with facets — as many options as you care to look at, not a batch of twenty.</li><li>The read-only inspector with pre-edit archiving and a visible diff.</li><li>One viewer, not two. One theme system, not two.</li><li>The skill <strong>shipped in this repo</strong>, with an installer, and free of any personal content.</li><li>README to the standard of the sibling repos: value proposition, badges, a picture, this vocabulary, requirements, install, a <strong>"hand it to your coding agent"</strong> paste block, a command table, roadmap, docs index.</li><li>Tests and CI. Golden-file renders per spec, invariants on the space, linter cases, and a PDF text-extraction smoke test.</li><li>A plain-language explanation of what an applicant tracking system is and why the layout rules exist — the linter is meaningless without it.</li></ul>
+<p>Explicitly <strong>not</strong> in v1: everything in the next section.</p>
+<hr>
+<h2>Beyond v1 — the shape it grows into</h2>
+<p>Not commitments. This is the vision the v1 architecture must not foreclose.</p>
+<p><strong>Getting data in.</strong> <em>Import an existing resume</em> (PDF/DOCX → profile) is the adoption cliff for this entire category — every comparable tool requires hand-authoring structured data before anything works. Extraction has a checkable oracle: every extracted string must appear in the source, so a hallucinated field can be rejected mechanically. The verifier ships with the extractor, not after it.</p>
+<p><strong>Trusting what comes out.</strong> A <em>provenance model</em> — per claim, is this a human-asserted fact or model-generated prose? — with explicit confirmation before any new figure renders. Nothing in this space ships it, and it is the necessary counterweight to a linter that asks for numbers.</p>
+<p><strong>More documents.</strong> <em>Cover letters</em> are the same data model plus a job posting, and <em>applications</em> are the object that ties a posting, a tailored variant and a letter together. Modelling the application rather than the resume as the primary object is the long-term shape.</p>
+<p><strong>More control over presentation.</strong> <em>Remix</em> (pin a layout, walk one axis), <em>merge</em> (take two layouts you like and browse everything between them), and <em>loadouts</em> (named partial specs — a middle ground between one-click themes and per-axis fiddling) are all the same move: constrain some axes, browse the rest. Each generalises what v1 already does with facets rather than adding a mechanism beside it — merge in particular is enumerable, not random, since two specs differing on <em>k</em> axes span exactly 2^k specs. A <em>drag-and-drop builder</em> sits on top of these, and only makes sense after the next item.</p>
+<p><strong>A content space alongside the style space.</strong> Today a spec describes presentation only. Section ordering, short/long bullet variants, and which subset of the master skills render are all <em>content</em> choices — and the correct home for per-variant curation, which is selection over the master profile and never deletion from it. The explorer would then browse the product of both spaces.</p>
+<p><strong>Somewhere to put it.</strong> <em>Copy-paste blocks</em> with per-field character limits for LinkedIn and application forms, since no official API accepts a profile write.</p>
+<p><strong>A hosted version.</strong> Plausible later, and therefore a constraint now: <strong>do not assume a local filesystem or a single user.</strong> Rendering is already pure and the explorer already speaks a small HTTP API; the cache directory, the upward walk for the profile, and shelling out to a local browser for PDF are the parts that assume otherwise. The job is to keep the boundary clean and documented — not to build hosting.</p>
+<hr>
+<h2>Principles</h2>
+<ul><li><strong>Agent-first, not agent-optional.</strong> The command line is the substrate the agent drives. A human-facing workflow that requires memorising commands has failed.</li><li><strong>Data in one place.</strong> One profile, edited once, rendered many ways. No format is authoritative except the profile.</li><li><strong>Generated files are disposable</strong> and never live beside source.</li><li><strong>Enumerate rather than recommend.</strong> A finite space with good facets beats a recommender with hidden state.</li><li><strong>The tool is public; the content never is.</strong> Every feature must be describable without reference to any particular person's resume.</li><li><strong>Explainable in one page,</strong> or out of scope.</li></ul>
+<hr>
+<h2>As-built — what actually exists today</h2>
+<p>Honest ledger, so this document does not overstate the repo.</p>
+<table><thead><tr><th>Area</th><th>State</th></tr></thead><tbody><tr><td>Pure <code>render(profile, spec)</code></td><td><strong>Exists</strong></td></tr><tr><td>Six axes, 5,040-spec space</td><td><strong>Exists</strong></td></tr><tr><td>Spec naming</td><td><strong>Index-encoded and unstable</strong> (<code>harbor-321-mixed-compact</code>) — adding an axis value renames existing specs; to be replaced with the fully-worded form above</td></tr><tr><td>Layout + content linter</td><td><strong>Exists</strong></td></tr><tr><td>Publish to PDF/HTML/Markdown</td><td><strong>Exists</strong></td></tr><tr><td><code>init</code> workspace scaffold</td><td><strong>Exists</strong></td></tr><tr><td>Explorer / catalogue</td><td><strong>Two overlapping implementations</strong> — to be collapsed to one</td></tr><tr><td>Hand-written themes</td><td><strong>Duplicate</strong> the generated system — to be retired or absorbed</td></tr><tr><td>Steering / neighbourhood sampling</td><td><strong>Exists but unused</strong> by this concept — defer or delete</td></tr><tr><td>Inspector</td><td><strong>Does not exist</strong></td></tr><tr><td>Faceted browse</td><td><strong>Does not exist</strong></td></tr><tr><td>Packaged skill in this repo</td><td><strong>Does not exist</strong> — lives only in a private workspace</td></tr><tr><td>Tests, CI</td><td><strong>Do not exist</strong> (empty <code>tests/</code>, empty <code>.github/</code>)</td></tr><tr><td>README, product/technical docs, ADRs</td><td><strong>Stubs and empty directories</strong></td></tr></tbody></table>
+<hr>
+<h2>Open questions</h2>
+<ol><li><strong>Rendering 5,040 variants for browse.</strong> On-demand rendering with pagination is the obvious answer; whether the exported (static) catalogue can offer the same facets over a subset, and how that subset is chosen, is not settled.</li><li><strong>Where the inspector runs.</strong> The explorer already serves HTTP; whether the inspector is a route on the same server or a separate surface is undecided.</li><li><strong>A seventh axis</strong> would take the space past 5,040 and past what a static export can hold. The threshold at which browse needs a different answer is unknown.</li><li><strong>Retiring the hand-written themes.</strong> One of them is two-column and deliberately not parse-safe, so it cannot be expressed as a spec. Keep it as the single exception, or drop it.</li></ol>
+</main></body></html>
