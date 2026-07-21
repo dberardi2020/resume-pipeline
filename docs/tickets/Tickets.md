@@ -1,0 +1,30 @@
+# resume-pipeline — Tickets
+
+A lightweight backlog — persist and review open items without a ticketing system.
+
+## In progress
+
+_(none)_
+
+## Open
+
+| ID | Type | Pri | Area | Title |
+|---|---|---|---|---|
+| RP-0001 | Feature | **P1** | import | **Import an existing resume** (PDF/DOCX → `resume.json`). The adoption cliff for this whole category: JSON Resume, HackMyResume and RenderCV all require hand-authoring structured data before anything works, which is why their download counts are in the hundreds. Extraction — unlike editing — has a **checkable oracle**: every extracted string must appear in the source text, so a hallucinated field can be rejected before it reaches the data. Ship the verifier alongside the extractor, not after. |
+| RP-0002 | Chore | **P1** | quality | **Tests + CI.** Golden-file tests over rendered HTML per theme/spec, unit tests for `space.distance`/`neighbours`/`diverse`/`steer` invariants, lint-rule cases, and a PDF smoke test asserting text extraction (PyMuPDF) round-trips the skills. GitHub Actions on macOS + Linux. **Blocks going public.** |
+| RP-0003 | Feature | P2 | explore | **Remix** — pin a layout and vary one axis at a time. Mostly a UI affordance: `space.neighbours(spec, radius=1)` already returns exactly the 20 one-axis variations. Needs an axis-picker in the card/detail view and a "vary this axis" strip showing each alternative rendered inline. |
+| RP-0004 | Feature | P2 | explore | **Global style locks + loadouts.** Pin axes (e.g. always `charter` + `moss`) so the samplers explore only the remaining subspace — an `axis_locks` filter threaded through `diverse()`/`steer()`, ~15 lines. "Loadouts" are named partial specs (pure data) offering a middle ground between one-click themes and per-axis fiddling. Depends on RP-0003 sharing the axis-control UI. |
+| RP-0005 | Feature | P3 | model | **A content design space, alongside the style space.** Today a `Spec` describes only *presentation*. Section ordering, per-section short/long bullet variants, and which subset of the master skill list renders are all *content* choices, and the explorer should browse the product of both spaces. This is also the correct home for per-variant skills curation — selection over the master profile, never deletion from it. Precondition for the drag-and-drop builder (RP-0006). |
+| RP-0006 | Feature | P3 | ux | **Drag-and-drop builder** — reorder sections and swap between interchangeable section versions directly, "loadouts" style. Sits on top of RP-0003/RP-0005: once content is an axis set, direct manipulation is a second editor over the same model rather than a parallel implementation. Do not start before RP-0005. |
+| RP-0007 | Feature | **P1** | safety | **Provenance model.** Track per-claim whether a value is a human-asserted fact or model-generated prose, and require explicit confirmation before any *new* figure can render. The genuinely unfilled gap in this space — no tool ships it — and the necessary counterweight to a linter that asks for metrics, which otherwise pressures a model into inventing them. |
+| RP-0008 | Feature | P2 | docs | **Explain what an ATS actually is**, and a how-to guide. Must be evidence-first: the widely-cited "75% of resumes never reach a human" traces to Preptel, a vendor that folded in 2013 without publishing a study. Document the *mechanism* (parsers extract top-to-bottom, left-to-right, so multi-column layouts interleave) and explicitly debunk the magnitude claims rather than repeating them. |
+| RP-0009 | Feature | P2 | render | **Cover letters.** Same data model plus a job posting; the reason RenderCV was not adopted (its schema cannot express them). Needs a letter document type, a shared identity/contact block with the resume, and per-application storage under `Applications/`. |
+| RP-0010 | Chore | P3 | render | **Retire or absorb the hand-written themes.** `ats`/`slate`/`editorial`/`designed` predate `compose.py` and duplicate its section logic. `slate` is reproducible as a spec; `designed` is the only one that is not (two-column, deliberately not ATS-safe). Decide: express them as named loadouts (RP-0004), or keep `designed` alone and delete the rest. |
+| RP-0011 | Chore | P3 | explore | **Delete `gallery.py`.** The static contact-sheet/gallery predates the `serve` explorer and is strictly worse — pre-baked PDFs, `localStorage` state, no steering. Keep only until `serve` covers batch export. |
+| RP-0012 | Chore | P3 | packaging | **Publish decision.** Repo is private and `kebab-case`, which the workspace manifest reserves for public — named for its destination so publishing is a visibility flip, not a rename. Resolve before v1: either confirm the exception in `.meta/code-manifest.md` or rename to `ResumePipeline` while private. Gated on RP-0002. |
+| RP-0013 | Feature | P3 | lint | **Lint variants, not the master profile.** `skills/bloat` currently fires against `resume.json`, but the master profile is *supposed* to be a superset — the warning belongs on a rendered variant. Requires RP-0005. |
+| RP-0014 | Chore | P3 | model | **`work[].promotions` is a local schema extension.** JSON Resume has no field for in-company progression, and its hosted registry validates against a stricter draft-04 schema with `additionalProperties: false`, so this would be rejected there. Harmless locally (we do not use the registry), but document it, and check for an upstream field before it spreads. |
+
+## Done
+
+_(none yet — repo created 2026-07-21)_
