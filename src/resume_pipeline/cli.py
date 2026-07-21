@@ -10,12 +10,37 @@ lives in `Code/`, the content lives wherever you keep it.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
 from . import compose, gallery, space
 from . import lint as lint_mod
 from . import markdown, model, pdf, themes
+
+
+def find_resume(explicit: str | None) -> Path:
+    """Locate the resume document.
+
+    Typing a path every time is friction on the most common action, so the path
+    is optional: an explicit argument wins, then `RESUME_PIPELINE_RESUME`, then
+    the nearest `resume.json` walking up from the working directory. That last
+    rule means `resume-pipeline serve` just works anywhere inside a resume folder.
+    """
+    if explicit:
+        return Path(explicit).expanduser()
+    if env := os.environ.get("RESUME_PIPELINE_RESUME"):
+        return Path(env).expanduser()
+    here = Path.cwd().resolve()
+    for folder in (here, *here.parents):
+        for candidate in ("resume.json", "Resume/resume.json"):
+            found = folder / candidate
+            if found.is_file():
+                return found
+    raise SystemExit(
+        "error: no resume found. Pass a path, set RESUME_PIPELINE_RESUME, or run "
+        "from a folder containing resume.json."
+    )
 
 
 def _resolve_themes(name: str):
@@ -36,6 +61,7 @@ def _load(path: str):
 
 
 def cmd_build(args) -> int:
+    args.resume = str(find_resume(args.resume))
     resume = _load(args.resume)
     out_dir = Path(args.out or Path(args.resume).parent)
     stem = args.name or Path(args.resume).stem
@@ -128,6 +154,7 @@ def _contact_sheet(themes_, stem: str) -> str:
 
 
 def cmd_lint(args) -> int:
+    args.resume = str(find_resume(args.resume))
     resume = _load(args.resume)
     theme = None if args.theme == "none" else themes.get(args.theme)
     findings = lint_mod.check(resume, theme=theme)
@@ -148,6 +175,7 @@ def cmd_lint(args) -> int:
 
 
 def cmd_explore(args) -> int:
+    args.resume = str(find_resume(args.resume))
     resume = _load(args.resume)
     out_dir = Path(args.out or (Path(args.resume).parent / "explore"))
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -176,7 +204,7 @@ def cmd_explore(args) -> int:
 
 def cmd_serve(args) -> int:
     from .explore import serve
-    resume_path = Path(args.resume)
+    resume_path = find_resume(args.resume)
     serve(
         resume_path,
         out_dir=Path(args.out) if args.out else resume_path.parent / "out",
@@ -203,7 +231,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("build", help="render a resume")
-    p.add_argument("resume", help="path to a JSON Resume document")
+    p.add_argument("resume", nargs="?", help="path to a JSON Resume document (default: nearest resume.json)")
     p.add_argument("--theme", default="ats",
                    help="theme name, or 'all' (default: ats)")
     p.add_argument("--formats", default="html,pdf",
@@ -213,7 +241,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_build)
 
     p = sub.add_parser("lint", help="check against ATS best practices")
-    p.add_argument("resume")
+    p.add_argument("resume", nargs="?")
     p.add_argument("--theme", default="ats",
                    help="theme to judge layout against, or 'none'")
     p.add_argument("--strict", action="store_true",
@@ -221,7 +249,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_lint)
 
     p = sub.add_parser("explore", help="generate many layout variants to flip through")
-    p.add_argument("resume")
+    p.add_argument("resume", nargs="?")
     p.add_argument("--count", type=int, default=24,
                    help="how many variants to generate (default: 24)")
     p.add_argument("--seed", type=int, default=0,
@@ -231,7 +259,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_explore)
 
     p = sub.add_parser("serve", help="open the interactive layout explorer")
-    p.add_argument("resume")
+    p.add_argument("resume", nargs="?")
     p.add_argument("--port", type=int, default=8765)
     p.add_argument("--batch", type=int, default=12,
                    help="layouts shown per batch (default: 12)")

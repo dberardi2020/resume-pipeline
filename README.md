@@ -15,14 +15,25 @@ three things that do not exist elsewhere:
 
 Zero runtime dependencies. Python 3.11+, plus any Chromium-family browser for PDF export.
 
+## Install
+
+```
+git clone git@github.com:dberardi2020/resume-pipeline.git
+cd resume-pipeline && python3 -m venv .venv && .venv/bin/pip install -e .
+ln -s "$PWD/.venv/bin/resume-pipeline" /usr/local/bin/resume-pipeline   # or ~/.local/bin
+```
+
 ## Use
 
 ```
-resume-pipeline serve   resume.json          # interactive layout explorer
-resume-pipeline build   resume.json --theme all
-resume-pipeline lint    resume.json --theme slate
-resume-pipeline explore resume.json --count 24
+resume-pipeline serve                  # interactive layout explorer
+resume-pipeline lint                   # ATS + content checks
+resume-pipeline build --theme all      # every theme, plus a comparison sheet
+resume-pipeline themes
 ```
+
+The resume path is optional — commands walk up from the working directory looking for
+`resume.json`, or read `RESUME_PIPELINE_RESUME`. Pass a path explicitly to override.
 
 Input is [JSON Resume](https://jsonresume.org/schema). Output is HTML, PDF, and Markdown.
 
