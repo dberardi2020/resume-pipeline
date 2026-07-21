@@ -16,7 +16,7 @@ from pathlib import Path
 
 from . import catalogue, compose, scaffold, space
 from . import lint as lint_mod
-from . import markdown, model, pdf, themes
+from . import markdown, model, pdf
 
 
 def find_resume(explicit: str | None) -> Path:
@@ -57,10 +57,17 @@ def cache_dir(resume_path: Path) -> Path:
     return root / "resume-pipeline" / resume_path.resolve().parent.name
 
 
-def _resolve_themes(name: str):
-    if name == "all":
-        return list(themes.registry().values())
-    return [themes.get(name)]
+def resolve_layout(name: str):
+    """A preset name or a generated layout id, resolved to something renderable."""
+    spec = compose.preset(name) or space.parse(name)
+    if spec is None:
+        raise SystemExit(
+            f"error: unknown layout {name!r}.\n"
+            f"  presets: {', '.join(compose.PRESETS)}\n"
+            f"  or a generated id like 'moss-111-charter-airy' - "
+            f"run `resume-pipeline catalogue` to browse them."
+        )
+    return compose.as_theme(spec)
 
 
 def _load(path: str):
@@ -74,50 +81,10 @@ def _load(path: str):
     return resume
 
 
-def cmd_build(args) -> int:
-    args.resume = str(find_resume(args.resume))
-    resume = _load(args.resume)
-    out_dir = Path(args.out) if args.out else cache_dir(Path(args.resume))
-    stem = args.name or Path(args.resume).stem
-    formats = set(args.formats.split(","))
-
-    if "md" in formats:
-        target = out_dir / f"{stem}.md"
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(markdown.render(resume), encoding="utf-8")
-        print(f"wrote {target}")
-
-    selected = _resolve_themes(args.theme)
-    for theme in selected:
-        html = theme.render(resume)
-        # Single theme keeps the bare stem; multiple themes need disambiguating.
-        suffix = "" if len(selected) == 1 else f".{theme.name}"
-        if "html" in formats:
-            target = out_dir / f"{stem}{suffix}.html"
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(html, encoding="utf-8")
-            print(f"wrote {target}")
-        if "pdf" in formats:
-            target = out_dir / f"{stem}{suffix}.pdf"
-            try:
-                pdf.write(html, target)
-            except (pdf.BrowserNotFound, RuntimeError) as exc:
-                print(f"error: {exc}", file=sys.stderr)
-                return 1
-            print(f"wrote {target}")
-
-        if not theme.ats_safe:
-            print(f"note: theme {theme.name!r} is not ATS-safe — use 'ats' for "
-                  f"anything submitted through a portal.", file=sys.stderr)
-
-    return 0
-
-
-
 def cmd_lint(args) -> int:
     args.resume = str(find_resume(args.resume))
     resume = _load(args.resume)
-    theme = None if args.theme == "none" else themes.get(args.theme)
+    theme = None if args.theme == "none" else resolve_layout(args.theme)
     findings = lint_mod.check(resume, theme=theme)
 
     if not findings:
@@ -175,7 +142,7 @@ def cmd_publish(args) -> int:
     """
     args.resume = str(find_resume(args.resume))
     resume = _load(args.resume)
-    theme = themes.get(args.theme)
+    theme = resolve_layout(args.theme)
     out_dir = Path(args.resume).parent
     stem = args.name or f"{resume.name.split()[-1]}_Resume".replace(" ", "_")
 
@@ -204,13 +171,6 @@ def cmd_init(args) -> int:
     return 0
 
 
-def cmd_themes(args) -> int:
-    for name, theme in sorted(themes.registry().items()):
-        flag = "ATS-safe" if theme.ats_safe else "not ATS-safe"
-        print(f"{name:<10} {theme.description}  ({flag}, {theme.columns}-col)")
-    return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="resume-pipeline",
@@ -218,20 +178,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p = sub.add_parser("build", help="render a resume")
-    p.add_argument("resume", nargs="?", help="path to a JSON Resume document (default: nearest resume.json)")
-    p.add_argument("--theme", default="ats",
-                   help="theme name, or 'all' (default: ats)")
-    p.add_argument("--formats", default="html,pdf",
-                   help="comma-separated: html,pdf,md (default: html,pdf)")
-    p.add_argument("--out", help="output directory (default: alongside input)")
-    p.add_argument("--name", help="output basename (default: input stem)")
-    p.set_defaults(func=cmd_build)
-
     p = sub.add_parser("lint", help="check against ATS best practices")
     p.add_argument("resume", nargs="?")
-    p.add_argument("--theme", default="ats",
-                   help="theme to judge layout against, or 'none'")
+    p.add_argument("--theme", default="default",
+                   help="layout to judge, or 'none'")
     p.add_argument("--strict", action="store_true",
                    help="treat warnings as failures")
     p.set_defaults(func=cmd_lint)
@@ -259,7 +209,8 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("publish",
                        help="write the deliverable beside the resume")
     p.add_argument("resume", nargs="?")
-    p.add_argument("--theme", default="slate", help="theme to publish (default: slate)")
+    p.add_argument("--theme", default="default",
+                   help="preset name or generated layout id (default: default)")
     p.add_argument("--name", help="output basename (default: <Lastname>_Resume)")
     p.set_defaults(func=cmd_publish)
 
@@ -268,9 +219,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--skill-only", action="store_true",
                    help="install just the Claude Code skill into an existing workspace")
     p.set_defaults(func=cmd_init)
-
-    p = sub.add_parser("themes", help="list available themes")
-    p.set_defaults(func=cmd_themes)
 
     return parser
 

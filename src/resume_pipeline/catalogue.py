@@ -14,6 +14,7 @@ The output is self-contained and works from `file://` — no server, no build st
 from __future__ import annotations
 
 import html
+import json
 from pathlib import Path
 
 from . import compose, space
@@ -30,6 +31,16 @@ def build(resume, count: int, out_dir: Path, seed: int = 0) -> tuple[Path, list]
 
     index = out_dir / "index.html"
     index.write_text(_index(specs, resume), encoding="utf-8")
+
+    # The page is for a human; this is for the agent standing next to them. It
+    # makes "use number 7" resolvable without parsing HTML or guessing.
+    (out_dir / "options.json").write_text(json.dumps({
+        "options": [
+            {"number": n, "name": s.name, "description": s.description,
+             "preview": f"{s.name}.html"}
+            for n, s in enumerate(specs, 1)
+        ],
+    }, indent=2) + "\n", encoding="utf-8")
     return index, specs
 
 
@@ -55,7 +66,7 @@ def _index(specs, resume) -> str:
           <div class="chips">{axes}</div>
           <div class="row">
             <a href="{spec.name}.html" target="_blank">Open full size</a>
-            <button data-name="{spec.name}">Copy publish command</button>
+            <button data-name="{spec.name}">Copy name</button>
           </div>
         </figcaption>
       </figure>""")
@@ -104,19 +115,18 @@ def _index(specs, resume) -> str:
 <header>
   <h1>{name} — layout catalogue</h1>
   <p class="sub">{len(specs)} of {space.TOTAL:,} possible layouts, spread across the design
-  space. Every preview is a live render, identical to what publishes. Pick one, then run
-  <code>resume-pipeline publish --theme &lt;name&gt;</code> — or use
-  <code>resume-pipeline serve</code> to browse interactively and steer toward what you like.</p>
+  space. Every preview is a live render — identical to what gets published.</p>
+  <p class="sub"><b>Pick one and tell your agent</b> — “use number 7” or “publish the
+  {html.escape(specs[0].name)} one”. Copy&nbsp;name is there if you would rather paste it.</p>
 </header>
 <div class="grid">{"".join(cards)}
 </div>
 <div class="toast" id="t"></div>
 <script>
 document.querySelectorAll("button[data-name]").forEach(b => b.onclick = () => {{
-  const cmd = `resume-pipeline publish --theme ${{b.dataset.name}}`;
-  navigator.clipboard.writeText(cmd).then(() => {{
+  navigator.clipboard.writeText(b.dataset.name).then(() => {{
     const t = document.getElementById("t");
-    t.textContent = "Copied: " + cmd; t.classList.add("on");
+    t.textContent = "Copied: " + b.dataset.name; t.classList.add("on");
     setTimeout(() => t.classList.remove("on"), 2200);
   }});
 }});

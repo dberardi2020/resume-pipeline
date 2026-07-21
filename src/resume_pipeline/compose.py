@@ -21,8 +21,35 @@ import hashlib
 import random
 from dataclasses import dataclass
 
+import html as _html
+from dataclasses import dataclass as _dataclass
+from typing import Callable as _Callable
+
 from .model import date_range
-from .themes import Theme, esc
+
+
+def esc(value) -> str:
+    """Escape for HTML text. All content routes through this."""
+    return _html.escape(str(value or ""), quote=True)
+
+
+@_dataclass(frozen=True)
+class Theme:
+    """A renderable layout, plus the claims the linter checks it against.
+
+    Everything the generator produces is single-column and >=10pt, so these are
+    constant today — safe by construction rather than by inspection. They stay
+    declared because imported or hand-written layouts will not have that
+    guarantee, and the linter should be able to judge those too.
+    """
+
+    name: str
+    description: str
+    render: _Callable[..., str]
+    columns: int = 1
+    min_font_pt: float = 10.0
+    remote_assets: bool = False
+    ats_safe: bool = True
 
 # ── Axes ──────────────────────────────────────────────────────────────────────
 
@@ -76,6 +103,20 @@ class Spec:
         return (f"{PALETTES[self.palette][0]} · {TYPEFACES[self.typeface][0]} · "
                 f"{self.header} header · {self.skills} skills · "
                 f"{self.promo} promo · {DENSITIES[self.density][0]}")
+
+
+# A handful of named starting points. Each is just a Spec — presets are a
+# convenience for people who do not want to browse, not a separate system.
+PRESETS = {
+    "default":   Spec(0, 0, "band", "pills", "ladder", 1),      # harbor, grotesk
+    "plain":     Spec(1, 0, "rule", "inline", "inline", 1),     # ink, understated
+    "editorial": Spec(1, 2, "masthead", "inline", "stacked", 1),  # serif, classic
+    "warm":      Spec(3, 1, "split", "pills", "badge", 1),      # clay, humanist
+}
+
+
+def preset(name: str) -> Spec | None:
+    return PRESETS.get(name)
 
 
 def all_specs() -> list[Spec]:
