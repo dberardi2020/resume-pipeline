@@ -1,22 +1,21 @@
-"""Search over the layout design space.
+"""The layout design space: enumerate it, measure it, name it.
 
-Browsing 5,040 layouts at random is not exploration, it is a slot machine — you see
-eighteen unrelated points and learn nothing that improves the next eighteen. What
-makes it exploration is *steering*: express a preference, and have the next batch
-respond to it.
+The space is finite, deterministic, and a product of independent categorical axes,
+which is the property everything else here leans on. It means the space can simply
+be *enumerated* and browsed with the axes as facets — "every layout in this palette",
+"this layout in any palette but this one" — so there is no recommender, no sampling
+seed, and no session state to keep. A catalogue answers what a search engine would.
 
-That requires two things a flat list does not have — a notion of how far apart two
-layouts are, and a sampler that uses it. Both live here, kept free of rendering and
-IO so they can be reasoned about and tested on their own.
+Distance is therefore Hamming: the number of axes on which two specs disagree, 0-6.
+Crude, but it matches how the choices behave — swapping a palette changes exactly one
+thing, and the metric should say exactly that. It underwrites `spread` (show me the
+range), `neighbours` (show me the near-misses), and the merge of two specs, which is
+just the sub-space they span.
 
-The space is a product of independent categorical axes, so distance is Hamming:
-the number of axes on which two specs disagree, 0-6. Crude, but it matches how the
-choices actually behave — swapping a palette changes one thing about a layout, and
-the metric should say exactly that.
+Kept free of rendering and IO, so it can be reasoned about and tested on its own.
 """
 from __future__ import annotations
 
-import random
 from dataclasses import replace
 
 from .compose import DENSITIES, HEADERS, PALETTES, PROMOS, SKILLS, TYPEFACES, Spec
@@ -60,80 +59,43 @@ def neighbours(spec: Spec, radius: int = 1) -> list[Spec]:
     return sorted(out, key=lambda s: s.name)
 
 
-def diverse(count: int, seed: int = 0, exclude: set[str] | None = None) -> list[Spec]:
-    """A spread-out sample, via greedy farthest-point selection.
+def spread(count: int) -> list[Spec]:
+    """`count` layouts spread across the space, by greedy farthest-point selection.
 
-    A uniform random draw clusters — with six axes and a small sample you routinely
-    get three layouts that differ only by palette, which wastes the batch. Greedy
-    farthest-point picks each next spec to maximise its minimum distance to those
-    already chosen, so a batch of twelve actually covers the space.
+    Taking the first N in enumeration order would return N near-identical layouts,
+    since enumeration varies the last axis fastest. Farthest-point picks each next
+    spec to maximise its minimum distance from those already chosen, so a handful
+    of cards actually shows you the range of what the space can do.
+
+    Deterministic: no seed, no shuffle. The same count always yields the same
+    layouts, so a catalogue can be rebuilt, linked and compared.
     """
-    exclude = exclude or set()
-    rng = random.Random(seed)
-    pool = [s for s in _all() if s.name not in exclude]
-    if not pool:
+    pool = _all()
+    if not pool or count <= 0:
         return []
-    rng.shuffle(pool)
-    # A candidate window keeps this near-linear; scoring all 5,040 each round is
-    # needless when the pool is already shuffled.
-    window = min(len(pool), max(240, count * 40))
-    pool = pool[:window]
+    if count >= len(pool):
+        return pool
 
-    chosen = [pool.pop(0)]
-    while pool and len(chosen) < count:
-        best_i, best_score = 0, -1
-        for i, cand in enumerate(pool):
-            score = min(distance(cand, c) for c in chosen)
-            if score > best_score:
+    # `nearest[i]` is the distance from pool[i] to the closest spec already
+    # chosen, updated incrementally as each pick lands. Recomputing it from
+    # scratch each round instead would make this cubic in the size of the space,
+    # which at 5,040 points does not finish.
+    chosen = [pool[0]]
+    taken = {0}
+    nearest = [distance(cand, pool[0]) for cand in pool]
+
+    while len(chosen) < count:
+        best_i, best_score = -1, -1
+        for i, score in enumerate(nearest):
+            if i not in taken and score > best_score:
                 best_i, best_score = i, score
-                if score == len(AXES):
-                    break
-        chosen.append(pool.pop(best_i))
+        chosen.append(pool[best_i])
+        taken.add(best_i)
+        for i, cand in enumerate(pool):
+            d = distance(cand, pool[best_i])
+            if d < nearest[i]:
+                nearest[i] = d
     return chosen
-
-
-def steer(favourites: list[Spec], rejects: list[Spec], count: int,
-          seed: int = 0, exclude: set[str] | None = None) -> list[Spec]:
-    """Sample near what was liked and away from what was not.
-
-    With no signal yet, fall back to a diverse sweep. Otherwise draw from the
-    union of the favourites' neighbourhoods, scoring each candidate by how close
-    it sits to a favourite and how far from a reject, then take a spread across
-    the winners so the batch does not collapse onto one favourite's variations.
-    """
-    exclude = set(exclude or set())
-    exclude |= {s.name for s in favourites} | {s.name for s in rejects}
-
-    if not favourites:
-        return diverse(count, seed=seed, exclude=exclude)
-
-    rng = random.Random(seed)
-    pool: dict[str, Spec] = {}
-    for fav in favourites:
-        for cand in neighbours(fav, radius=2):
-            if cand.name not in exclude:
-                pool[cand.name] = cand
-    if not pool:
-        return diverse(count, seed=seed, exclude=exclude)
-
-    def score(spec: Spec) -> float:
-        near = min(distance(spec, f) for f in favourites)
-        away = min((distance(spec, r) for r in rejects), default=len(AXES))
-        # Close to a favourite is good; close to a reject is bad but weighted
-        # lower, since a reject usually means one bad axis rather than a bad region.
-        return -near + 0.5 * min(away, 3) + rng.random() * 0.4
-
-    ranked = sorted(pool.values(), key=score, reverse=True)
-    # Take a diverse slice of the top candidates rather than the top N, which
-    # would be near-duplicates of one another.
-    head = ranked[: max(count * 4, count)]
-    out = [head[0]]
-    for cand in head[1:]:
-        if len(out) >= count:
-            break
-        if min(distance(cand, c) for c in out) >= 1:
-            out.append(cand)
-    return out[:count]
 
 
 def _all() -> list[Spec]:
@@ -141,9 +103,31 @@ def _all() -> list[Spec]:
     return all_specs()
 
 
+# Value -> index, for the axes stored as indices into a table of tuples.
+_PALETTE_IDS = {p[0]: i for i, p in enumerate(PALETTES)}
+_TYPEFACE_IDS = {t[0]: i for i, t in enumerate(TYPEFACES)}
+_DENSITY_IDS = {d[0]: i for i, d in enumerate(DENSITIES)}
+
+
 def parse(name: str) -> Spec | None:
-    """Recover a Spec from its stable name. Returns None if it does not parse."""
-    for spec in _all():
-        if spec.name == name:
-            return spec
-    return None
+    """Recover a Spec from its name. Returns None if it does not parse.
+
+    Decoded directly rather than by scanning all 5,040 specs for a match: the
+    name spells out every axis, so it is a lookup per segment.
+    """
+    parts = name.split("-")
+    if len(parts) != 6:
+        return None
+    palette, typeface, header, skills, promo, density = parts
+    if (palette not in _PALETTE_IDS or typeface not in _TYPEFACE_IDS
+            or density not in _DENSITY_IDS or header not in HEADERS
+            or skills not in SKILLS or promo not in PROMOS):
+        return None
+    return Spec(
+        palette=_PALETTE_IDS[palette],
+        typeface=_TYPEFACE_IDS[typeface],
+        header=header,
+        skills=skills,
+        promo=promo,
+        density=_DENSITY_IDS[density],
+    )

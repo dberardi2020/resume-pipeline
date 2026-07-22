@@ -1,11 +1,16 @@
 """Command line entry point.
 
-    python -m resume_pipeline build   resume.json --theme all
-    python -m resume_pipeline lint    resume.json --theme ats
-    python -m resume_pipeline themes
+    python -m resume_pipeline lint
+    python -m resume_pipeline catalogue
+    python -m resume_pipeline publish --theme default
 
-The resume document is always an argument, never a hardcoded path — the tool
-lives in `Code/`, the content lives wherever you keep it.
+The resume document is never a hardcoded path — the tool is generic, the content
+lives wherever you keep it. The path argument is optional because commands walk up
+from the working directory to find it.
+
+This is the substrate, not the interface. The intended way to drive all of this is
+an agent working in the workspace (see the `career` skill in `scaffold.py`); a human
+should not have to remember any of these verbs.
 """
 from __future__ import annotations
 
@@ -64,7 +69,7 @@ def resolve_layout(name: str):
         raise SystemExit(
             f"error: unknown layout {name!r}.\n"
             f"  presets: {', '.join(compose.PRESETS)}\n"
-            f"  or a generated id like 'moss-111-charter-airy' - "
+            f"  or a layout id like 'moss-charter-band-pills-ladder-airy' - "
             f"run `resume-pipeline catalogue` to browse them."
         )
     return compose.as_theme(spec)
@@ -110,23 +115,24 @@ def cmd_catalogue(args) -> int:
     # does and stays findable. It is HTML only, so it costs a few hundred KB.
     out_dir = (Path(args.out) if args.out
                else Path(args.resume).parent / "Options")
-    index, specs = catalogue.build(resume, args.count, out_dir, seed=args.seed)
+    index, specs = catalogue.build(resume, args.count, out_dir)
     print(f"built {len(specs)} layouts of {space.TOTAL:,}")
+    width = max((len(s.name) for s in specs), default=0)
     for n, spec in enumerate(specs, 1):
-        print(f"  {n:>2}. {spec.name:<34} {spec.description}")
+        print(f"  {n:>2}. {spec.name:<{width}}  {spec.description}")
     print(f"\nopen: file://{index}")
     print("publish one with: resume-pipeline publish --theme <name>")
     return 0
 
 
 def cmd_serve(args) -> int:
-    from .explore import serve
+    from .server import serve
     resume_path = find_resume(args.resume)
     serve(
         resume_path,
         out_dir=Path(args.out) if args.out else cache_dir(resume_path),
         stem=args.name or resume_path.stem,
-        batch_size=args.batch,
+        count=args.count,
         port=args.port,
         open_browser=not args.no_open,
     )
@@ -191,16 +197,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("resume", nargs="?")
     p.add_argument("--count", type=int, default=20,
                    help="how many layouts to generate (default: 20)")
-    p.add_argument("--seed", type=int, default=0,
-                   help="sampling seed - the same seed gives the same catalogue")
     p.add_argument("--out", help="output directory (default: cache)")
     p.set_defaults(func=cmd_catalogue)
 
-    p = sub.add_parser("serve", help="open the interactive layout explorer")
+    p = sub.add_parser("serve", help="browse layouts in a local viewer")
     p.add_argument("resume", nargs="?")
     p.add_argument("--port", type=int, default=8765)
-    p.add_argument("--batch", type=int, default=12,
-                   help="layouts shown per batch (default: 12)")
+    p.add_argument("--count", type=int, default=24,
+                   help="layouts shown (default: 24)")
     p.add_argument("--out", help="export directory (default: <resume dir>/out)")
     p.add_argument("--name", help="export basename (default: input stem)")
     p.add_argument("--no-open", action="store_true", help="do not open a browser")

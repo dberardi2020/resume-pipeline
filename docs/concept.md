@@ -312,18 +312,19 @@ Honest ledger, so this document does not overstate the repo.
 |---|---|
 | Pure `render(profile, spec)` | **Exists** |
 | Six axes, 5,040-spec space | **Exists** |
-| Spec naming | **Index-encoded and unstable** (`harbor-321-mixed-compact`) — adding an axis value renames existing specs; to be replaced with the fully-worded form above |
+| Spec naming | **Exists** — fully worded and stable; every name round-trips, asserted across all 5,040 |
 | Layout + content linter | **Exists** |
 | Publish to PDF/HTML/Markdown | **Exists** |
-| `init` workspace scaffold | **Exists** |
-| Explorer / catalogue | **Two overlapping implementations** — to be collapsed to one |
-| Hand-written themes | **Duplicate** the generated system — to be retired or absorbed |
-| Steering / neighbourhood sampling | **Exists but unused** by this concept — defer or delete |
+| `init` workspace scaffold | **Exists**, and ships the `career` skill |
+| Viewer | **One implementation**, two deliveries (static folder, or served with PDF export) |
+| Hand-written themes | **Gone** — presets are ordinary specs, so there is no second theme system |
+| Steering / sampling / session state | **Gone** — `spread` is deterministic; `distance` and `neighbours` remain, for remix and merge |
+| Tests | **Exist** — 120, covering the space, rendering, linting, both deliveries, the scaffold, and PDF text extraction |
+| CI | **Written** (`.github/workflows/tests.yml`, macOS + Linux × Python 3.11/3.13) — **unverified until first push** |
 | Inspector | **Does not exist** |
-| Faceted browse | **Does not exist** |
-| Packaged skill in this repo | **Does not exist** — lives only in a private workspace |
-| Tests, CI | **Do not exist** (empty `tests/`, empty `.github/`) |
-| README, product/technical docs, ADRs | **Stubs and empty directories** |
+| Faceted browse | **Does not exist** — the viewer shows a spread; the facets are not built |
+| Import | **Does not exist** |
+| README, product/technical docs, ADRs | **Stub and empty directories** |
 
 ---
 

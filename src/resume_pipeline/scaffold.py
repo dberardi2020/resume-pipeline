@@ -118,15 +118,18 @@ cp Resume/resume.json "Resume/Archive/$(date +%Y%m%d)-pre-<change>.json"
 
 ## Commands
 
+You should rarely need these — ask your agent instead; it has the `career` skill. They
+are here so nothing is hidden.
+
 ```
-resume-pipeline lint                     # ATS + content checks
-resume-pipeline publish --theme slate    # write the deliverable beside resume.json
-resume-pipeline serve                    # interactive layout explorer
-resume-pipeline themes
+resume-pipeline lint                       # ATS + content checks
+resume-pipeline catalogue                  # build a browsable page of layout options
+resume-pipeline serve                      # the same viewer, with PDF export
+resume-pipeline publish --theme default    # write the deliverable beside resume.json
 ```
 
 Paths are optional — commands walk up from the working directory to find `resume.json`.
-Scratch renders go to `~/.cache/resume-pipeline/`; only `publish` writes here.
+Scratch renders go to `~/.cache/resume-pipeline/`; only `publish` and `catalogue` write here.
 
 **Never create a virtualenv inside this folder** if it is file-synced (Dropbox, iCloud,
 Drive, a NAS). Virtualenvs carry absolute paths and per-machine binaries.
@@ -149,17 +152,21 @@ directory, so the path argument is optional.
 ## Commands
 
 ```bash
-resume-pipeline lint                     # ATS + content checks
-resume-pipeline publish --theme slate    # write the deliverable beside resume.json
-resume-pipeline serve                    # interactive layout explorer (opens a browser)
-resume-pipeline build --theme all        # scratch renders for comparison
-resume-pipeline themes
+resume-pipeline lint                       # ATS + content checks
+resume-pipeline catalogue                  # browsable page of layout options
+resume-pipeline serve                      # the same viewer, with PDF export
+resume-pipeline publish --theme default    # write the deliverable beside resume.json
 ```
 
-**`publish` vs `build`.** `publish` overwrites the canonical `.pdf/.html/.md` beside
-`resume.json` — that trio *is* the deliverable attached to an application. Use it after any
-content change. `build` writes scratch to `~/.cache/resume-pipeline/` and is for comparing
-options; never point `build --out` at the resume folder.
+**You run these, not the user.** They work in an agent session and should not be handed a
+command to type — if a turn ends by telling them to run something, run it instead.
+
+**`catalogue` vs `publish`.** `catalogue` writes a folder of HTML options to look at.
+`publish` overwrites the canonical `.pdf/.html/.md` beside `resume.json` — that trio *is*
+the deliverable attached to an application. Use it after any content change.
+
+`--theme` takes a preset (`default`, `plain`, `editorial`, `warm`) or any layout id from
+the catalogue, e.g. `moss-charter-band-pills-ladder-airy`.
 
 `serve` blocks until ctrl-c — run it in the background.
 
@@ -185,7 +192,7 @@ choice, not a deletion.
 2. Edit `resume.json` only.
 3. `resume-pipeline lint` — compare against the pre-edit baseline; never silence a finding
    with invented data.
-4. `resume-pipeline publish --theme slate`
+4. `resume-pipeline publish --theme default`
 5. Report what changed, and list anything you needed but did not have.
 """
 
@@ -199,9 +206,11 @@ Scaffolded by [`resume-pipeline`](https://github.com/dberardi2020/resume-pipelin
 1. Fill in `Resume/resume.json`. Already have a resume? See the import notes in the tool's
    README — until then, transcribe it once; everything downstream is generated from it.
 2. `cd Resume && resume-pipeline lint` — see what a parser and a screener would object to.
-3. `resume-pipeline serve` — browse layouts, keep the ones you like, and the next batch is
-   sampled near them.
-4. `resume-pipeline publish --theme slate` — writes the file you actually send.
+3. `resume-pipeline catalogue` — build a page of layout options and open it.
+4. `resume-pipeline publish --theme <id>` — writes the file you actually send.
+
+Better still, ask your coding agent for any of the above — `init` installs a `career`
+skill that teaches it the workflow and the rules.
 
 ## What goes where
 
@@ -216,20 +225,11 @@ Scaffolded by [`resume-pipeline`](https://github.com/dberardi2020/resume-pipelin
 letting any agent edit your resume.
 """
 
-LAUNCHER = """#!/bin/sh
-# Double-click to open the layout explorer (macOS runs .command files in Terminal).
-cd "$(dirname "$0")/Resume" || exit 1
-exec resume-pipeline serve
-"""
-
-
-def _write(path: Path, content: str, *, executable: bool = False) -> str:
+def _write(path: Path, content: str) -> str:
     if path.exists():
         return f"  skip  {path}  (exists)"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
-    if executable:
-        path.chmod(0o755)
     return f"  write {path}"
 
 
@@ -244,7 +244,6 @@ def init(root: Path, *, skill_only: bool = False) -> list[str]:
     out.append(_write(root / "README.md", WORKSPACE_README))
     out.append(_write(root / ".claude" / "skills" / "career" / "SKILL.md", SKILL_MD))
     out.append(_write(root / "Resume" / "resume.json", STARTER_RESUME))
-    out.append(_write(root / "Explore Resume.command", LAUNCHER, executable=True))
     for folder in ("Resume/Archive", "Cover Letters", "Applications", "Reference"):
         target = root / folder
         target.mkdir(parents=True, exist_ok=True)

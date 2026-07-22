@@ -18,7 +18,6 @@ treatment of details — never from a layout that breaks parsing.
 from __future__ import annotations
 
 import hashlib
-import random
 from dataclasses import dataclass
 
 import html as _html
@@ -93,10 +92,24 @@ class Spec:
 
     @property
     def name(self) -> str:
-        """Stable, readable id — the catalogue and explorer key off this."""
-        return (f"{PALETTES[self.palette][0]}-{HEADERS.index(self.header)}"
-                f"{SKILLS.index(self.skills)}{PROMOS.index(self.promo)}"
-                f"-{TYPEFACES[self.typeface][0]}-{DENSITIES[self.density][0]}")
+        """Stable, readable id — every axis spelled out, in axis order.
+
+        Written out rather than encoded, because a spec name is what you save,
+        share and publish against. An earlier scheme packed three axes into
+        positional digits (`harbor-321-mixed-compact`), which was undecodable
+        without the source and, worse, unstable: inserting a value into HEADERS
+        renumbered every existing name, so a published spec silently came to
+        mean a different layout. Spelling the values out costs characters and
+        buys permanence.
+        """
+        return "-".join((
+            PALETTES[self.palette][0],
+            TYPEFACES[self.typeface][0],
+            self.header,
+            self.skills,
+            self.promo,
+            DENSITIES[self.density][0],
+        ))
 
     @property
     def description(self) -> str:
@@ -127,14 +140,6 @@ def all_specs() -> list[Spec]:
             for s in SKILLS
             for pr in PROMOS
             for d in range(len(DENSITIES))]
-
-
-def sample(count: int, seed: int = 0) -> list[Spec]:
-    """A spread-out sample. Seeded, so the same seed gives the same catalogue."""
-    specs = all_specs()
-    rng = random.Random(seed)
-    rng.shuffle(specs)
-    return specs[:count]
 
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
