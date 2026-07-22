@@ -36,13 +36,14 @@ strong{font-weight:650}
 <p>The structured resume data — one file, <a href="https://jsonresume.org/schema">JSON Resume</a> schema. <strong>The only thing you edit.</strong> Everything else in this document is derived from it.</p>
 <p>A profile is a <strong>master superset</strong>, not a finished document: it holds every skill, every role, every bullet you have ever written, including things no single resume would show. Curating down to what one employer sees is a <em>rendering</em> decision, made per variant. <strong>Nothing is ever deleted from the profile to make a document shorter.</strong></p>
 <h3>Axis</h3>
-<p>One independent presentation choice. Six of them today:</p>
-<table><thead><tr><th>Axis</th><th>What it varies</th></tr></thead><tbody><tr><td><code>palette</code></td><td>Colour scheme</td></tr><tr><td><code>typeface</code></td><td>Type pairing</td></tr><tr><td><code>header</code></td><td>Name/contact block treatment</td></tr><tr><td><code>skills</code></td><td>How the skills section is laid out</td></tr><tr><td><code>promo</code></td><td>How in-role progression is shown</td></tr><tr><td><code>density</code></td><td>Vertical rhythm — compact through airy</td></tr></tbody></table>
-<p>Axes are <strong>independent and categorical</strong>: changing one changes exactly one thing. That property is what makes the space browsable instead of chaotic, and it is worth protecting when adding a seventh.</p>
+<p>One independent presentation choice. Seven of them today:</p>
+<table><thead><tr><th>Axis</th><th>What it varies</th></tr></thead><tbody><tr><td><code>palette</code></td><td>Colour scheme</td></tr><tr><td><code>typeface</code></td><td>Type pairing</td></tr><tr><td><code>header</code></td><td>Name/contact block treatment</td></tr><tr><td><code>skills</code></td><td>How the skills section is laid out</td></tr><tr><td><code>promo</code></td><td>How a title line reads within a role</td></tr><tr><td><code>density</code></td><td>Vertical rhythm — compact through airy</td></tr><tr><td><code>grouping</code></td><td>Whether a promotion reads as one tenure or as separate roles</td></tr></tbody></table>
+<p>Axes are <strong>independent and categorical</strong>: changing one changes exactly one thing. That property is what makes the space browsable instead of chaotic, and it is worth protecting when adding an eighth.</p>
+<p>Adding an axis is not free, and <code>grouping</code> showed the bill: it doubled the space, added a segment to every spec name, and for a resume with no promotion it changes nothing at all. Prefer new <em>values</em> on existing axes — those multiply the space without lengthening a name or introducing a lever that does nothing for some documents.</p>
 <h3>Spec</h3>
-<p>One point in the space — a value on every axis — named by spelling out each axis value in a fixed order, <code>palette-typeface-header-skills-promo-density</code>:</p>
-<pre><code>harbor-grotesk-band-pills-ladder-compact
-ink-charter-masthead-inline-stacked-airy</code></pre>
+<p>One point in the space — a value on every axis — named by spelling out each axis value in a fixed order, <code>palette-typeface-header-skills-promo-density-grouping</code>:</p>
+<pre><code>harbor-grotesk-band-pills-ladder-compact-grouped
+ink-charter-masthead-inline-stacked-airy-flat</code></pre>
 <p>A spec is <strong>pure data</strong>: no rendering, no IO. It is what you save, share, and publish against — and that is exactly why the name is written out in full rather than encoded. A spec name must be <strong>decodable without a legend</strong> and <strong>stable forever</strong>: adding a new value to an axis must never change what an existing name refers to, or every saved and published spec silently starts pointing somewhere else.</p>
 <h3>Space</h3>
 <p>The product of all axes: <strong>10,080 specs today</strong>. Not a gallery someone curated — a combinatorial space, enumerated exhaustively and browsed with facets. The axes <em>are</em> the facets, so "show me every layout in this palette" and "this layout in any palette but this one" are the same operation.</p>
@@ -66,7 +67,7 @@ ink-charter-masthead-inline-stacked-airy</code></pre>
 <h3>3. The explorer — <em>browse</em></h3>
 <p>A faceted catalogue over the whole space. You do not design a layout and you do not generate a fixed batch of them — you <strong>browse</strong>, filtering and grouping by axis, until something looks right.</p>
 <p>Two consequences worth stating, because they are what makes this simple:</p>
-<ul><li><strong>No search, no steering, no favourites.</strong> The space is finite, enumerable and deterministic. A catalogue with facets answers every question a recommender would, and needs no session state.</li><li><strong>"I like this layout but not that colour" is a filter,</strong> not a feature. Hold five axes, clear the sixth.</li></ul>
+<ul><li><strong>No search, no steering, no favourites.</strong> The space is finite, enumerable and deterministic. A catalogue with facets answers every question a recommender would, and needs no session state.</li><li><strong>"I like this layout but not that colour" is a filter,</strong> not a feature. Hold six axes, clear the seventh.</li></ul>
 <p>One viewer serves both the live and exported cases; there is no second UI.</p>
 <h3>4. Publish — <em>export</em></h3>
 <p>Take one spec, write the deliverable — PDF, HTML, Markdown — into the workspace. Every spec in the space is publishable; nothing is browsable-but-unreachable.</p>

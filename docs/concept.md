@@ -35,7 +35,7 @@ Curating down to what one employer sees is a *rendering* decision, made per vari
 
 ### Axis
 
-One independent presentation choice. Six of them today:
+One independent presentation choice. Seven of them today:
 
 | Axis | What it varies |
 |---|---|
@@ -43,21 +43,27 @@ One independent presentation choice. Six of them today:
 | `typeface` | Type pairing |
 | `header` | Name/contact block treatment |
 | `skills` | How the skills section is laid out |
-| `promo` | How in-role progression is shown |
+| `promo` | How a title line reads within a role |
 | `density` | Vertical rhythm — compact through airy |
+| `grouping` | Whether a promotion reads as one tenure or as separate roles |
 
 Axes are **independent and categorical**: changing one changes exactly one thing. That
 property is what makes the space browsable instead of chaotic, and it is worth protecting
-when adding a seventh.
+when adding an eighth.
+
+Adding an axis is not free, and `grouping` showed the bill: it doubled the space, added a
+segment to every spec name, and for a resume with no promotion it changes nothing at all.
+Prefer new *values* on existing axes — those multiply the space without lengthening a name
+or introducing a lever that does nothing for some documents.
 
 ### Spec
 
 One point in the space — a value on every axis — named by spelling out each axis value in
-a fixed order, `palette-typeface-header-skills-promo-density`:
+a fixed order, `palette-typeface-header-skills-promo-density-grouping`:
 
 ```
-harbor-grotesk-band-pills-ladder-compact
-ink-charter-masthead-inline-stacked-airy
+harbor-grotesk-band-pills-ladder-compact-grouped
+ink-charter-masthead-inline-stacked-airy-flat
 ```
 
 A spec is **pure data**: no rendering, no IO. It is what you save, share, and publish
@@ -129,8 +135,8 @@ Two consequences worth stating, because they are what makes this simple:
 - **No search, no steering, no favourites.** The space is finite, enumerable and
   deterministic. A catalogue with facets answers every question a recommender would, and
   needs no session state.
-- **"I like this layout but not that colour" is a filter,** not a feature. Hold five axes,
-  clear the sixth.
+- **"I like this layout but not that colour" is a filter,** not a feature. Hold six axes,
+  clear the seventh.
 
 One viewer serves both the live and exported cases; there is no second UI.
 
