@@ -59,7 +59,7 @@ def live(tmp_path, resume):
         "out_dir": tmp_path / "out",
         "stem": "Test",
         "publish_dir": tmp_path / "workspace",
-        "publish_stem": "Rivera_Resume",
+        "publish_stem": "Smith_Resume",
         "specs": space.spread(4),
     }
     httpd = ThreadingHTTPServer(("127.0.0.1", 0),
@@ -142,9 +142,9 @@ def test_publish_writes_the_deliverable_beside_the_profile(live, monkeypatch):
     result = post(base, "/api/publish", {"name": spec.name})
 
     assert result["ok"] is True
-    assert result["stem"] == "Rivera_Resume"
+    assert result["stem"] == "Smith_Resume"
     for suffix in (".html", ".md", ".pdf"):
-        assert (ctx["publish_dir"] / f"Rivera_Resume{suffix}").exists()
+        assert (ctx["publish_dir"] / f"Smith_Resume{suffix}").exists()
 
 
 def test_publish_never_writes_into_the_scratch_cache(live, monkeypatch):

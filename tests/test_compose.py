@@ -2,7 +2,7 @@
 
 The claims the linter trusts — single column, >=10pt, no remote assets — are
 "by construction" claims. That only stays true if something checks the whole
-space, so this walks all 5,040 layouts rather than a sample.
+space, so this walks every layout in it rather than a sample.
 """
 from __future__ import annotations
 
@@ -75,7 +75,7 @@ def test_no_layout_uses_multiple_columns(resume):
 
 def test_the_content_survives_rendering(resume):
     html = compose.render(resume, ALL[0])
-    assert "Alex Rivera" in html
+    assert "Jane Smith" in html
     assert "Northwind" in html
     assert "Shipped 14 API endpoints backing the billing product." in html
     for keyword in ("Python", "Go", "SQL", "Docker", "Postgres"):

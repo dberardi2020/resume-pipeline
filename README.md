@@ -17,7 +17,8 @@ This keeps one structured **profile** as the only thing you edit, generates a **
 editing happens through your agent: you say what to change, it changes the data. Publishing
 writes one deliverable — PDF, HTML and Markdown — from the layout you chose.
 
-![Eight layouts from the space, each a live render captioned with its axis values as chips](docs/assets/viewer.png)
+![Eight resume layouts side by side, each a live render of the same profile, captioned with
+its palette, typeface, header, skills, promo, density and grouping as chips](docs/assets/viewer.png)
 
 **Not another resume generator.** That category is well served and mostly abandoned. Three
 things here do not exist elsewhere: layouts as a *design space* rather than a theme list, a
@@ -144,15 +145,17 @@ reach a human" traces to a vendor that folded in 2013 without ever publishing a 
 the skeptical counter-numbers are no better sourced. Nobody has good public data, so nothing
 here rests on any.
 
-## Status
+## Roadmap
 
-Early, and honest about it. The space, the viewer, the linter and publishing work and are
-tested. These are not built yet:
+Early, and honest about it. The design space, the viewer, the linter and publishing all work
+and are covered by tests. These are not built yet:
 
 - **Import** an existing resume (PDF/DOCX → profile) — the biggest gap, since today you
   transcribe once before anything works.
-- **Faceted browse** — filter and group the space by axis, rather than viewing a spread of it.
-- **An inspector** — a live, read-only view of the profile as it is edited, showing what changed.
+- **Faceted browse** — filter and group the space by axis, rather than viewing a spread
+  of it.
+- **An inspector** — a live, read-only view of the profile as it is edited, showing what
+  changed.
 - **Provenance** — per claim, whether it is your asserted fact or model-generated prose.
 - **Cover letters and applications**, from the same data model.
 

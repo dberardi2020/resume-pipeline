@@ -149,26 +149,26 @@ def test_publishing_matches_a_name_already_in_the_folder(tmp_path, resume):
     """
     from resume_pipeline import deliverable
     for suffix in (".pdf", ".html", ".md"):
-        (tmp_path / f"Resume_Rivera{suffix}").write_text("old", encoding="utf-8")
+        (tmp_path / f"Resume_Smith{suffix}").write_text("old", encoding="utf-8")
 
-    assert deliverable.existing_stem(tmp_path) == "Resume_Rivera"
-    assert deliverable.default_stem(resume, tmp_path) == "Resume_Rivera"
+    assert deliverable.existing_stem(tmp_path) == "Resume_Smith"
+    assert deliverable.default_stem(resume, tmp_path) == "Resume_Smith"
 
 
 def test_an_empty_folder_gets_the_derived_name(tmp_path, resume):
     from resume_pipeline import deliverable
     assert deliverable.existing_stem(tmp_path) is None
-    assert deliverable.default_stem(resume, tmp_path) == "Rivera_Resume"
+    assert deliverable.default_stem(resume, tmp_path) == "Smith_Resume"
 
 
 def test_an_ambiguous_folder_falls_back_to_the_derived_name(tmp_path, resume):
     """Two complete trios: no way to tell which is *the* deliverable."""
     from resume_pipeline import deliverable
-    for stem in ("Resume_Rivera", "Rivera_CV"):
+    for stem in ("Resume_Smith", "Smith_CV"):
         for suffix in (".pdf", ".html", ".md"):
             (tmp_path / f"{stem}{suffix}").write_text("x", encoding="utf-8")
     assert deliverable.existing_stem(tmp_path) is None
-    assert deliverable.default_stem(resume, tmp_path) == "Rivera_Resume"
+    assert deliverable.default_stem(resume, tmp_path) == "Smith_Resume"
 
 
 def test_a_partial_trio_is_not_a_deliverable(tmp_path, resume):

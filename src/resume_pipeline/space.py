@@ -82,7 +82,7 @@ def spread(count: int) -> list[Spec]:
     # `nearest[i]` is the distance from pool[i] to the closest spec already
     # chosen, updated incrementally as each pick lands. Recomputing it from
     # scratch each round instead would make this cubic in the size of the space,
-    # which at 5,040 points does not finish.
+    # which at ten thousand points does not finish.
     chosen = [pool[0]]
     taken = {0}
     nearest = [distance(cand, pool[0]) for cand in pool]

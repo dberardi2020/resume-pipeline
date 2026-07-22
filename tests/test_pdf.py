@@ -56,8 +56,8 @@ def test_the_pdf_is_one_page(rendered):
 
 def test_the_identity_survives_extraction(rendered):
     text = _text(rendered)
-    assert "Alex Rivera" in text
-    assert "alex@example.com" in text
+    assert "Jane Smith" in text
+    assert "jane@example.com" in text
 
 
 def test_every_skill_survives_extraction(rendered):
@@ -82,7 +82,7 @@ def test_text_is_not_scrambled_by_the_layout(rendered):
     """
     text = _text(rendered)
     assert text.index("Northwind") < text.index("Contoso")
-    assert text.index("Alex Rivera") < text.index("Northwind")
+    assert text.index("Jane Smith") < text.index("Northwind")
 
 
 @pytest.mark.parametrize("header", compose.HEADERS)
@@ -141,5 +141,5 @@ def test_a_spread_of_layouts_all_extract_cleanly(tmp_path, spec):
     # Case-insensitively: some headers set `text-transform: uppercase`, and a PDF
     # carries the transformed glyphs. A parser still reads the name either way.
     text = _text(out).lower()
-    assert "alex rivera" in text
+    assert "jane smith" in text
     assert "northwind" in text

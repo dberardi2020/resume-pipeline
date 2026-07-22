@@ -15,14 +15,14 @@ from resume_pipeline import model
 
 CLEAN = {
     "basics": {
-        "name": "Alex Rivera",
+        "name": "Jane Smith",
         "label": "Software Engineer | Backend · APIs",
-        "email": "alex@example.com",
+        "email": "jane@example.com",
         "phone": "(555) 555-5555",
         "location": {"city": "Portland", "region": "OR", "countryCode": "US"},
         "profiles": [
-            {"network": "GitHub", "username": "arivera",
-             "url": "https://github.com/arivera"},
+            {"network": "GitHub", "username": "jsmith",
+             "url": "https://github.com/jsmith"},
         ],
         "summary": (
             "Backend engineer with 6 years building APIs in Python and Go, "

@@ -3,7 +3,7 @@
 The naming tests carry the most weight here. A spec name is what gets saved,
 linked and published against, so the properties that matter are that every spec
 has a distinct name and that every name decodes back to the spec it came from —
-for all 5,040, not a sample. The previous scheme packed three axes into positional
+for every one of them, not a sample. The previous scheme packed three axes into positional
 digits and silently broke both promises whenever an axis gained a value; these
 tests are what stop that returning.
 """

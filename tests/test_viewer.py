@@ -53,7 +53,7 @@ def test_the_two_deliveries_differ_only_in_those_switches(resume):
 
 
 def test_the_resume_name_titles_the_page(resume):
-    assert "Alex Rivera — layouts" in viewer.page(SPECS, resume)
+    assert "Jane Smith — layouts" in viewer.page(SPECS, resume)
 
 
 def test_a_hostile_name_cannot_break_out_of_the_title(make_resume):

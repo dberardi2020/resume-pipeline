@@ -45,7 +45,7 @@ One independent presentation choice. Seven of them today:
 | `skills` | How the skills section is laid out |
 | `promo` | How a title line reads within a role |
 | `density` | Vertical rhythm — compact through airy |
-| `grouping` | Whether a promotion reads as one tenure or as separate roles |
+| `grouping` | Whether a promotion reads as one tenure or as separate roles *(experimental — see RP-0024)* |
 
 Axes are **independent and categorical**: changing one changes exactly one thing. That
 property is what makes the space browsable instead of chaotic, and it is worth protecting

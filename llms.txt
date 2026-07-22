@@ -48,11 +48,22 @@ The profile path is optional: commands walk up from the working directory lookin
 `catalogue` also writes `options.json` — numbered entries with spec name, description, axes,
 and preview path — so "use number 7" resolves without parsing HTML.
 
+## Source
+
+https://github.com/dberardi2020/resume-pipeline
+
 ## Docs
 
-- [Concept](docs/concept.md): the product definition, the four surfaces, what v1 means, and
+- [Concept](https://github.com/dberardi2020/resume-pipeline/blob/main/docs/concept.md): the product definition, the four surfaces, what v1 means, and
   an honest as-built ledger. The canonical statement; it wins over any other doc.
-- [Tickets](docs/tickets/Tickets.md): backlog, open and done.
+- [Tickets](https://github.com/dberardi2020/resume-pipeline/blob/main/docs/tickets/Tickets.md): backlog, open and done.
+
+## Experimental
+
+`work[].stints` — per-title bullets within one employer, and the `grouping` axis that
+renders them. Ships and is tested, but is a local schema extension no real document has
+exercised yet. Prefer a flat `highlights` list plus a `note` unless per-title bullets are
+genuinely needed.
 
 ## Not built yet
 
