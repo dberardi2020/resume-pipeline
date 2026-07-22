@@ -41,6 +41,24 @@ def test_no_layout_reaches_the_network(resume):
         assert "@import" not in html
 
 
+def test_every_layout_is_inset_on_screen(resume):
+    """`@page` margins are print-only; a preview needs its own inset.
+
+    Without this, every non-bleeding layout rendered text hard against the edge
+    of the viewport — correct on paper, wrong in every preview, and previews are
+    what people judge a layout by.
+    """
+    for spec in space.spread(40):
+        css = compose.css(spec)
+        assert "@media screen" in css, spec.name
+        screen = css.split("@media screen", 1)[1]
+        if spec.header == "band":
+            # Bleeds by design; the inset comes from `.wrap` instead.
+            assert "padding:0.3in" in css, spec.name
+        else:
+            assert "padding: 0.55in" in screen, spec.name
+
+
 def test_no_layout_uses_multiple_columns(resume):
     """The parse-safety claim, checked against the CSS that makes it.
 

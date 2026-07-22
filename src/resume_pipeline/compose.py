@@ -206,6 +206,13 @@ h1 {{ font-family:{display_font}; font-size:24pt; font-weight:700;
 .contact .bit {{ white-space:nowrap; }}
 .contact .sep {{ opacity:.5; padding:0 4px; }}
 .wrap {{ {"padding:0.3in " + pad + " 0.4in;" if full_bleed else ""} }}
+/* `@page` margins apply to print only, so on screen a layout would have no
+   inset whatsoever — text running to the very edge of every preview, which is
+   exactly what the viewer shows. The bleeding header supplies its own inset via
+   `.wrap`; everything else needs the page margin mirrored here. */
+@media screen {{
+  body {{ padding: {"0" if full_bleed else f"0.55in {pad}"}; }}
+}}
 h2 {{ font-family:{display_font}; font-size:10.4pt; font-weight:700;
       text-transform:uppercase; letter-spacing:1.1px; color:{accent};
       margin:{entry_gap + 4}px 0 6px; padding-bottom:3px;

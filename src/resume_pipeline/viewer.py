@@ -149,6 +149,9 @@ _PAGE = r"""<!doctype html>
   .dlg-id .meta{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .dlg-acts{display:flex;gap:8px;flex:0 0 auto}
   dialog iframe{width:100%;height:min(76vh,1056px);border:0;background:#fff}
+  /* With a dialog open, reaching the bottom of the preview handed the scroll
+     back to the grid behind it. Lock the page while the modal is up. */
+  body.modal-open{overflow:hidden}
   .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
          background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;
          font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
@@ -274,9 +277,11 @@ function open(v){
                           r => "Published " + r.stem + ".pdf / .html / .md");
   }
   $("#dlg").showModal();
+  document.body.classList.add("modal-open");
 }
 
 $("#dlgClose").onclick = ()=>$("#dlg").close();
+$("#dlg").addEventListener("close", ()=>document.body.classList.remove("modal-open"));
 
 addEventListener("keydown", e => {
   if($("#dlg").open){ if(e.key==="Escape") $("#dlg").close(); return; }
