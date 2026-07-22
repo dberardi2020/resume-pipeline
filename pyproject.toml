@@ -31,3 +31,8 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# The suite shares one fixture document via `from tests.conftest import CLEAN`,
+# which needs the repo root importable. `python -m pytest` adds the working
+# directory for free; the bare `pytest` console script does not — so this passed
+# locally and failed in CI until it was pinned here.
+pythonpath = ["."]
