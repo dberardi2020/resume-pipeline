@@ -43,7 +43,8 @@ def describe(spec: compose.Spec) -> dict:
     }
 
 
-def page(specs, resume, *, preview: str = "file", exportable: bool = False) -> str:
+def page(specs, resume, *, preview: str = "file", exportable: bool = False,
+         pages: int = 0) -> str:
     """Render the viewer.
 
     `preview` is "file" (previews sit beside the page as `<name>.html`) or "route"
@@ -51,7 +52,8 @@ def page(specs, resume, *, preview: str = "file", exportable: bool = False) -> s
     """
     options = [describe(s) for s in specs]
     title = html.escape(resume.name or "Resume")
-    return _PAGE.replace("__TITLE__", title) \
+    return _PAGE.replace("__PAGES__", str(pages)) \
+                .replace("__TITLE__", title) \
                 .replace("__TOTAL__", f"{space.TOTAL:,}") \
                 .replace("__PREVIEW__", preview) \
                 .replace("__EXPORTABLE__", "true" if exportable else "false") \
@@ -64,7 +66,7 @@ def page(specs, resume, *, preview: str = "file", exportable: bool = False) -> s
 _PAGE = r"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>__TITLE__ — layouts</title>
+<title>__TITLE__ — Layouts</title>
 <style>
   :root{
     --bg:#f2f4f7; --card:#fff; --ink:#12151a; --muted:#69707c; --line:#e0e4ea;
@@ -92,7 +94,9 @@ _PAGE = r"""<!doctype html>
   h1{font-size:15px;margin:0;letter-spacing:-.2px;font-weight:700}
   .meta{color:var(--muted);font-size:12.5px}
   .grow{flex:1}
-  .hint{margin:6px 0 0;color:var(--muted);font-size:12.5px;max-width:78ch}
+  .hint{margin:6px 0 0;color:var(--muted);font-size:12.5px;max-width:82ch}
+  .nav{display:flex;gap:6px;align-items:center}
+  .nav button{padding:5px 11px}
 
   button{font:inherit;font-size:13px;font-weight:500;color:var(--ink);
          background:var(--btn);border:1px solid var(--btn-line);border-radius:8px;
@@ -158,13 +162,21 @@ _PAGE = r"""<!doctype html>
 
 <header>
   <div class="bar">
-    <h1>__TITLE__ — layouts</h1>
+    <h1>__TITLE__ — Layouts</h1>
     <span class="meta" id="meta"></span>
     <span class="grow"></span>
-    <span class="meta"><kbd>↵</kbd> open · <kbd>Esc</kbd> close</span>
+    <span class="meta" id="pageMeta"></span>
+    <span class="nav" id="nav" hidden>
+      <button id="prev" title="Previous page">‹</button>
+      <button id="shuffle">Shuffle</button>
+      <button id="next" title="Next page">›</button>
+    </span>
   </div>
-  <p class="hint">Open any layout, then <b>Make this my resume</b> to publish it — or give
-  your agent its name. Every preview is a live render, identical to what gets published.</p>
+  <p class="hint">Layouts are <b>generated</b>, not templates — each is one combination of
+  seven independent choices, so there are __TOTAL__ of them. <b>Next</b> walks the space in
+  order; <b>Shuffle</b> jumps somewhere else entirely. Open any layout, then
+  <b>Make this my resume</b> to publish it. Every preview is a live render, identical to what
+  gets published.</p>
 </header>
 
 <div class="grid" id="grid"></div>
@@ -188,7 +200,9 @@ _PAGE = r"""<!doctype html>
 <div class="toast" id="toast"></div>
 
 <script>
-const OPTIONS    = __OPTIONS__;
+let   OPTIONS    = __OPTIONS__;
+const PAGES      = __PAGES__;
+let   PAGE_INDEX = 0;
 const PREVIEW    = "__PREVIEW__";
 const EXPORTABLE = __EXPORTABLE__;
 const TOTAL      = "__TOTAL__";
@@ -218,6 +232,10 @@ let cursor = 0;
 
 function render(){
   $("#meta").textContent = `${OPTIONS.length} of ${TOTAL} possible layouts`;
+  if(PAGES > 1){
+    $("#nav").hidden = false;
+    $("#pageMeta").textContent = `page ${PAGE_INDEX + 1} of ${PAGES.toLocaleString()}`;
+  }
   const grid = $("#grid");
   grid.innerHTML = "";
   OPTIONS.forEach((v, i) => {
@@ -276,6 +294,24 @@ function open(v){
   document.body.classList.add("modal-open");
 }
 
+async function goto(index){
+  const nav = $("#nav"); nav.style.opacity = ".5";
+  const r = await fetch("/api/page?i=" + index).then(r=>r.json())
+                  .catch(e=>({error:String(e)}));
+  nav.style.opacity = "1";
+  if(r.error){ toast("Could not load page: " + r.error); return; }
+  OPTIONS = r.options; PAGE_INDEX = r.index; cursor = 0;
+  render();
+  scrollTo({ top: 0, behavior: "smooth" });
+}
+
+if(PAGES > 1){
+  $("#next").onclick    = ()=>goto(PAGE_INDEX + 1);
+  $("#prev").onclick    = ()=>goto(PAGE_INDEX - 1 + PAGES);
+  // Somewhere else in the space entirely, rather than the next twelve along.
+  $("#shuffle").onclick = ()=>goto(Math.floor(Math.random() * PAGES));
+}
+
 $("#dlgClose").onclick = ()=>$("#dlg").close();
 $("#dlg").addEventListener("close", ()=>document.body.classList.remove("modal-open"));
 
@@ -284,6 +320,8 @@ addEventListener("keydown", e => {
   if(e.key==="ArrowRight"||e.key==="j"){ cursor=Math.min(cursor+1,OPTIONS.length-1); }
   else if(e.key==="ArrowLeft"||e.key==="k"){ cursor=Math.max(cursor-1,0); }
   else if(e.key==="Enter"&&OPTIONS[cursor]){ open(OPTIONS[cursor]); }
+  else if(PAGES>1&&(e.key==="]"||e.key==="n")){ goto(PAGE_INDEX+1); }
+  else if(PAGES>1&&(e.key==="["||e.key==="p")){ goto(PAGE_INDEX-1+PAGES); }
 });
 
 render();

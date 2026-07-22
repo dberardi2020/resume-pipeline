@@ -9,9 +9,13 @@ worth looking at — PDF is an export step for the one you chose, not a precondi
 for looking at any of them.
 
 There is deliberately no session: no favourites, no verdicts, no persisted batch.
-The space is enumerable, so the page shows a spread of it and the axes are the
-facets. Nothing needs remembering between requests, which is also what keeps this
-honest about a hosted future — the server holds no per-user state.
+The space is enumerable and has a deterministic browsing order, so "page 3" means
+the same twelve layouts on every machine — the page index lives in the URL the
+client asks for, not in state the server keeps.
+
+The profile is re-read per request. It is expected to be edited *while* the viewer
+is open, by an agent, which is the whole premise; a copy cached at startup means
+watching a stale document and not knowing it.
 
 Stdlib only — `http.server` is unglamorous, but this binds to loopback for one user.
 """
@@ -22,7 +26,7 @@ import webbrowser
 from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from . import compose, deliverable, model, pdf, space, viewer
 
@@ -49,6 +53,28 @@ class Handler(BaseHTTPRequestHandler):
     def _json(self, payload, status: int = 200) -> None:
         self._send(json.dumps(payload).encode(), "application/json", status)
 
+    def _resume(self):
+        """The profile, re-read if it changed on disk.
+
+        An agent is expected to be editing this while the viewer is open. A copy
+        taken at startup means quietly showing a document that no longer exists,
+        which is worse than showing nothing. Falls back to the last good copy if
+        an edit is caught mid-write.
+        """
+        ctx = self.ctx
+        path = ctx["resume_path"]
+        try:
+            stamp = path.stat().st_mtime_ns
+        except OSError:
+            return ctx["resume"]
+        if stamp != ctx["stamp"]:
+            try:
+                ctx["resume"] = model.load(path)
+                ctx["stamp"] = stamp
+            except (model.ResumeError, OSError, ValueError):
+                pass  # keep serving the last document that loaded
+        return ctx["resume"]
+
     def _body(self) -> dict:
         length = int(self.headers.get("Content-Length") or 0)
         if not length:
@@ -63,15 +89,26 @@ class Handler(BaseHTTPRequestHandler):
         ctx = self.ctx
 
         if route == "/":
-            page = viewer.page(ctx["specs"], ctx["resume"],
-                               preview="route", exportable=True)
-            return self._send(page.encode(), "text/html; charset=utf-8")
+            html = viewer.page(space.page(0, ctx["count"]), self._resume(),
+                               preview="route", exportable=True,
+                               pages=space.pages(ctx["count"]))
+            return self._send(html.encode(), "text/html; charset=utf-8")
+
+        if route == "/api/page":
+            query = parse_qs(urlparse(self.path).query)
+            index = int((query.get("i") or ["0"])[0] or 0)
+            specs = space.page(index, ctx["count"])
+            return self._json({
+                "index": index % space.pages(ctx["count"]),
+                "pages": space.pages(ctx["count"]),
+                "options": [viewer.describe(s) for s in specs],
+            })
 
         if route.startswith("/preview/"):
             spec = space.parse(unquote(route[len("/preview/"):]))
             if not spec:
                 return self._send(b"unknown layout", "text/plain", 404)
-            return self._send(compose.render(ctx["resume"], spec).encode(),
+            return self._send(compose.render(self._resume(), spec).encode(),
                               "text/html; charset=utf-8")
 
         return self._send(b"not found", "text/plain", 404)
@@ -88,7 +125,7 @@ class Handler(BaseHTTPRequestHandler):
             if not spec:
                 return self._json({"error": "unknown layout"}, 400)
             try:
-                stem = deliverable.write(ctx["resume"], spec,
+                stem = deliverable.write(self._resume(), spec,
                                          ctx["publish_dir"], ctx["publish_stem"])
             except (pdf.BrowserNotFound, RuntimeError) as exc:
                 return self._json({"error": str(exc)}, 500)
@@ -101,7 +138,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"error": "unknown layout"}, 400)
             out_dir = ctx["out_dir"]
             out_dir.mkdir(parents=True, exist_ok=True)
-            html = compose.render(ctx["resume"], spec)
+            html = compose.render(self._resume(), spec)
             target = out_dir / f"{ctx['stem']}.{spec.name}.pdf"
             try:
                 pdf.write(html, target)
@@ -121,6 +158,9 @@ def serve(resume_path: Path, out_dir: Path, stem: str, count: int = 24,
     out_dir.mkdir(parents=True, exist_ok=True)
     ctx = {
         "resume": resume,
+        "resume_path": Path(resume_path),
+        "stamp": Path(resume_path).stat().st_mtime_ns,
+        "count": count,
         "out_dir": out_dir,            # scratch exports — the cache
         "stem": stem,
         # Publishing writes beside the profile, never into the cache: that is
@@ -128,12 +168,11 @@ def serve(resume_path: Path, out_dir: Path, stem: str, count: int = 24,
         "publish_dir": Path(resume_path).parent,
         "publish_stem": publish_stem or deliverable.default_stem(
             resume, Path(resume_path).parent),
-        "specs": space.spread(count),
     }
     httpd = ThreadingHTTPServer(("127.0.0.1", port), partial(Handler, ctx=ctx))
     url = f"http://127.0.0.1:{port}/"
     print(f"layout viewer running at {url}")
-    print(f"  showing {len(ctx['specs'])} of {space.TOTAL:,} layouts")
+    print(f"  {space.TOTAL:,} layouts, {space.pages(count):,} pages of {count}")
     print("  ctrl-c to stop")
     if open_browser:
         webbrowser.open(url)

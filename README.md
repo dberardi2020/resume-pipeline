@@ -20,6 +20,13 @@ writes one deliverable — PDF, HTML and Markdown — from the layout you chose.
 ![Eight resume layouts side by side, each a live render of the same profile, captioned with
 its palette, typeface, header, skills, promo, density and grouping as chips](docs/assets/viewer.png)
 
+**Layouts are generated, not templates.** There is one renderer and seven independent
+choices — palette, typeface, header treatment, skills treatment, promotion treatment, density
+and grouping. A **spec** is one combination of the seven, and every combination renders, which
+is where 10,080 comes from. Adding a value to any one choice multiplies the catalogue instead
+of adding a single entry to it. Browse them a page at a time, or **Shuffle** to land somewhere
+else in the space entirely.
+
 **Not another resume generator.** That category is well served and mostly abandoned. Three
 things here do not exist elsewhere: layouts as a *design space* rather than a theme list, a
 linter that checks a **layout** for parse safety, and a workflow built for an agent to drive
@@ -117,21 +124,6 @@ for `resume.json`, or read `RESUME_PIPELINE_RESUME`. `--theme` takes a preset (`
 `~/.cache/resume-pipeline/`; only `publish` writes into the workspace, and only as the one
 canonical deliverable — so the folder always answers "which file do I send?" instantly.
 
-## Two rules it will not break
-
-Part of the point is making agent edits *safe*. Two rules carry that, and `init` installs
-both into the workspace so your agent reads them before touching anything.
-
-**Never invent a fact about your career.** No metric, no date, no scope claim, no technology
-you did not use. This matters because the tooling *creates* the pressure to break it: the
-linter flags bullets with no figures, and the obvious way to satisfy a linter is to supply
-one. So the linter only ever reports — it asks for the number and leaves the bullet alone.
-Rewriting your own facts into stronger prose is the point; introducing new ones is
-misrepresentation you would have to defend in an interview and could not.
-
-**Never delete a skill from the profile.** It is a list built over years. Curating which
-skills appear in a given variant is a rendering choice, not a deletion.
-
 ## On applicant tracking systems
 
 Layout rules here are justified by **mechanism, never by magnitude**. Parsers demonstrably
@@ -140,15 +132,10 @@ reading order. That is verifiable, it is sufficient, and it is why every generat
 single-column and ≥10pt *by construction* — a test re-extracts published PDFs and asserts the
 text comes back in document order.
 
-What you will not find here is a rejection statistic. The ubiquitous "75% of resumes never
-reach a human" traces to a vendor that folded in 2013 without ever publishing a study, and
-the skeptical counter-numbers are no better sourced. Nobody has good public data, so nothing
-here rests on any.
-
 ## Roadmap
 
-Early, and honest about it. The design space, the viewer, the linter and publishing all work
-and are covered by tests. These are not built yet:
+The design space, the viewer, the linter and publishing all work and are covered by tests.
+These are not built yet:
 
 - **Import** an existing resume (PDF/DOCX → profile) — the biggest gap, since today you
   transcribe once before anything works.

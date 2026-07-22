@@ -53,14 +53,18 @@ def test_catalogue_previews_are_the_real_render(tmp_path, resume):
 # ── server ────────────────────────────────────────────────────────────────────
 
 @pytest.fixture
-def live(tmp_path, resume):
+def live(tmp_path, resume, data):
+    profile = tmp_path / "resume.json"
+    profile.write_text(json.dumps(data), encoding="utf-8")
     ctx = {
         "resume": resume,
+        "resume_path": profile,
+        "stamp": profile.stat().st_mtime_ns,
+        "count": 4,
         "out_dir": tmp_path / "out",
         "stem": "Test",
         "publish_dir": tmp_path / "workspace",
         "publish_stem": "Smith_Resume",
-        "specs": space.spread(4),
     }
     httpd = ThreadingHTTPServer(("127.0.0.1", 0),
                                 partial(server.Handler, ctx=ctx))
@@ -87,7 +91,7 @@ def test_root_serves_the_viewer(live):
 
 def test_preview_renders_a_layout(live, resume):
     base, _ = live
-    spec = space.spread(4)[0]
+    spec = space.page(0, 4)[0]
     status, body = get(f"{base}/preview/{spec.name}")
     assert status == 200
     assert body == compose.render(resume, spec)
@@ -116,8 +120,8 @@ def test_the_server_keeps_no_session_state(live):
                    for p in ctx["out_dir"].glob("*") if p.is_file())
     # Config, not session: every key is fixed at startup and never mutated by a
     # request. Nothing here would need scoping to a user if this were hosted.
-    assert set(ctx) == {"resume", "out_dir", "stem",
-                        "publish_dir", "publish_stem", "specs"}
+    assert set(ctx) == {"resume", "resume_path", "stamp", "count", "out_dir",
+                        "stem", "publish_dir", "publish_stem"}
 
 
 def post(base, path, payload):
@@ -137,7 +141,7 @@ def test_publish_writes_the_deliverable_beside_the_profile(live, monkeypatch):
     monkeypatch.setattr("resume_pipeline.pdf.write",
                         lambda html, path, **kw: path.write_bytes(b"%PDF-fake"))
     base, ctx = live
-    spec = space.spread(4)[0]
+    spec = space.page(0, 4)[0]
 
     result = post(base, "/api/publish", {"name": spec.name})
 
@@ -151,7 +155,7 @@ def test_publish_never_writes_into_the_scratch_cache(live, monkeypatch):
     monkeypatch.setattr("resume_pipeline.pdf.write",
                         lambda html, path, **kw: path.write_bytes(b"%PDF-fake"))
     base, ctx = live
-    post(base, "/api/publish", {"name": space.spread(4)[0].name})
+    post(base, "/api/publish", {"name": space.page(0, 4)[0].name})
     assert not list(ctx["out_dir"].glob("*")) if ctx["out_dir"].exists() else True
 
 
@@ -171,3 +175,79 @@ def test_export_rejects_an_unknown_layout(live):
     with pytest.raises(urllib.error.HTTPError) as exc:
         urllib.request.urlopen(request, timeout=10)
     assert exc.value.code == 400
+
+
+# ── paging ────────────────────────────────────────────────────────────────────
+
+def test_pages_partition_the_space():
+    """Every layout is reachable by paging, and no page repeats one."""
+    count = 240
+    seen = []
+    for index in range(space.pages(count)):
+        seen += [s.name for s in space.page(index, count)]
+    assert len(seen) == len(set(seen)) == space.TOTAL
+
+
+def test_paging_is_deterministic():
+    assert [s.name for s in space.page(7, 12)] == [s.name for s in space.page(7, 12)]
+
+
+def test_paging_wraps():
+    assert space.page(space.pages(12), 12) == space.page(0, 12)
+
+
+def test_a_page_is_not_all_one_palette():
+    """Enumeration order clusters near-identical layouts; browse order must not."""
+    palettes = {compose.PALETTES[s.palette][0] for s in space.page(0, 12)}
+    assert len(palettes) >= 4
+
+
+def test_the_page_route_serves_a_page(live):
+    base, _ = live
+    status, body = get(base + "/api/page?i=3")
+    payload = json.loads(body)
+    assert payload["index"] == 3
+    assert payload["pages"] == space.pages(4)
+    assert [o["name"] for o in payload["options"]] == [s.name for s in space.page(3, 4)]
+
+
+def test_the_page_route_wraps_rather_than_erroring(live):
+    base, _ = live
+    payload = json.loads(get(base + f"/api/page?i={space.pages(4) + 1}")[1])
+    assert payload["index"] == 1
+
+
+# ── live reload ───────────────────────────────────────────────────────────────
+
+def test_the_server_notices_the_profile_changing(live, data):
+    """An agent edits the profile while the viewer is open. That is the premise.
+
+    Caching a copy at startup meant serving a document that no longer existed —
+    silently, which is worse than serving nothing.
+    """
+    base, ctx = live
+    spec = space.page(0, 4)[0]
+    assert "Northwind" in get(f"{base}/preview/{spec.name}")[1]
+
+    edited = json.loads(json.dumps(data))
+    edited["work"][0]["name"] = "Renamed Employer"
+    ctx["resume_path"].write_text(json.dumps(edited), encoding="utf-8")
+    import os
+    os.utime(ctx["resume_path"], ns=(ctx["stamp"] + 10**9, ctx["stamp"] + 10**9))
+
+    body = get(f"{base}/preview/{spec.name}")[1]
+    assert "Renamed Employer" in body
+    assert "Northwind" not in body
+
+
+def test_a_broken_edit_keeps_serving_the_last_good_profile(live, ctx_break=None):
+    """Caught mid-write, or saved invalid — do not blank the page."""
+    base, ctx = live
+    spec = space.page(0, 4)[0]
+    ctx["resume_path"].write_text("{ not json", encoding="utf-8")
+    import os
+    os.utime(ctx["resume_path"], ns=(ctx["stamp"] + 10**9, ctx["stamp"] + 10**9))
+
+    status, body = get(f"{base}/preview/{spec.name}")
+    assert status == 200
+    assert "Northwind" in body

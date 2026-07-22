@@ -264,10 +264,11 @@ a {{ color:{accent}; text-decoration:none; }}
 .skill-grid {{ display:grid; grid-template-columns:1fr 1fr; gap:2px 18px; }}
 
 /* promotion treatments */
-.promo-badge {{ display:inline-block; background:{accent}; color:#fff;
-                border-radius:20px; padding:0.5pt 7pt; font-size:8.6pt;
-                font-weight:700; letter-spacing:.4px; margin-left:7px;
-                vertical-align:2px; }}
+.promo-badge {{ display:inline-block; width:auto; max-width:max-content;
+                background:{accent}; color:#fff; border-radius:20px;
+                padding:0.5pt 7pt; font-size:8.6pt; font-weight:700;
+                letter-spacing:.4px; margin-left:7px; vertical-align:2px;
+                text-align:center; white-space:nowrap; }}
 .promo-ladder {{ font-size:9.8pt; opacity:.78; margin-top:2px; }}
 .promo-ladder .arrow {{ color:{accent}; font-weight:700; padding:0 4px; }}
 

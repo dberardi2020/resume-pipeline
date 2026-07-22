@@ -15,7 +15,7 @@ SPECS = space.spread(5)
 
 
 def _options(html: str) -> list[dict]:
-    match = re.search(r"^const OPTIONS\s*=\s*(\[.*\]);$", html, re.MULTILINE)
+    match = re.search(r"^let\s+OPTIONS\s*=\s*(\[.*\]);$", html, re.MULTILINE)
     assert match, "OPTIONS payload not found in page"
     return json.loads(match.group(1))
 
@@ -53,7 +53,7 @@ def test_the_two_deliveries_differ_only_in_those_switches(resume):
 
 
 def test_the_resume_name_titles_the_page(resume):
-    assert "Jane Smith — layouts" in viewer.page(SPECS, resume)
+    assert "Jane Smith — Layouts" in viewer.page(SPECS, resume)
 
 
 def test_a_hostile_name_cannot_break_out_of_the_title(make_resume):

@@ -17,6 +17,7 @@ Kept free of rendering and IO, so it can be reasoned about and tested on its own
 """
 from __future__ import annotations
 
+import hashlib
 from dataclasses import replace
 
 from .compose import (DENSITIES, GROUPINGS, HEADERS, PALETTES, PROMOS, SKILLS,
@@ -136,3 +137,39 @@ def parse(name: str) -> Spec | None:
         density=_DENSITY_IDS[density],
         grouping=grouping,
     )
+
+
+# Browsing order, computed once. Enumeration order groups near-identical layouts
+# together (the last axis varies fastest), so paging through it would show seven
+# shades of one design per page. Ordering by a hash of the name mixes the space
+# thoroughly while staying completely deterministic: page 3 is always page 3, on
+# every machine, with no seed to carry and no state to store.
+_ORDER: list[Spec] | None = None
+
+
+def browse_order() -> list[Spec]:
+    """Every spec, in a stable, well-mixed order."""
+    global _ORDER
+    if _ORDER is None:
+        _ORDER = sorted(
+            _all(),
+            key=lambda s: hashlib.blake2b(s.name.encode(), digest_size=8).digest(),
+        )
+    return _ORDER
+
+
+def pages(count: int) -> int:
+    """How many pages of `count` the space divides into."""
+    if count <= 0:
+        return 0
+    return -(-TOTAL // count)
+
+
+def page(index: int, count: int) -> list[Spec]:
+    """One page of `count` layouts. Wraps, so any index is valid."""
+    if count <= 0:
+        return []
+    order = browse_order()
+    total_pages = pages(count)
+    start = (index % total_pages) * count
+    return order[start:start + count]
