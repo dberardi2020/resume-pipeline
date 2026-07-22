@@ -6,7 +6,8 @@ be *enumerated* and browsed with the axes as facets — "every layout in this pa
 "this layout in any palette but this one" — so there is no recommender, no sampling
 seed, and no session state to keep. A catalogue answers what a search engine would.
 
-Distance is therefore Hamming: the number of axes on which two specs disagree, 0-6.
+Distance is therefore Hamming: the number of axes on which two specs disagree,
+0-7.
 Crude, but it matches how the choices behave — swapping a palette changes exactly one
 thing, and the metric should say exactly that. It underwrites `spread` (show me the
 range), `neighbours` (show me the near-misses), and the merge of two specs, which is
@@ -18,7 +19,8 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from .compose import DENSITIES, HEADERS, PALETTES, PROMOS, SKILLS, TYPEFACES, Spec
+from .compose import (DENSITIES, GROUPINGS, HEADERS, PALETTES, PROMOS, SKILLS,
+                      TYPEFACES, Spec)
 
 # Every axis, as (attribute, values). Order is stable so `axis_values` and
 # distance stay consistent across runs.
@@ -29,6 +31,7 @@ AXES: list[tuple[str, list]] = [
     ("skills", list(SKILLS)),
     ("promo", list(PROMOS)),
     ("density", list(range(len(DENSITIES)))),
+    ("grouping", list(GROUPINGS)),
 ]
 
 TOTAL = 1
@@ -112,16 +115,17 @@ _DENSITY_IDS = {d[0]: i for i, d in enumerate(DENSITIES)}
 def parse(name: str) -> Spec | None:
     """Recover a Spec from its name. Returns None if it does not parse.
 
-    Decoded directly rather than by scanning all 5,040 specs for a match: the
+    Decoded directly rather than by scanning the whole space for a match: the
     name spells out every axis, so it is a lookup per segment.
     """
     parts = name.split("-")
-    if len(parts) != 6:
+    if len(parts) != 7:
         return None
-    palette, typeface, header, skills, promo, density = parts
+    palette, typeface, header, skills, promo, density, grouping = parts
     if (palette not in _PALETTE_IDS or typeface not in _TYPEFACE_IDS
             or density not in _DENSITY_IDS or header not in HEADERS
-            or skills not in SKILLS or promo not in PROMOS):
+            or skills not in SKILLS or promo not in PROMOS
+            or grouping not in GROUPINGS):
         return None
     return Spec(
         palette=_PALETTE_IDS[palette],
@@ -130,4 +134,5 @@ def parse(name: str) -> Spec | None:
         skills=skills,
         promo=promo,
         density=_DENSITY_IDS[density],
+        grouping=grouping,
     )

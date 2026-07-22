@@ -58,6 +58,8 @@ def live(tmp_path, resume):
         "resume": resume,
         "out_dir": tmp_path / "out",
         "stem": "Test",
+        "publish_dir": tmp_path / "workspace",
+        "publish_stem": "Rivera_Resume",
         "specs": space.spread(4),
     }
     httpd = ThreadingHTTPServer(("127.0.0.1", 0),
@@ -112,7 +114,52 @@ def test_the_server_keeps_no_session_state(live):
     get(base + "/")
     assert not any(p.name.endswith("session.json")
                    for p in ctx["out_dir"].glob("*") if p.is_file())
-    assert set(ctx) == {"resume", "out_dir", "stem", "specs"}
+    # Config, not session: every key is fixed at startup and never mutated by a
+    # request. Nothing here would need scoping to a user if this were hosted.
+    assert set(ctx) == {"resume", "out_dir", "stem",
+                        "publish_dir", "publish_stem", "specs"}
+
+
+def post(base, path, payload):
+    request = urllib.request.Request(
+        base + path, method="POST", data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(request, timeout=30) as response:
+        return json.loads(response.read())
+
+
+def test_publish_writes_the_deliverable_beside_the_profile(live, monkeypatch):
+    """Browsing has to be able to end in the file you send.
+
+    Otherwise the last step is copying a name out of the page into a command,
+    which was the half-finished handoff this replaces.
+    """
+    monkeypatch.setattr("resume_pipeline.pdf.write",
+                        lambda html, path, **kw: path.write_bytes(b"%PDF-fake"))
+    base, ctx = live
+    spec = space.spread(4)[0]
+
+    result = post(base, "/api/publish", {"name": spec.name})
+
+    assert result["ok"] is True
+    assert result["stem"] == "Rivera_Resume"
+    for suffix in (".html", ".md", ".pdf"):
+        assert (ctx["publish_dir"] / f"Rivera_Resume{suffix}").exists()
+
+
+def test_publish_never_writes_into_the_scratch_cache(live, monkeypatch):
+    monkeypatch.setattr("resume_pipeline.pdf.write",
+                        lambda html, path, **kw: path.write_bytes(b"%PDF-fake"))
+    base, ctx = live
+    post(base, "/api/publish", {"name": space.spread(4)[0].name})
+    assert not list(ctx["out_dir"].glob("*")) if ctx["out_dir"].exists() else True
+
+
+def test_publish_rejects_an_unknown_layout(live):
+    base, _ = live
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        post(base, "/api/publish", {"name": "not-a-layout"})
+    assert exc.value.code == 400
 
 
 def test_export_rejects_an_unknown_layout(live):

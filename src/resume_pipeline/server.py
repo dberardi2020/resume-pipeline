@@ -24,7 +24,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
-from . import compose, model, pdf, space, viewer
+from . import compose, deliverable, model, pdf, space, viewer
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -80,6 +80,21 @@ class Handler(BaseHTTPRequestHandler):
         route = urlparse(self.path).path
         ctx = self.ctx
 
+        if route == "/api/publish":
+            # Browsing has to be able to end in the deliverable. Otherwise the
+            # last step is copying a name out of the page and pasting it into a
+            # command, which is the half-finished handoff this replaces.
+            spec = space.parse(self._body().get("name") or "")
+            if not spec:
+                return self._json({"error": "unknown layout"}, 400)
+            try:
+                stem = deliverable.write(ctx["resume"], spec,
+                                         ctx["publish_dir"], ctx["publish_stem"])
+            except (pdf.BrowserNotFound, RuntimeError) as exc:
+                return self._json({"error": str(exc)}, 500)
+            return self._json({"ok": True, "stem": stem,
+                               "dir": str(ctx["publish_dir"])})
+
         if route == "/api/export":
             spec = space.parse(self._body().get("name") or "")
             if not spec:
@@ -100,13 +115,18 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def serve(resume_path: Path, out_dir: Path, stem: str, count: int = 24,
-          port: int = 8765, open_browser: bool = True) -> None:
+          port: int = 8765, open_browser: bool = True,
+          publish_stem: str | None = None) -> None:
     resume = model.load(resume_path)
     out_dir.mkdir(parents=True, exist_ok=True)
     ctx = {
         "resume": resume,
-        "out_dir": out_dir,
+        "out_dir": out_dir,            # scratch exports — the cache
         "stem": stem,
+        # Publishing writes beside the profile, never into the cache: that is
+        # the whole distinction between an export and the deliverable.
+        "publish_dir": Path(resume_path).parent,
+        "publish_stem": publish_stem or deliverable.default_stem(resume),
         "specs": space.spread(count),
     }
     httpd = ThreadingHTTPServer(("127.0.0.1", port), partial(Handler, ctx=ctx))

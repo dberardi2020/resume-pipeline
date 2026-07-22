@@ -27,8 +27,8 @@ def test_page_embeds_every_spec(resume):
 
 def test_page_embeds_the_axes_as_facets(resume):
     options = _options(viewer.page(SPECS, resume))
-    assert all(set(o["axes"]) == {"palette", "typeface", "header",
-                                  "skills", "promo", "density"}
+    assert all(set(o["axes"]) == {"palette", "typeface", "header", "skills",
+                                  "promo", "density", "grouping"}
                for o in options)
 
 

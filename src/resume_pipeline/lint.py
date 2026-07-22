@@ -20,6 +20,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from . import model
+
 ERROR, WARNING, INFO = "ERROR", "WARNING", "INFO"
 
 # Objective-style openers. Objective statements are obsolete and, worse, read as
@@ -156,7 +158,7 @@ def _check_experience(resume) -> list[Finding]:
 
     for i, entry in enumerate(work):
         label = _role_label(entry, i)
-        highlights = entry.get("highlights") or []
+        highlights = model.highlights_of(entry)
 
         if not highlights:
             out.append(Finding(

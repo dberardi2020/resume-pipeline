@@ -111,6 +111,52 @@ class Resume:
 # JSON Resume's top-level sections. Anything else is passed through untouched
 # but reported, so a typo like `experience` (correct name: `work`) surfaces
 # instead of silently rendering an empty resume.
+def stints(entry: dict) -> list[dict]:
+    """The title history within one employer, newest first.
+
+    A promotion is not decoration — the bullets a person wrote as a senior
+    engineer are different evidence from the ones they wrote a level below, and
+    a resume that cannot say which is which loses the progression it is trying
+    to show. So a `work` entry may carry `stints`, each with its own position,
+    dates and highlights.
+
+    The older `promotions` field held prior *titles* but no bullets, so it could
+    never express that split. It is normalised into stints here — one synthesised
+    stint for the current title, then the prior ones — so existing documents keep
+    rendering and every caller sees a single shape.
+
+    Returns `[]` for a role with no progression; callers render those flat.
+    """
+    raw = entry.get("stints")
+    if isinstance(raw, list) and raw:
+        return [s for s in raw if isinstance(s, dict)]
+
+    prior = [p for p in (entry.get("promotions") or []) if isinstance(p, dict)]
+    if not prior:
+        return []
+
+    prior = sorted(prior, key=lambda p: str(p.get("startDate") or ""), reverse=True)
+    # The current title began when the most recent prior one ended.
+    current = {
+        "position": entry.get("position", ""),
+        "startDate": prior[0].get("endDate") or entry.get("startDate"),
+        "endDate": entry.get("endDate"),
+    }
+    return [current, *prior]
+
+
+def highlights_of(entry: dict) -> list:
+    """Every bullet in a work entry — employer-level first, then each stint's.
+
+    Linting and Markdown care how many bullets a role has and whether they carry
+    figures, not which title they sit under, so they read through this.
+    """
+    out = list(entry.get("highlights") or [])
+    for stint in stints(entry):
+        out += list(stint.get("highlights") or [])
+    return out
+
+
 KNOWN_SECTIONS = {
     "basics", "work", "volunteer", "education", "awards", "certificates",
     "publications", "skills", "languages", "interests", "references",
@@ -164,7 +210,45 @@ def _validate(data: dict) -> list[str]:
             if highlights is not None and not isinstance(highlights, list):
                 raise ResumeError(f"`{name}[{i}].highlights` must be an array.")
 
+    _validate_stints(data.get("work", []))
     return notes
+
+
+def _validate_stints(work: list) -> None:
+    """`work[].stints` — the title history. A local extension; see `stints()`."""
+    for i, entry in enumerate(work):
+        raw = entry.get("stints")
+        if raw is None:
+            continue
+        where = f"`work[{i}].stints`"
+        if not isinstance(raw, list):
+            raise ResumeError(f"{where} must be an array.")
+        for j, stint in enumerate(raw):
+            at = f"`work[{i}].stints[{j}]`"
+            if not isinstance(stint, dict):
+                raise ResumeError(f"{at} must be an object.")
+            if not stint.get("position"):
+                raise ResumeError(
+                    f"{at}.position is required — a stint is a title you held."
+                )
+            for key in ("startDate", "endDate"):
+                value = stint.get(key)
+                if value and not _DATE_RE.match(str(value)):
+                    raise ResumeError(
+                        f"{at}.{key} is {value!r} — expected ISO 8601 "
+                        f"(YYYY, YYYY-MM, or YYYY-MM-DD)."
+                    )
+            start, end = stint.get("startDate"), stint.get("endDate")
+            if start and end and str(end) < str(start):
+                raise ResumeError(f"{at} ends ({end}) before it starts ({start}).")
+            bullets = stint.get("highlights")
+            if bullets is not None and not isinstance(bullets, list):
+                raise ResumeError(f"{at}.highlights must be an array.")
+        if raw and entry.get("promotions"):
+            raise ResumeError(
+                f"`work[{i}]` has both `stints` and the older `promotions`. "
+                f"Keep `stints` — it supersedes it."
+            )
 
 
 def load(path: str | Path) -> Resume:

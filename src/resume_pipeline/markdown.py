@@ -10,11 +10,12 @@ hand-written `resume.html` had. Edit the JSON; the Markdown follows.
 """
 from __future__ import annotations
 
+from . import model
 from .model import date_range
 
 
-def _bullets(entry) -> list[str]:
-    return [f"- {h}" for h in (entry.get("highlights") or [])]
+def _bullets(highlights) -> list[str]:
+    return [f"- {h}" for h in (highlights or [])]
 
 
 def render(resume) -> str:
@@ -50,7 +51,16 @@ def render(resume) -> str:
             out += [f"**{head}** - {meta}" if meta else f"**{head}**"]
             if note := entry.get("note"):
                 out += [f"*{note}*"]
-            out += [""] + _bullets(entry) + [""]
+            out += [""] + _bullets(entry.get("highlights")) + [""]
+
+            # Each title held at this employer, with the bullets earned under it.
+            # Markdown has no layout axis, so this always reads the plainest way
+            # that still says which work belongs to which title.
+            for stint in model.stints(entry):
+                when = date_range(stint.get("startDate"), stint.get("endDate"))
+                title = stint.get("position", "")
+                out += [f"*{title}* - {when}" if when else f"*{title}*", ""]
+                out += _bullets(stint.get("highlights")) + [""]
 
     if resume.projects:
         out += ["---", "", "## Projects", ""]

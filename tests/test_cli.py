@@ -63,8 +63,8 @@ def test_presets_resolve():
 
 def test_generated_ids_resolve():
     """The generated half of the space must be publishable, not just viewable."""
-    theme = cli.resolve_layout("moss-charter-rule-grid-stacked-compact")
-    assert theme.name == "moss-charter-rule-grid-stacked-compact"
+    theme = cli.resolve_layout("moss-charter-rule-grid-stacked-compact-flat")
+    assert theme.name == "moss-charter-rule-grid-stacked-compact-flat"
 
 
 def test_an_unknown_layout_exits_with_help():

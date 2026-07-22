@@ -30,6 +30,7 @@ def axes_of(spec: compose.Spec) -> dict[str, str]:
         "skills": spec.skills,
         "promo": spec.promo,
         "density": compose.DENSITIES[spec.density][0],
+        "grouping": spec.grouping,
     }
 
 
@@ -68,11 +69,16 @@ _PAGE = r"""<!doctype html>
   :root{
     --bg:#f2f4f7; --card:#fff; --ink:#12151a; --muted:#69707c; --line:#e0e4ea;
     --accent:#0b6fa4;
+    /* Buttons need a surface of their own. Using --card put a card-coloured
+       button on a card-coloured panel, which in dark mode left only a faint
+       border to see — controls read as disabled, or vanished entirely. */
+    --btn:#f1f4f8; --btn-line:#c9d0da;
     --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
   }
   @media (prefers-color-scheme:dark){
     :root{ --bg:#0e1014; --card:#181b21; --ink:#e8eaef; --muted:#98a0ad; --line:#282d36;
            --accent:#63b3e0;
+           --btn:#262b36; --btn-line:#3c4453;
            --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35); }
   }
   *{box-sizing:border-box}
@@ -88,13 +94,13 @@ _PAGE = r"""<!doctype html>
   .grow{flex:1}
   .hint{margin:6px 0 0;color:var(--muted);font-size:12.5px;max-width:78ch}
 
-  button{font:inherit;font-size:13px;color:var(--ink);background:var(--card);
-         border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;
-         transition:border-color .12s,background .12s}
-  button:hover{border-color:var(--accent)}
+  button{font:inherit;font-size:13px;font-weight:500;color:var(--ink);
+         background:var(--btn);border:1px solid var(--btn-line);border-radius:8px;
+         padding:6px 12px;cursor:pointer;white-space:nowrap;
+         transition:border-color .12s,background .12s,color .12s}
+  button:hover{border-color:var(--accent);color:var(--accent)}
   button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
-  button.primary:hover{filter:brightness(1.08)}
-  button.ghost{border-color:transparent;color:var(--muted)}
+  button.primary:hover{filter:brightness(1.08);color:#fff}
 
   .grid{display:grid;gap:18px;padding:20px;
         grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
@@ -134,8 +140,14 @@ _PAGE = r"""<!doctype html>
   dialog{border:0;border-radius:14px;padding:0;background:var(--card);color:var(--ink);
          width:min(94vw,900px);box-shadow:var(--shadow)}
   dialog::backdrop{background:rgba(8,10,14,.55)}
+  /* No wrapping: a long spec name used to push Close onto a line of its own,
+     which is where it went to hide. The name truncates instead. */
   .dlg-bar{display:flex;align-items:center;gap:10px;padding:11px 14px;
-           border-bottom:1px solid var(--line);flex-wrap:wrap}
+           border-bottom:1px solid var(--line);flex-wrap:nowrap}
+  .dlg-id{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}
+  .dlg-id b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dlg-id .meta{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dlg-acts{display:flex;gap:8px;flex:0 0 auto}
   dialog iframe{width:100%;height:min(76vh,1056px);border:0;background:#fff}
   .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
          background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;
@@ -150,20 +162,25 @@ _PAGE = r"""<!doctype html>
     <span class="grow"></span>
     <span class="meta"><kbd>↵</kbd> open · <kbd>Esc</kbd> close</span>
   </div>
-  <p class="hint"><b>Pick one and tell your agent</b> — “publish number 7”, or paste the
-  name. Every preview is a live render, identical to what gets published.</p>
+  <p class="hint">Open any layout, then <b>Make this my resume</b> to publish it — or tell
+  your agent “publish number 7”. Every preview is a live render, identical to what
+  gets published.</p>
 </header>
 
 <div class="grid" id="grid"></div>
 
 <dialog id="dlg">
   <div class="dlg-bar">
-    <b id="dlgName"></b>
-    <span class="meta" id="dlgDesc"></span>
-    <span class="grow"></span>
-    <button id="dlgCopy">Copy Name</button>
-    <button id="dlgExport" class="primary" hidden>Export PDF</button>
-    <button id="dlgClose">Close</button>
+    <div class="dlg-id">
+      <b id="dlgName"></b>
+      <span class="meta" id="dlgDesc"></span>
+    </div>
+    <div class="dlg-acts">
+      <button id="dlgCopy">Copy Name</button>
+      <button id="dlgExport" hidden>Export PDF</button>
+      <button id="dlgPublish" class="primary" hidden>★ Make this my resume</button>
+      <button id="dlgClose">Close</button>
+    </div>
   </div>
   <iframe id="dlgFrame" title="preview"></iframe>
 </dialog>
@@ -210,9 +227,9 @@ function render(){
       <div class="shot"><iframe loading="lazy" src="${previewUrl(v.name)}"
            title="${v.name}" scrolling="no"></iframe><div class="veil"></div></div>
       <div class="info">
-        <div class="row"><span class="num">${i+1}</span><span class="nm">${v.name}</span></div>
-        <div class="chips">${Object.values(v.axes)
-          .map(val => `<span class="chip">${val}</span>`).join("")}</div>
+        <div class="row"><span class="num">${i+1}</span>
+          <div class="chips">${Object.values(v.axes)
+            .map(val => `<span class="chip">${val}</span>`).join("")}</div></div>
         <div class="acts">
           <button class="o">Open</button>
           <button class="c">Copy Name</button>
@@ -233,19 +250,28 @@ function open(v){
   $("#dlgDesc").textContent = v.description;
   $("#dlgFrame").src = previewUrl(v.name);
   $("#dlgCopy").onclick = ()=>copy(v.name);
-  const ex = $("#dlgExport");
-  ex.hidden = !EXPORTABLE;
+
+  const post = (path, body) => fetch(path, {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify(body)
+  }).then(r=>r.json()).catch(e=>({error:String(e)}));
+
+  const act = async (button, label, busy, path, done) => {
+    button.disabled = true; button.textContent = busy;
+    const r = await post(path, { name: v.name });
+    button.disabled = false; button.textContent = label;
+    toast(r.error ? (label + " failed: " + r.error) : done(r));
+  };
+
+  const ex = $("#dlgExport"), pub = $("#dlgPublish");
+  ex.hidden = pub.hidden = !EXPORTABLE;
   if(EXPORTABLE){
-    ex.onclick = async ()=>{
-      ex.disabled = true; ex.textContent = "Exporting…";
-      const r = await fetch("/api/export", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ name: v.name })
-      }).then(r=>r.json()).catch(e=>({error:String(e)}));
-      ex.disabled = false; ex.textContent = "Export PDF";
-      toast(r.error ? ("Export failed: " + r.error)
-                    : ("Exported " + r.path.split("/").pop()));
-    };
+    ex.onclick = ()=>act(ex, "Export PDF", "Exporting…", "/api/export",
+                         r => "Exported " + r.path.split("/").pop());
+    // The whole point of browsing: end on the deliverable, not on a name to
+    // copy somewhere else.
+    pub.onclick = ()=>act(pub, "★ Make this my resume", "Publishing…", "/api/publish",
+                          r => "Published " + r.stem + ".pdf / .html / .md");
   }
   $("#dlg").showModal();
 }

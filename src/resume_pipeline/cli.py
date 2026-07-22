@@ -19,7 +19,7 @@ import os
 import sys
 from pathlib import Path
 
-from . import catalogue, compose, scaffold, space
+from . import catalogue, compose, deliverable, scaffold, space
 from . import lint as lint_mod
 from . import markdown, model, pdf
 
@@ -62,17 +62,23 @@ def cache_dir(resume_path: Path) -> Path:
     return root / "resume-pipeline" / resume_path.resolve().parent.name
 
 
-def resolve_layout(name: str):
-    """A preset name or a generated layout id, resolved to something renderable."""
+def resolve_spec(name: str) -> compose.Spec:
+    """A preset name or a layout id, resolved to a Spec."""
     spec = compose.preset(name) or space.parse(name)
     if spec is None:
         raise SystemExit(
             f"error: unknown layout {name!r}.\n"
             f"  presets: {', '.join(compose.PRESETS)}\n"
-            f"  or a layout id like 'moss-charter-band-pills-ladder-airy' - "
+            f"  or a layout id like "
+            f"'moss-charter-band-pills-ladder-airy-grouped' - "
             f"run `resume-pipeline catalogue` to browse them."
         )
-    return compose.as_theme(spec)
+    return spec
+
+
+def resolve_layout(name: str):
+    """The same, as a renderable Theme — what the linter judges."""
+    return compose.as_theme(resolve_spec(name))
 
 
 def _load(path: str):
@@ -149,15 +155,13 @@ def cmd_publish(args) -> int:
     """
     args.resume = str(find_resume(args.resume))
     resume = _load(args.resume)
-    theme = resolve_layout(args.theme)
+    spec = resolve_spec(args.theme)
+    theme = compose.as_theme(spec)
     out_dir = Path(args.resume).parent
-    stem = args.name or f"{resume.name.split()[-1]}_Resume".replace(" ", "_")
+    stem = args.name or deliverable.default_stem(resume)
 
-    html = theme.render(resume)
-    (out_dir / f"{stem}.html").write_text(html, encoding="utf-8")
-    (out_dir / f"{stem}.md").write_text(markdown.render(resume), encoding="utf-8")
     try:
-        pdf.write(html, out_dir / f"{stem}.pdf")
+        deliverable.write(resume, spec, out_dir, stem)
     except (pdf.BrowserNotFound, RuntimeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

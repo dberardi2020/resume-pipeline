@@ -8,8 +8,13 @@ So a layout here is not code — it is a `Spec`, a handful of independent choice
 One renderer reads the spec and emits the HTML. Adding a new value to any axis
 multiplies the catalogue instead of adding to it.
 
-    palettes (7) x type (4) x header (5) x skills (3) x promo (4) x density (3)
-    = 5,040 layouts
+    palettes (7) x type (4) x header (5) x skills (3) x promo (4)
+      x density (3) x grouping (2) = 10,080 layouts
+
+A caveat worth keeping honest: that number is combinatorial, not curated. There
+are 28 hand-authored axis values here and one HTML skeleton — variety comes from
+multiplying choices, not from 10,080 designs. Widening the space means adding
+values or a second skeleton, not raising the multiplier.
 
 Every axis is constrained to stay single-column and >=10pt, so *everything* the
 space can produce is submittable. Character comes from colour, type, and the
@@ -24,6 +29,7 @@ import html as _html
 from dataclasses import dataclass as _dataclass
 from typing import Callable as _Callable
 
+from . import model
 from .model import date_range
 
 
@@ -80,6 +86,16 @@ SKILLS = ["pills", "inline", "grid"]
 PROMOS = ["ladder", "badge", "stacked", "inline"]
 DENSITIES = [("airy", 1.55, 15), ("normal", 1.45, 11), ("compact", 1.34, 8)]
 
+# How a role with a title history is structured on the page. Two genuinely
+# different designs, not two ornaments:
+#   grouped — the employer is the heading; each title nests beneath it with its
+#             own dates and bullets. Progression reads as one continuous tenure.
+#   flat    — each title is its own heading, employer repeated. Progression reads
+#             as separate roles, which is what most parsers and screeners expect.
+# For a role with no promotion the two render identically — as does the `promo`
+# axis, which has nothing to show either.
+GROUPINGS = ["grouped", "flat"]
+
 
 @dataclass(frozen=True)
 class Spec:
@@ -89,6 +105,9 @@ class Spec:
     skills: str
     promo: str
     density: int
+    # Added after the first six. Defaulted so existing positional construction
+    # keeps working, and named last so it reads at the end of a spec name.
+    grouping: str = "grouped"
 
     @property
     def name(self) -> str:
@@ -109,13 +128,15 @@ class Spec:
             self.skills,
             self.promo,
             DENSITIES[self.density][0],
+            self.grouping,
         ))
 
     @property
     def description(self) -> str:
         return (f"{PALETTES[self.palette][0]} · {TYPEFACES[self.typeface][0]} · "
                 f"{self.header} header · {self.skills} skills · "
-                f"{self.promo} promo · {DENSITIES[self.density][0]}")
+                f"{self.promo} promo · {DENSITIES[self.density][0]} · "
+                f"{self.grouping}")
 
 
 # A handful of named starting points. Each is just a Spec — presets are a
@@ -133,13 +154,14 @@ def preset(name: str) -> Spec | None:
 
 
 def all_specs() -> list[Spec]:
-    return [Spec(p, t, h, s, pr, d)
+    return [Spec(p, t, h, s, pr, d, g)
             for p in range(len(PALETTES))
             for t in range(len(TYPEFACES))
             for h in HEADERS
             for s in SKILLS
             for pr in PROMOS
-            for d in range(len(DENSITIES))]
+            for d in range(len(DENSITIES))
+            for g in GROUPINGS]
 
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
@@ -241,6 +263,26 @@ a {{ color:{accent}; text-decoration:none; }}
                 vertical-align:2px; }}
 .promo-ladder {{ font-size:9.8pt; opacity:.78; margin-top:2px; }}
 .promo-ladder .arrow {{ color:{accent}; font-weight:700; padding:0 4px; }}
+
+/* Title history within one employer. Each stint owns its bullets, so the title
+   line has to read as a heading for what follows, not as a caption on what came
+   before — hence the weight, and the rule that ties the run together. */
+.stints {{ margin-top:5px; }}
+.stint {{ margin-top:6px; }}
+.stint:first-child {{ margin-top:3px; }}
+.stint-title {{ font-size:10.4pt; font-weight:700; color:{accent}; }}
+.stint-title .when {{ float:right; font-weight:400; font-size:9.6pt;
+                      color:inherit; opacity:.7; }}
+.stint-when {{ font-size:9.6pt; opacity:.66; margin-top:1px; }}
+.stint ul {{ margin-top:4px; }}
+/* ladder: a spine down the run of titles, so promotion reads as one tenure */
+.promo-ladder.stints, .stints.promo-ladder {{ }}
+.stints.promo-ladder .stint {{ padding-left:11px; border-left:2px solid {tint}; }}
+.stints.promo-ladder .stint.current {{ border-left-color:{accent}; }}
+/* stacked: title and dates on separate lines, with air between stints */
+.stints.promo-stacked .stint {{ margin-top:9px; }}
+/* inline: quietest — title and dates run together, no rules */
+.stints.promo-inline .stint-title {{ font-weight:600; }}
 .promo-stacked {{ margin-top:3px; padding-left:9px;
                   border-left:2.5px solid {accent}; font-size:9.8pt; }}
 .promo-stacked .then {{ opacity:.65; }}
@@ -278,49 +320,67 @@ def _header(resume, spec: Spec) -> str:
             f"{_contact(resume)}</header>")
 
 
-def _promotion(entry, spec: Spec) -> str:
-    """Render career progression within a single employer.
-
-    The data carries prior titles; how that reads on the page is a design choice,
-    so it is an axis rather than a fixed string. A promotion is one of the
-    strongest seniority signals on a resume and deserves better than a footnote.
-    """
-    promos = entry.get("promotions") or []
-    if not promos:
-        # Fall back to the free-text note when no structured history exists.
-        return (f'<div class="promo-inline">{esc(entry["note"])}</div>'
-                if entry.get("note") else "")
-
-    prior = promos[0]
-    prior_title = esc(prior.get("title", ""))
-    when = date_range(prior.get("endDate"), prior.get("endDate")).split(" - ")[0]
-
-    if spec.promo == "badge":
-        return ""  # rendered next to the title instead
-    if spec.promo == "ladder":
-        return (f'<div class="promo-ladder">{prior_title}'
-                f'<span class="arrow">&rarr;</span>'
-                f'{esc(entry.get("position", ""))} <span>({esc(when)})</span></div>')
-    if spec.promo == "stacked":
-        return (f'<div class="promo-stacked"><span class="then">Previously</span> '
-                f"{prior_title} &middot; promoted {esc(when)}</div>")
-    return (f'<div class="promo-inline">Promoted from {prior_title}, '
-            f"{esc(when)}</div>")
-
 
 def _entry_head(entry, spec: Spec) -> str:
-    head = " - ".join(x for x in (esc(entry.get("position", "")),
+    """The role heading.
+
+    With a title history the employer *is* the heading, and each title appears
+    once below it with its own dates and bullets. Repeating the current title
+    here would print it twice.
+    """
+    if model.stints(entry):
+        head = esc(entry.get("name", ""))
+        if spec.promo == "badge":
+            head += '<span class="promo-badge">&uarr; PROMOTED</span>'
+        return head
+    return " - ".join(x for x in (esc(entry.get("position", "")),
                                   esc(entry.get("name", ""))) if x)
-    if spec.promo == "badge" and (entry.get("promotions") or []):
-        head += '<span class="promo-badge">&uarr; PROMOTED</span>'
-    return head
 
 
-def _bullets(entry) -> str:
-    highlights = entry.get("highlights") or []
+def _bullet_list(highlights) -> str:
     if not highlights:
         return ""
     return "<ul>" + "".join(f"<li>{esc(h)}</li>" for h in highlights) + "</ul>"
+
+
+def _bullets(entry) -> str:
+    return _bullet_list(entry.get("highlights") or [])
+
+
+def _stint_block(entry, spec: Spec) -> str:
+    """Each title held at one employer, with the bullets earned under it.
+
+    The promo axis chooses how the title line reads; it no longer chooses
+    whether the progression is visible at all. Every treatment shows each
+    stint's own bullets, because that is the thing a promotion is evidence of.
+    """
+    history = model.stints(entry)
+    if not history:
+        return ""
+
+    rows = []
+    for index, stint in enumerate(history):
+        title = esc(stint.get("position", ""))
+        when = date_range(stint.get("startDate"), stint.get("endDate"))
+        current = index == 0
+
+        if spec.promo == "ladder":
+            line = (f'<div class="stint-title">{title}'
+                    f'<span class="when">{esc(when)}</span></div>')
+        elif spec.promo == "stacked":
+            line = (f'<div class="stint-title">{title}</div>'
+                    f'<div class="stint-when">{esc(when)}</div>')
+        elif spec.promo == "badge":
+            mark = '<span class="promo-badge">&uarr; PROMOTED</span>' if current else ""
+            line = (f'<div class="stint-title">{title}{mark}'
+                    f'<span class="when">{esc(when)}</span></div>')
+        else:  # inline
+            line = (f'<div class="stint-title">{title} '
+                    f'<span class="when">&middot; {esc(when)}</span></div>')
+
+        rows.append(f'<div class="stint{" current" if current else ""}">'
+                    f'{line}{_bullet_list(stint.get("highlights") or [])}</div>')
+    return f'<div class="stints promo-{esc(spec.promo)}">' + "".join(rows) + "</div>"
 
 
 def _skills(resume, spec: Spec) -> str:
@@ -344,19 +404,57 @@ def _skills(resume, spec: Spec) -> str:
     return "<h2>Skills</h2>" + rows
 
 
+def _note(entry) -> str:
+    return (f'<div class="promo-inline">{esc(entry["note"])}</div>'
+            if entry.get("note") else "")
+
+
+def _work_grouped(entry, spec: Spec) -> str:
+    """Employer as the heading, each title nested beneath it."""
+    meta = " | ".join(x for x in (
+        esc(entry.get("location")),
+        date_range(entry.get("startDate"), entry.get("endDate"))) if x)
+    return (f'<div class="entry"><div class="entry-head">'
+            f'{_entry_head(entry, spec)}</div>'
+            f'<div class="entry-meta">{meta}</div>'
+            f"{_note(entry)}{_bullets(entry)}{_stint_block(entry, spec)}</div>")
+
+
+def _work_flat(entry, spec: Spec) -> str:
+    """Each title its own heading, employer repeated — one block per stint.
+
+    Company-level bullets ride with the most recent title, since that is where a
+    reader looks first and they describe the tenure as a whole.
+    """
+    history = model.stints(entry)
+    if not history:
+        return _work_grouped(entry, spec)
+
+    employer = esc(entry.get("name", ""))
+    blocks = []
+    for index, stint in enumerate(history):
+        head = " - ".join(x for x in (esc(stint.get("position", "")), employer) if x)
+        if spec.promo == "badge" and index == 0:
+            head += '<span class="promo-badge">&uarr; PROMOTED</span>'
+        meta = " | ".join(x for x in (
+            esc(entry.get("location")),
+            date_range(stint.get("startDate"), stint.get("endDate"))) if x)
+        bullets = list(stint.get("highlights") or [])
+        if index == 0:
+            bullets = list(entry.get("highlights") or []) + bullets
+        blocks.append(f'<div class="entry"><div class="entry-head">{head}</div>'
+                      f'<div class="entry-meta">{meta}</div>'
+                      f'{_note(entry) if index == 0 else ""}'
+                      f"{_bullet_list(bullets)}</div>")
+    return "".join(blocks)
+
+
 def _work(resume, spec: Spec) -> str:
     if not resume.work:
         return ""
-    rows = []
-    for entry in resume.work:
-        meta = " | ".join(x for x in (
-            esc(entry.get("location")),
-            date_range(entry.get("startDate"), entry.get("endDate"))) if x)
-        rows.append(f'<div class="entry"><div class="entry-head">'
-                    f'{_entry_head(entry, spec)}</div>'
-                    f'<div class="entry-meta">{meta}</div>'
-                    f"{_promotion(entry, spec)}{_bullets(entry)}</div>")
-    return "<h2>Experience</h2>" + "".join(rows)
+    render_entry = _work_flat if spec.grouping == "flat" else _work_grouped
+    return "<h2>Experience</h2>" + "".join(
+        render_entry(entry, spec) for entry in resume.work)
 
 
 def _education(resume) -> str:

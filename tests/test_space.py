@@ -20,7 +20,7 @@ def test_space_is_the_product_of_its_axes():
     expected = 1
     for _, values in space.AXES:
         expected *= len(values)
-    assert space.TOTAL == expected == len(ALL) == 5040
+    assert space.TOTAL == expected == len(ALL) == 10080
 
 
 def test_every_spec_is_enumerated_once():
@@ -40,10 +40,10 @@ def test_every_name_round_trips():
 def test_name_spells_out_every_axis_in_order():
     spec = compose.Spec(palette=0, typeface=0, header="band",
                         skills="pills", promo="ladder", density=0)
-    assert spec.name == "harbor-grotesk-band-pills-ladder-airy"
+    assert spec.name == "harbor-grotesk-band-pills-ladder-airy-grouped"
     assert spec.name.split("-") == [
         compose.PALETTES[0][0], compose.TYPEFACES[0][0],
-        "band", "pills", "ladder", compose.DENSITIES[0][0],
+        "band", "pills", "ladder", compose.DENSITIES[0][0], "grouped",
     ]
 
 
@@ -51,11 +51,11 @@ def test_name_spells_out_every_axis_in_order():
     "",
     "nope",
     "harbor",
-    "a-b-c-d-e-f",                              # right shape, wrong values
-    "harbor-grotesk-band-pills-ladder",         # too few segments
-    "harbor-grotesk-band-pills-ladder-airy-x",  # too many
+    "a-b-c-d-e-f-g",                            # right shape, wrong values
+    "harbor-grotesk-band-pills-ladder-airy",    # too few segments
+    "harbor-grotesk-band-pills-ladder-airy-grouped-x",  # too many
     "harbor-321-mixed-compact",                 # the retired scheme
-    "HARBOR-grotesk-band-pills-ladder-airy",    # case matters
+    "HARBOR-grotesk-band-pills-ladder-airy-grouped",  # case matters
 ])
 def test_parse_rejects_anything_that_is_not_a_name(bad):
     assert space.parse(bad) is None
