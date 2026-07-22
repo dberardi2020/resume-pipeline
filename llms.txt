@@ -1,0 +1,60 @@
+# resume-pipeline
+
+> Browse a design space of 5,040 resume layouts, check them for parse safety, and publish
+> the one you pick. Built to be driven by a coding agent rather than typed by a human.
+> Python 3.11+, zero runtime dependencies, MIT.
+
+The user's resume is **structured data** (JSON Resume), not a document. One profile is the
+only authored file; layouts are generated; the published deliverable is derived. If you are
+working in someone's career workspace, read its `CLAUDE.md` and the `career` skill first —
+they carry rules that override anything convenient.
+
+## Vocabulary
+
+- **Profile** — the resume as data. The only file edited. A *superset* of everything the
+  person has done; a given resume shows a subset.
+- **Axis** — one presentation choice: `palette`, `typeface`, `header`, `skills`, `promo`,
+  `density`.
+- **Spec** — one point in the space, named in full and stable:
+  `harbor-grotesk-band-pills-ladder-airy`. Order is
+  `palette-typeface-header-skills-promo-density`.
+- **Space** — the product of the axes: 5,040 specs, enumerable and deterministic.
+- **Variant** — a profile rendered through a spec.
+- **Deliverable** — the single published output (`.pdf` / `.html` / `.md`).
+
+## Rules you must not break
+
+1. **Never invent a career fact** — no metric, date, scope claim, or technology. The linter
+   flags unquantified bullets; satisfying it with a number you made up is misrepresentation.
+   Report the gap and ask. Rewriting the person's own facts into better prose is encouraged.
+2. **Never delete a skill from the profile.** Curation is a rendering choice.
+3. **Never hand-edit a generated file** (`.html`, `.md`, `.pdf`) — the next publish
+   overwrites it and the two then disagree silently.
+4. **Archive before a substantive rewrite** — `Archive/YYYYMMDD-description.ext`.
+5. **Do not end a turn telling the user to run a command.** Run it.
+
+## Commands
+
+    resume-pipeline init [dir]              scaffold a workspace (add --skill-only for just the skill)
+    resume-pipeline lint                    parse-safety and content checks; reports, never edits
+    resume-pipeline catalogue               static browsable folder of layout options
+    resume-pipeline serve                   same viewer, served, with PDF export
+    resume-pipeline publish --theme <spec>  write the deliverable beside the profile
+
+The profile path is optional: commands walk up from the working directory looking for
+`resume.json`, or read `RESUME_PIPELINE_RESUME`. `--theme` accepts a preset (`default`,
+`plain`, `editorial`, `warm`) or any spec name.
+
+`catalogue` also writes `options.json` — numbered entries with spec name, description, axes,
+and preview path — so "use number 7" resolves without parsing HTML.
+
+## Docs
+
+- [Concept](docs/concept.md): the product definition, the four surfaces, what v1 means, and
+  an honest as-built ledger. The canonical statement; it wins over any other doc.
+- [Tickets](docs/tickets/Tickets.md): backlog, open and done.
+
+## Not built yet
+
+Import (PDF/DOCX → profile), faceted browse, the read-only inspector, the provenance model,
+cover letters and applications. Do not describe these as working.

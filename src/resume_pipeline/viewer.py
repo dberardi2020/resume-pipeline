@@ -115,7 +115,10 @@ _PAGE = r"""<!doctype html>
   .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .num{font-size:11px;font-weight:700;color:#fff;background:var(--accent);
        border-radius:20px;min-width:20px;text-align:center;padding:1px 6px}
-  .nm{font-size:12px;font-weight:700;letter-spacing:-.1px;word-break:break-all}
+  /* Names are long and hyphenated by design. `break-all` would split them
+     mid-word (`badge-co / mpact`); this wraps at the hyphens instead. */
+  .nm{font-size:12px;font-weight:700;letter-spacing:-.1px;
+      overflow-wrap:anywhere;word-break:normal;line-height:1.35}
   .chips{display:flex;flex-wrap:wrap;gap:4px}
   .chip{font-size:10.5px;background:var(--bg);border:1px solid var(--line);
         border-radius:20px;padding:1px 7px;color:var(--muted)}

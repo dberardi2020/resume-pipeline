@@ -110,11 +110,12 @@ def cmd_lint(args) -> int:
 def cmd_catalogue(args) -> int:
     args.resume = str(find_resume(args.resume))
     resume = _load(args.resume)
-    # Not the cache. Scratch is output nobody looks at; the catalogue is the one
-    # output whose entire purpose is being looked at, so it lives where the resume
-    # does and stays findable. It is HTML only, so it costs a few hundred KB.
-    out_dir = (Path(args.out) if args.out
-               else Path(args.resume).parent / "Options")
+    # The cache, like every other generated thing. A catalogue is disposable —
+    # rebuilding it is instant and deterministic — and a workspace is often
+    # file-synced, so writing dozens of HTML files into it churns bytes and buries
+    # the one authored file. Findability comes from printing the `file://` link,
+    # not from the folder's location.
+    out_dir = Path(args.out) if args.out else cache_dir(Path(args.resume)) / "catalogue"
     index, specs = catalogue.build(resume, args.count, out_dir)
     print(f"built {len(specs)} layouts of {space.TOTAL:,}")
     width = max((len(s.name) for s in specs), default=0)
