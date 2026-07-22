@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>0006 — The linter reports; it never edits</title><style>
+:root{--bg:#f7f8fa;--fg:#181820;--muted:#565666;--line:#e5e7ec;--code-bg:#eef0f4;--accent:#4577d1;--link:#3a67b8}
+@media(prefers-color-scheme:dark){:root{--bg:#080a0e;--fg:#e9ecf3;--muted:#a2a7b8;--line:#232735;--code-bg:#12141b;--accent:#5b8de0;--link:#6f9ae6}}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:64px 28px 120px}
+h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
+h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
+h3{font-size:1.08rem;margin:1.8em 0 .4em}
+p{margin:.7em 0}
+a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
+a:hover{border-bottom-color:var(--link)}
+code{background:var(--code-bg);padding:.12em .4em;border-radius:4px;font:.86em/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
+pre{background:var(--code-bg);padding:16px 18px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:.85em}
+ul,ol{padding-left:1.4em;margin:.7em 0}
+li{margin:.3em 0}
+blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
+blockquote strong{color:var(--fg)}
+table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+th{background:var(--code-bg);font-weight:600}
+hr{border:none;border-top:1px solid var(--line);margin:2em 0}
+strong{font-weight:650}
+</style></head><body><main class="wrap">
+<h1>0006 — The linter reports; it never edits</h1>
+<p><strong>Status:</strong> Accepted · 2026-07-21</p>
+<h2>Context</h2>
+<p>The linter flags bullets containing no figures, because unquantified prose genuinely does not convey scope. The obvious way to satisfy that finding is to supply a number.</p>
+<p>Point a generative model at a linter that demands metrics and you have built a machine for manufacturing plausible lies about someone's career — and the person who has to defend "reduced p99 latency by 40%" in an interview is not the one who wrote it.</p>
+<p>Research across the surveyed tools found no tool that tracks which claims are the human's and which are the model's. The hazard is not hypothetical; it is created by the feature.</p>
+<h2>Decision</h2>
+<p><strong><code>lint.check()</code> is a pure reporter.</strong> It returns findings and never mutates the profile. No <code>--fix</code>, no autocorrect, no suggested replacement text for a missing figure.</p>
+<p>The rule it enforces, stated in the workspace <code>CLAUDE.md</code> and the shipped skill: <strong>never invent a career fact.</strong> Flagging that a bullet lacks a number is useful; filling it in is not. Ask, and leave the bullet unquantified until answered.</p>
+<h2>Rationale</h2>
+<p>The line is not "AI helped write this" — that is normal and fine. The line is <strong>misrepresentation</strong>, and invented metrics are the specific failure mode. Rewriting someone's own facts into stronger prose is the entire point of the tool; introducing new facts is a different act wearing the same clothes.</p>
+<p>Detection-based arguments were considered and rejected: AI detectors are unreliable and biased (61% false-positive on non-native English speakers), so "you will get caught" is not the argument. The argument is narrower and stronger.</p>
+<h2>Consequences</h2>
+<ul><li>Finding messages are phrased as questions and say so explicitly — the <code>work/unquantified</code> message ends <em>"(Ask for the number — never invent one.)"</em></li><li>A test asserts the profile is byte-identical after a check that fired. This is the only place the rule is <em>enforced</em> rather than stated.</li><li>The linter reports a permanent error on a genuinely unquantified resume. That is correct behaviour, not a defect to silence.</li><li><strong>Provenance tracking</strong> (RP-0007) is the eventual counterweight: per claim, human-asserted fact or model-generated prose. Not built.</li></ul>
+</main></body></html>

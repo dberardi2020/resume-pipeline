@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>User guide</title><style>
+:root{--bg:#f7f8fa;--fg:#181820;--muted:#565666;--line:#e5e7ec;--code-bg:#eef0f4;--accent:#4577d1;--link:#3a67b8}
+@media(prefers-color-scheme:dark){:root{--bg:#080a0e;--fg:#e9ecf3;--muted:#a2a7b8;--line:#232735;--code-bg:#12141b;--accent:#5b8de0;--link:#6f9ae6}}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:64px 28px 120px}
+h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
+h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
+h3{font-size:1.08rem;margin:1.8em 0 .4em}
+p{margin:.7em 0}
+a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
+a:hover{border-bottom-color:var(--link)}
+code{background:var(--code-bg);padding:.12em .4em;border-radius:4px;font:.86em/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
+pre{background:var(--code-bg);padding:16px 18px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:.85em}
+ul,ol{padding-left:1.4em;margin:.7em 0}
+li{margin:.3em 0}
+blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
+blockquote strong{color:var(--fg)}
+table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+th{background:var(--code-bg);font-weight:600}
+hr{border:none;border-top:1px solid var(--line);margin:2em 0}
+strong{font-weight:650}
+</style></head><body><main class="wrap">
+<h1>User guide</h1>
+<p>Install, first run, the workflow end to end, and what to do when something goes wrong. Assumes the vocabulary in <a href="concepts.md"><code>concepts.md</code></a>.</p>
+<h2>Requirements</h2>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><strong>Python</strong></td><td>3.11 or newer. Zero runtime dependencies — everything is stdlib.</td></tr><tr><td><strong>A Chromium-family browser</strong></td><td>Chrome, Chromium, Edge or Brave. Used <strong>only</strong> for PDF export, and located at runtime. Everything else works without one.</td></tr><tr><td><strong>A coding agent</strong> <em>(recommended)</em></td><td>The intended interface. <code>init</code> installs a skill that teaches it the workflow.</td></tr></tbody></table>
+<p>Set <code>RESUME_PIPELINE_CHROME</code> to an executable path if the browser is somewhere unusual.</p>
+<h2>Install</h2>
+<pre><code>pipx install git+https://github.com/dberardi2020/resume-pipeline.git</code></pre>
+<p>Or from a checkout, with no install at all:</p>
+<pre><code>git clone https://github.com/dberardi2020/resume-pipeline.git
+cd resume-pipeline
+python3 -m venv .venv &amp;&amp; .venv/bin/pip install -e .
+python3 -m resume_pipeline --help</code></pre>
+<h2>First run</h2>
+<pre><code>resume-pipeline init ~/Career</code></pre>
+<p>That writes a workspace and does not overwrite anything that already exists:</p>
+<pre><code>~/Career/
+  CLAUDE.md                        the working rules, including anti-fabrication
+  README.md                        orientation
+  .claude/skills/career/SKILL.md   the agent skill
+  Resume/resume.json               a starter profile to fill in
+  Resume/Archive/                  pre-edit snapshots go here
+  Cover Letters/  Applications/  Reference/</code></pre>
+<p>Then fill in <code>Resume/resume.json</code>. If you would rather see the tool working before writing anything, point it at the demo profile that renders every screenshot in these docs:</p>
+<pre><code>resume-pipeline catalogue docs/assets/demo-profile.json</code></pre>
+<blockquote>
+<p><strong>Importing an existing resume is not built yet</strong> (RP-0001) — today you transcribe once. It is the biggest gap in the tool and it is the top of the backlog.</p>
+</blockquote>
+<h2>The workflow</h2>
+<p>Five verbs. In practice you say what you want and the agent runs them.</p>
+<h3>1. Edit — through the agent</h3>
+<p>You describe the change; the agent edits <code>resume.json</code>. You do not hand-author structured data, and you should not have to remember a command.</p>
+<p>Two rules the skill installs into the workspace, which the agent reads before touching anything:</p>
+<ul><li><strong>Never invent a career fact.</strong> No metric, date, scope claim, or technology. If a number would help, the agent asks for it and leaves the bullet unquantified until answered. Rewriting your own facts into stronger prose is the point; introducing new ones is not.</li><li><strong>Never delete a skill from the profile.</strong> Curation is a rendering choice.</li></ul>
+<p>Archive before a substantive rewrite — <code>Archive/YYYYMMDD-description.json</code>.</p>
+<h3>2. Lint — check it</h3>
+<pre><code>resume-pipeline lint</code></pre>
+<p>Reports three levels: <code>ERROR</code> (likely to be mis-parsed or auto-rejected), <code>WARNING</code> (weakens the resume; a deliberate choice may override), <code>INFO</code> (worth a look, often intentional). Only errors fail the command, so it is usable in CI without forcing every nit.</p>
+<p><strong>It never edits.</strong> A finding is a question, not a task to silence. Full rule list in <a href="../technical/module-reference.md#lintpy"><code>../technical/module-reference.md</code></a>.</p>
+<h3>3. Browse — find a layout</h3>
+<p>Two deliveries of the same viewer.</p>
+<pre><code>resume-pipeline catalogue      # a folder of HTML you open from file://
+resume-pipeline serve          # the same viewer, with a process behind it</code></pre>
+<p><code>catalogue</code> writes a self-contained folder into the cache and prints a <code>file://</code> link — no server, and you can commit it or send it to someone. <code>serve</code> renders previews on request and adds two actions the static version cannot have: <strong>Export PDF</strong>, and <strong>Make this my resume</strong>, which publishes directly.</p>
+<p>Every preview is a <strong>live render</strong> — the same function that publishes — so nothing you see can drift from what you get. Cards show each spec's axis values as chips; the full name is in the detail view, and <strong>Copy Name</strong> puts it on the clipboard.</p>
+<blockquote>
+<p><strong>Faceted filtering is not built yet.</strong> The viewer currently shows a deterministic <em>spread</em> across the space — <code>spread(n)</code> picks layouts that are maximally different from each other, so a handful of cards shows the range rather than seven shades of one design.</p>
+</blockquote>
+<h3>4. Publish — write the deliverable</h3>
+<pre><code>resume-pipeline publish --theme harbor-grotesk-band-pills-ladder-airy-grouped</code></pre>
+<p><code>--theme</code> takes a preset (<code>default</code>, <code>plain</code>, <code>editorial</code>, <code>warm</code>) or any spec name. Writes <code>&lt;Name&gt;.pdf</code>, <code>.html</code> and <code>.md</code> beside the profile, overwriting in place — the folder always answers "which file do I send?" If a deliverable is already there under another name, that name is kept.</p>
+<p>From the viewer, <strong>Make this my resume</strong> does the same thing with no name typed.</p>
+<h3>5. Cover letters — not built</h3>
+<p>Designed, unbuilt (RP-0009). <code>Cover Letters/</code> and <code>Applications/</code> are scaffolded and empty.</p>
+<h2>Where files go</h2>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><strong>The profile and the deliverable</strong></td><td>In your workspace, beside each other.</td></tr><tr><td><strong>Everything else generated</strong></td><td><code>~/.cache/resume-pipeline/&lt;workspace&gt;/</code> — catalogues, scratch exports. Safe to delete; rebuilding is instant and deterministic.</td></tr></tbody></table>
+<p>Generated files never sit beside source. If your workspace is file-synced (Dropbox, iCloud, a NAS), this is what keeps it from churning.</p>
+<p><strong>Never create a virtualenv inside a synced workspace</strong> — virtualenvs carry absolute paths and per-machine binaries.</p>
+<h2>Troubleshooting</h2>
+<table><thead><tr><th>Symptom</th><th>Cause and fix</th></tr></thead><tbody><tr><td><code>no resume found</code></td><td>No <code>resume.json</code> walking up from the working directory. Pass a path, set <code>RESUME_PIPELINE_RESUME</code>, or <code>cd</code> into the workspace.</td></tr><tr><td><code>No Chrome/Chromium/Edge found</code></td><td>PDF export needs one. Install it, or set <code>RESUME_PIPELINE_CHROME</code> to the executable. HTML and Markdown still work.</td></tr><tr><td><code>unknown layout '…'</code></td><td>Not a preset and not a valid spec name. Spec names have <strong>seven</strong> hyphen-separated segments; run <code>catalogue</code> to see real ones.</td></tr><tr><td><code>error: &lt;field&gt; is … — expected ISO 8601</code></td><td>Dates are <code>YYYY</code>, <code>YYYY-MM</code> or <code>YYYY-MM-DD</code>.</td></tr><tr><td><code>work[N] ends before it starts</code></td><td>A date got transposed — usually a bad edit. Check the archive.</td></tr><tr><td>A published file does not match the preview</td><td>Should be impossible; previews call the same render function. Re-run <code>publish</code> and file a bug.</td></tr><tr><td>Two resumes in the folder</td><td>An older deliverable under a different name. Publishing now reuses an existing name, but a pre-existing pair may need deleting by hand.</td></tr></tbody></table>
+<h2>Reference</h2>
+<p>Command surface, flags and exit codes: <a href="../technical/module-reference.md#clipy"><code>../technical/module-reference.md</code></a>.</p>
+</main></body></html>

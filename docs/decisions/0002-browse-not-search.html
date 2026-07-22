@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>0002 — Browse the space; do not search it</title><style>
+:root{--bg:#f7f8fa;--fg:#181820;--muted:#565666;--line:#e5e7ec;--code-bg:#eef0f4;--accent:#4577d1;--link:#3a67b8}
+@media(prefers-color-scheme:dark){:root{--bg:#080a0e;--fg:#e9ecf3;--muted:#a2a7b8;--line:#232735;--code-bg:#12141b;--accent:#5b8de0;--link:#6f9ae6}}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:64px 28px 120px}
+h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
+h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
+h3{font-size:1.08rem;margin:1.8em 0 .4em}
+p{margin:.7em 0}
+a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
+a:hover{border-bottom-color:var(--link)}
+code{background:var(--code-bg);padding:.12em .4em;border-radius:4px;font:.86em/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
+pre{background:var(--code-bg);padding:16px 18px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:.85em}
+ul,ol{padding-left:1.4em;margin:.7em 0}
+li{margin:.3em 0}
+blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
+blockquote strong{color:var(--fg)}
+table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+th{background:var(--code-bg);font-weight:600}
+hr{border:none;border-top:1px solid var(--line);margin:2em 0}
+strong{font-weight:650}
+</style></head><body><main class="wrap">
+<h1>0002 — Browse the space; do not search it</h1>
+<p><strong>Status:</strong> Accepted · 2026-07-21</p>
+<h2>Context</h2>
+<p>The first explorer treated the space as something to <em>sample</em>: it showed a batch, let you mark favourites and rejects, and drew the next batch from the neighbourhood of what you liked — steering. That required a persisted session file, a sampler with a seed, and an interaction model where the tool guessed at your taste.</p>
+<h2>Decision</h2>
+<p><strong>Browse, do not search.</strong> The space is enumerated and shown; the axes are the facets. There is no sampler, no seed, no favourites, and no session state anywhere.</p>
+<h2>Rationale</h2>
+<p>The space is <strong>finite, deterministic and categorical</strong>. That is not true of most search problems and it changes the answer completely: a catalogue with facets can express every question a recommender could, and answer it exactly rather than approximately. "Every layout in this palette" and "this layout in any palette but this one" are the same operation on the same data.</p>
+<p>Steering also carried hidden state that the user could not see, could not edit, and could not sync — and which made two runs of the same tool disagree.</p>
+<h2>Consequences</h2>
+<ul><li><code>space.diverse</code> and <code>space.steer</code> were deleted, along with the verdict file and the favourite/reject UI. <code>distance</code> and <code>neighbours</code> stay: they are what remix and merge are built from.</li><li><code>spread(count)</code> replaces sampling — deterministic greedy farthest-point selection, no seed. The same count always yields the same layouts, so a catalogue can be rebuilt and compared.</li><li><strong>The server holds no per-user state</strong>, which is most of what a hosted version would otherwise have to solve. A test asserts the context keys so state cannot creep back.</li><li>Faceted filtering in the UI is not built yet; the viewer shows a spread. That is a gap in the <em>interface</em>, not in the model.</li></ul>
+</main></body></html>

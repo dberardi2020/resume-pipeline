@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>0008 — Per-title bullets as a local schema extension</title><style>
+:root{--bg:#f7f8fa;--fg:#181820;--muted:#565666;--line:#e5e7ec;--code-bg:#eef0f4;--accent:#4577d1;--link:#3a67b8}
+@media(prefers-color-scheme:dark){:root{--bg:#080a0e;--fg:#e9ecf3;--muted:#a2a7b8;--line:#232735;--code-bg:#12141b;--accent:#5b8de0;--link:#6f9ae6}}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:64px 28px 120px}
+h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
+h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
+h3{font-size:1.08rem;margin:1.8em 0 .4em}
+p{margin:.7em 0}
+a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
+a:hover{border-bottom-color:var(--link)}
+code{background:var(--code-bg);padding:.12em .4em;border-radius:4px;font:.86em/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
+pre{background:var(--code-bg);padding:16px 18px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:.85em}
+ul,ol{padding-left:1.4em;margin:.7em 0}
+li{margin:.3em 0}
+blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
+blockquote strong{color:var(--fg)}
+table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+th{background:var(--code-bg);font-weight:600}
+hr{border:none;border-top:1px solid var(--line);margin:2em 0}
+strong{font-weight:650}
+</style></head><body><main class="wrap">
+<h1>0008 — Per-title bullets as a local schema extension</h1>
+<p><strong>Status:</strong> Experimental · 2026-07-22</p>
+<h2>Context</h2>
+<p>A promotion was decoration. <code>work[].promotions</code> recorded prior <em>titles</em> with dates but no bullets, so nothing in the data could say which work was done at which level. Every layout therefore rendered promotion as a caption — and the complaint that "most of these designs don't do promotion well" was correct but misdiagnosed: the information was not in the file.</p>
+<p>JSON Resume has no field for in-company progression. The alternatives were separate <code>work</code> entries per title (stock schema, but the employer repeats and grouping becomes guesswork at render time) or tagging individual bullets (smallest diff, but two shapes in one array).</p>
+<h2>Decision</h2>
+<p><code>work[].stints</code> — a list of titles held at one employer, each with its own dates and <code>highlights</code>. Employer-level <code>highlights</code> remain, for work spanning the whole tenure. Legacy <code>promotions</code> normalises into stints on read; carrying both is an error.</p>
+<p>A <strong><code>grouping</code></strong> axis renders the two structural readings: <code>grouped</code> (employer as heading, titles nested — one continuous tenure) and <code>flat</code> (each title its own heading, employer repeated — separate roles, what parsers expect).</p>
+<h2>Rationale</h2>
+<p>If a promotion is worth showing, what is worth showing is <em>what changed</em> — and that is the bullets, not the title. Only a data model that attaches bullets to titles can express it.</p>
+<h2>Consequences</h2>
+<ul><li>The <code>promo</code> axis now chooses how a title line <strong>reads</strong>, not whether progression is visible.</li><li><code>grouping</code> doubled the space and added a segment to every spec name — the concrete price of a new axis, recorded in <a href="0003-spec-names-are-written-out-in-full.md">0003</a>.</li><li>For a role with no promotion, both grouping values render <strong>identically</strong>. The axis is inert for most documents.</li><li><strong>This is why the status is Experimental.</strong> No real document has exercised it: the author's own resume was migrated onto stints and then migrated back, because a flat bullet list plus a <code>note</code> said the same thing with less machinery. That is evidence, and it is recorded rather than hidden.</li><li>Do not build further features on it. Promoting it requires a document that genuinely needs per-title bullets, and a check for an upstream JSON Resume field first (RP-0014, RP-0024).</li></ul>
+</main></body></html>

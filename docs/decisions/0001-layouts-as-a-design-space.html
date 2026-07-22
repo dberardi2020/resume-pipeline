@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>0001 — Layouts are a design space, not hand-written themes</title><style>
+:root{--bg:#f7f8fa;--fg:#181820;--muted:#565666;--line:#e5e7ec;--code-bg:#eef0f4;--accent:#4577d1;--link:#3a67b8}
+@media(prefers-color-scheme:dark){:root{--bg:#080a0e;--fg:#e9ecf3;--muted:#a2a7b8;--line:#232735;--code-bg:#12141b;--accent:#5b8de0;--link:#6f9ae6}}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:64px 28px 120px}
+h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
+h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
+h3{font-size:1.08rem;margin:1.8em 0 .4em}
+p{margin:.7em 0}
+a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
+a:hover{border-bottom-color:var(--link)}
+code{background:var(--code-bg);padding:.12em .4em;border-radius:4px;font:.86em/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
+pre{background:var(--code-bg);padding:16px 18px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:.85em}
+ul,ol{padding-left:1.4em;margin:.7em 0}
+li{margin:.3em 0}
+blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
+blockquote strong{color:var(--fg)}
+table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+th{background:var(--code-bg);font-weight:600}
+hr{border:none;border-top:1px solid var(--line);margin:2em 0}
+strong{font-weight:650}
+</style></head><body><main class="wrap">
+<h1>0001 — Layouts are a design space, not hand-written themes</h1>
+<p><strong>Status:</strong> Accepted · 2026-07-21</p>
+<h2>Context</h2>
+<p>The tool began with four hand-written themes, several hundred lines each. Every new look cost another theme, and each duplicated the section logic of the last. Meanwhile the actual need was the opposite of a curated set: <em>many</em> candidates to flip through, because judging a layout takes under a second and generating one should be cheaper than that.</p>
+<h2>Decision</h2>
+<p>A layout is not code. It is a <strong><code>Spec</code></strong> — a value on each of several independent categorical axes — and one renderer reads the spec and emits the HTML.</p>
+<h2>Rationale</h2>
+<p>Adding a value to any axis <strong>multiplies</strong> the catalogue rather than adding one to it. Seven axes and 28 hand-authored values produce 10,080 layouts. The axes being independent and categorical is what makes the result browsable rather than chaotic: changing one changes exactly one thing, which is also what gives distance a meaning (see <a href="0002-browse-not-search.md">0002</a>).</p>
+<p>Constraining every axis to stay single-column and ≥10pt means <em>everything</em> the space can produce is submittable. Character comes from colour, type and the treatment of details — never from a layout that breaks parsing.</p>
+<h2>Consequences</h2>
+<ul><li>The hand-written themes were retired. The four surviving names are <strong>presets</strong>: ordinary specs with convenient labels, not a separate system.</li><li>Variety is bounded by the axis values, not by the multiplier. 10,080 is combinatorial, not curated — 28 values over <strong>one HTML skeleton</strong> — and widening the space means adding values or a second skeleton. This is stated in the README and concepts doc so the number is not oversold.</li><li>Every generated layout can be published; nothing is browsable-but-unreachable.</li><li>A test renders every spec in the space, because "by construction" only stays true if something checks the construction.</li></ul>
+</main></body></html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Architecture</title><style>
+:root{--bg:#f7f8fa;--fg:#181820;--muted:#565666;--line:#e5e7ec;--code-bg:#eef0f4;--accent:#4577d1;--link:#3a67b8}
+@media(prefers-color-scheme:dark){:root{--bg:#080a0e;--fg:#e9ecf3;--muted:#a2a7b8;--line:#232735;--code-bg:#12141b;--accent:#5b8de0;--link:#6f9ae6}}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:64px 28px 120px}
+h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
+h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
+h3{font-size:1.08rem;margin:1.8em 0 .4em}
+p{margin:.7em 0}
+a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
+a:hover{border-bottom-color:var(--link)}
+code{background:var(--code-bg);padding:.12em .4em;border-radius:4px;font:.86em/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
+pre{background:var(--code-bg);padding:16px 18px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:.85em}
+ul,ol{padding-left:1.4em;margin:.7em 0}
+li{margin:.3em 0}
+blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
+blockquote strong{color:var(--fg)}
+table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+th{background:var(--code-bg);font-weight:600}
+hr{border:none;border-top:1px solid var(--line);margin:2em 0}
+strong{font-weight:650}
+</style></head><body><main class="wrap">
+<h1>Architecture</h1>
+<p>The shape of the code, the flow through it, and the seams that matter. Per-module detail is in <a href="module-reference.md"><code>module-reference.md</code></a>.</p>
+<h2>In one line</h2>
+<p><strong>Rendering is a pure function — <code>compose.render(profile, spec) -&gt; str</code>.</strong> Every surface is a different way of calling it, and none of them owns the data.</p>
+<p>That is the whole architecture. It is why a preview cannot drift from what publishes, why there is no cache to invalidate, and why the server needs no per-user state.</p>
+<h2>Layers</h2>
+<pre><code>                 cli.py                        the substrate an agent drives
+                   │
+     ┌─────────────┼──────────────┬──────────────┐
+     │             │              │              │
+ catalogue.py   server.py    deliverable.py    lint.py        surfaces
+     │             │              │              │
+     └──── viewer.py ─────┐       │              │
+                          │       │              │
+                   compose.render(profile, spec) │            the pure core
+                          │       │              │
+              ┌───────────┴───┬───┴────┐         │
+           compose.py     markdown.py  pdf.py    │            renderers
+              │                                  │
+           space.py ─────────────────────────────┘            the space
+              │
+           model.py                                           the data</code></pre>
+<p>Dependencies point downward only. <code>model.py</code> imports nothing from the package; <code>compose.py</code> imports <code>model</code>; <code>space.py</code> imports <code>compose</code>. Nothing in the core knows a surface exists.</p>
+<h2>End-to-end flow</h2>
+<p><strong>Browsing.</strong> <code>cli</code> locates the profile → <code>model.load</code> validates it → <code>space.spread(n)</code> picks layouts spread across the space → <code>viewer.page</code> builds one HTML page embedding those specs → each card is an <code>&lt;iframe&gt;</code> whose content is <code>compose.render</code> output, either written beside the page (<code>catalogue</code>) or served on request (<code>server</code>).</p>
+<p><strong>Publishing.</strong> A spec name arrives from the CLI or the viewer → <code>space.parse</code> decodes it → <code>deliverable.write</code> renders HTML, Markdown and PDF, and writes all three beside the profile.</p>
+<p><strong>Linting.</strong> <code>lint.check(resume, theme=...)</code> walks the profile and the layout's declared claims and returns <code>Finding</code> objects. It never mutates.</p>
+<h2>The seams</h2>
+<p>Four places where the design deliberately leaves a joint.</p>
+<h3><code>render(profile, spec)</code> is pure</h3>
+<p>No IO, no globals, no clock. Same inputs, same bytes — asserted by test. This is what makes previews trustworthy and what would make a hosted version possible.</p>
+<h3>The space is data, not code</h3>
+<p><code>space.py</code> knows nothing about HTML. It computes distance, neighbours, spread and name parsing over <code>Spec</code> — a frozen dataclass of categorical values. Adding an axis value touches one list in <code>compose.py</code>; the space grows and everything else follows.</p>
+<h3>One viewer, two deliveries</h3>
+<p><code>viewer.page(specs, resume, preview=..., exportable=...)</code> is the only UI. The two callers differ in exactly two switches: where a preview comes from (a sibling file, or a <code>/preview/</code> route) and whether the page can act. A test asserts those are the <em>only</em> differences, because this was two implementations that had begun to drift. See <a href="../decisions/0004-one-viewer-two-deliveries.md"><code>../decisions/0004-one-viewer-two-deliveries.md</code></a>.</p>
+<h3>The browser is behind <code>pdf.py</code></h3>
+<p>The one external dependency. <code>find_browser()</code> resolves it at runtime across macOS, Windows and Linux, honouring <code>RESUME_PIPELINE_CHROME</code>, and raises <code>BrowserNotFound</code> rather than failing obscurely. Everything except PDF works without it.</p>
+<h2>The server holds no state</h2>
+<p><code>server.py</code> builds a context dict at startup — profile, output directories, the specs to show — and <strong>never mutates it</strong>. No favourites, no verdicts, no persisted batch, no session file. A test asserts the context keys, so state cannot creep back in unnoticed.</p>
+<p>This falls out of <a href="../decisions/0002-browse-not-search.md"><code>../decisions/0002-browse-not-search.md</code></a>, and it is what keeps a hosted future open: there is nothing here that would need scoping to a user.</p>
+<h2>Where a hosted version would strain</h2>
+<p>Not built, and deliberately not foreclosed (RP-0023). Currently sound: rendering is pure, the API is small, no session state. Currently single-user:</p>
+<ul><li><code>cli.cache_dir()</code> writes under <code>~/.cache</code>.</li><li><code>cli.find_resume()</code> walks up from the working directory.</li><li><code>pdf.py</code> shells out to a local browser — the real obstacle.</li></ul>
+<h2>Print versus screen</h2>
+<p>A rendered variant has to be correct in two media, and they take different rules.</p>
+<ul><li><strong>Print</strong> — <code>@page</code> boxes set the paper margin. The <code>band</code> header bleeds a banner to the paper edge, which needs a zero-margin page; that is scoped to <code>@page :first</code> so later pages keep their margins.</li><li><strong>Screen</strong> — <code>@page</code> does not apply, so a <code>@media screen</code> rule mirrors the margin.</li></ul>
+<p>Both are asserted: a PDF test re-extracts text and checks every page's margin, and a CSS test checks the screen inset across the space. Each of these was a real bug, and each was invisible in the other medium.</p>
+</main></body></html>

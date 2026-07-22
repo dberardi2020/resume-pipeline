@@ -54,9 +54,16 @@ https://github.com/dberardi2020/resume-pipeline
 
 ## Docs
 
-- [Concept](https://github.com/dberardi2020/resume-pipeline/blob/main/docs/concept.md): the product definition, the four surfaces, what v1 means, and
-  an honest as-built ledger. The canonical statement; it wins over any other doc.
-- [Tickets](https://github.com/dberardi2020/resume-pipeline/blob/main/docs/tickets/Tickets.md): backlog, open and done.
+- [Concepts](https://github.com/dberardi2020/resume-pipeline/blob/main/docs/product/concepts.md): the vocabulary. Everything else is written in
+  these terms.
+- [Overview](https://github.com/dberardi2020/resume-pipeline/blob/main/docs/product/overview.md): the problem, the approach, the design principles.
+- [User guide](https://github.com/dberardi2020/resume-pipeline/blob/main/docs/product/user-guide.md): install, first run, the workflow end to end.
+- [Status](https://github.com/dberardi2020/resume-pipeline/blob/main/docs/product/platforms-and-status.md): what works, what is experimental, what
+  is not built. Read before claiming this tool does something.
+- [Architecture](https://github.com/dberardi2020/resume-pipeline/blob/main/docs/technical/architecture.md): the shape of the code.
+- [Decisions](https://github.com/dberardi2020/resume-pipeline/blob/main/docs/decisions/README.md): ADRs. They carry the current decision state;
+  when a doc disagrees with one, the ADR is right.
+- [Tickets](https://github.com/dberardi2020/resume-pipeline/blob/main/docs/tickets/tickets.md): backlog, open and done.
 
 ## Experimental
 

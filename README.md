@@ -40,7 +40,7 @@ rather than a human to type.
 - **Variant** — a profile rendered through a spec. What you look at. Cheap and disposable.
 - **Deliverable** — the one published output you actually send.
 
-The full product definition is [`docs/concept.md`](docs/concept.md).
+The full concept model is [`docs/product/concepts.md`](docs/product/concepts.md).
 
 ## Requirements
 
@@ -159,13 +159,20 @@ and are covered by tests. These are not built yet:
 - **Provenance** — per claim, whether it is your asserted fact or model-generated prose.
 - **Cover letters and applications**, from the same data model.
 
-The backlog is [`docs/tickets/Tickets.md`](docs/tickets/Tickets.md).
+The backlog is [`docs/tickets/tickets.md`](docs/tickets/tickets.md).
 
 ## Documentation
 
-- **[Concept](docs/concept.md)** — what this is, the vocabulary, the four surfaces, and what
-  v1 means. Start here.
-- **[Tickets](docs/tickets/Tickets.md)** — the backlog, open and done.
+Full docs live in [`docs/`](docs/README.md), routed by what you came to do:
+
+- **[Overview](docs/product/overview.md)** — the problem, the approach, the design principles.
+- **[Concepts](docs/product/concepts.md)** — the vocabulary. Read this second.
+- **[User guide](docs/product/user-guide.md)** — install, first run, the workflow end to end.
+- **[Platforms and status](docs/product/platforms-and-status.md)** — what works, what is
+  experimental, what is not built.
+- **[Architecture](docs/technical/architecture.md)** · **[Modules](docs/technical/module-reference.md)** ·
+  **[Data model](docs/technical/data-model-and-config.md)** · **[Testing](docs/technical/testing.md)**
+- **[Decisions](docs/decisions/README.md)** — ADRs. When a doc and an ADR disagree, the ADR wins.
 - **[llms.txt](llms.txt)** — the same orientation for an agent, without cloning.
 
 ## License

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Data model and config</title><style>
+:root{--bg:#f7f8fa;--fg:#181820;--muted:#565666;--line:#e5e7ec;--code-bg:#eef0f4;--accent:#4577d1;--link:#3a67b8}
+@media(prefers-color-scheme:dark){:root{--bg:#080a0e;--fg:#e9ecf3;--muted:#a2a7b8;--line:#232735;--code-bg:#12141b;--accent:#5b8de0;--link:#6f9ae6}}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:64px 28px 120px}
+h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
+h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
+h3{font-size:1.08rem;margin:1.8em 0 .4em}
+p{margin:.7em 0}
+a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
+a:hover{border-bottom-color:var(--link)}
+code{background:var(--code-bg);padding:.12em .4em;border-radius:4px;font:.86em/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
+pre{background:var(--code-bg);padding:16px 18px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:.85em}
+ul,ol{padding-left:1.4em;margin:.7em 0}
+li{margin:.3em 0}
+blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
+blockquote strong{color:var(--fg)}
+table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+th{background:var(--code-bg);font-weight:600}
+hr{border:none;border-top:1px solid var(--line);margin:2em 0}
+strong{font-weight:650}
+</style></head><body><main class="wrap">
+<h1>Data model and config</h1>
+<p>What the profile looks like, where the local extensions are, and how paths resolve. The vocabulary is in <a href="../product/concepts.md"><code>../product/concepts.md</code></a>.</p>
+<h2>The profile</h2>
+<p><a href="https://jsonresume.org/schema">JSON Resume</a>, draft-07. One file, and the only authored one.</p>
+<p>Sections read by the renderers: <code>basics</code> (with <code>location</code> and <code>profiles</code>), <code>work</code>, <code>education</code>, <code>skills</code>, <code>projects</code>. Other JSON Resume sections pass through untouched but unrendered.</p>
+<pre><code>{
+  "basics": {
+    "name": "Jane Smith",
+    "label": "Senior Software Engineer | Go · Python",
+    "email": "jane@example.com",
+    "phone": "(555) 555-0142",
+    "location": { "city": "Portland", "region": "OR", "countryCode": "US" },
+    "profiles": [{ "network": "GitHub", "url": "https://github.com/janesmith" }],
+    "summary": "…"
+  },
+  "skills": [{ "name": "Languages", "keywords": ["Go", "Python"] }],
+  "work": [{
+    "name": "Northwind Payments",
+    "position": "Senior Software Engineer",
+    "location": "Portland, OR (Remote)",
+    "startDate": "2021-03",
+    "highlights": ["…"]
+  }],
+  "education": [{ "institution": "…", "studyType": "…", "area": "…", "endDate": "2016-06" }]
+}</code></pre>
+<p>A complete, realistic example is <a href="../assets/demo-profile.json"><code>../assets/demo-profile.json</code></a> — the profile every screenshot in these docs renders. It lints clean, which makes it a useful baseline when a rule fires and you are unsure whether the rule or the content is wrong.</p>
+<h2>Validation</h2>
+<p>Hand-rolled in <code>model.py</code>, not run against the published schema — a deliberate limit, recorded in <a href="../product/platforms-and-status.md"><code>../product/platforms-and-status.md</code></a>.</p>
+<p><strong>Fatal</strong> (<code>ResumeError</code>, exit 2): a non-object top level; a missing <code>basics.name</code>; a dated section that is not an array, or whose entries are not objects; a date not matching <code>YYYY</code>, <code>YYYY-MM</code> or <code>YYYY-MM-DD</code>; an entry ending before it starts; <code>highlights</code> that is not an array.</p>
+<p><strong>Non-fatal</strong> (a note on stderr): an unrecognised top-level section. Reported rather than ignored, so <code>experience</code> instead of <code>work</code> surfaces immediately.</p>
+<p>Dates are compared as <strong>strings</strong>, which is why the ISO format is enforced rather than suggested — zero-padded ISO 8601 sorts lexicographically.</p>
+<h2>Local extensions</h2>
+<p>Two fields JSON Resume has no equivalent for. Both are harmless locally; both would be rejected by the JSON Resume <strong>registry</strong>, which validates against a stricter draft-04 schema with <code>additionalProperties: false</code>. That is one more reason not to use it.</p>
+<h3><code>work[].note</code> — stable</h3>
+<p>A free-text line under a role, rendered in italic. Used for anything the schema cannot say:</p>
+<pre><code>{ "note": "Promoted from Software Engineer, December 2025" }</code></pre>
+<h3><code>work[].stints</code> — experimental</h3>
+<p>Per-title bullets within one employer, so a promotion shows <em>which</em> work was done at which level:</p>
+<pre><code>{
+  "name": "Northwind Payments",
+  "highlights": ["A bullet spanning the whole tenure."],
+  "stints": [
+    { "position": "Staff Engineer",  "startDate": "2023-06",
+      "highlights": ["Led the platform team of 6."] },
+    { "position": "Senior Engineer", "startDate": "2021-03", "endDate": "2023-06",
+      "highlights": ["Shipped 14 API endpoints."] }
+  ]
+}</code></pre>
+<p>Newest first. Each stint requires <code>position</code>; dates and <code>highlights</code> are optional. Employer-level <code>highlights</code> remain, for work spanning the whole tenure.</p>
+<p>The older <strong><code>promotions</code></strong> field (prior titles, no bullets) normalises into stints on read, so existing documents keep rendering. <strong>Carrying both is an error</strong> — two sources for one fact is the drift worth preventing.</p>
+<p>See <a href="../product/platforms-and-status.md"><code>../product/platforms-and-status.md</code></a> for why this is experimental and RP-0024 for what would promote it. Also RP-0014: check for an upstream field before it spreads.</p>
+<h2>Configuration</h2>
+<p>There is no config file. Everything resolves from the environment or the filesystem.</p>
+<table><thead><tr><th>Variable</th><th>Effect</th></tr></thead><tbody><tr><td><code>RESUME_PIPELINE_RESUME</code></td><td>Absolute path to the profile. Beaten by an explicit CLI argument.</td></tr><tr><td><code>RESUME_PIPELINE_CHROME</code></td><td>Path to the browser used for PDF export. Errors if it does not exist rather than falling back silently.</td></tr><tr><td><code>XDG_CACHE_HOME</code></td><td>Root for generated output. Defaults to <code>~/.cache</code>.</td></tr></tbody></table>
+<p><strong>Profile resolution</strong>, in order: explicit argument → <code>RESUME_PIPELINE_RESUME</code> → the nearest <code>resume.json</code> or <code>Resume/resume.json</code> walking up from the working directory.</p>
+<h2>Where output goes</h2>
+<table><thead><tr><th>Kind</th><th>Location</th><th>Lifetime</th></tr></thead><tbody><tr><td><strong>Deliverable</strong></td><td>Beside the profile, as <code>&lt;Stem&gt;.pdf</code> / <code>.html</code> / <code>.md</code></td><td>Overwritten in place; there is exactly one</td></tr><tr><td><strong>Catalogue</strong></td><td><code>&lt;cache&gt;/catalogue/</code></td><td>Disposable; rebuild is deterministic</td></tr><tr><td><strong>Scratch exports</strong></td><td><code>&lt;cache&gt;/</code></td><td>Disposable</td></tr></tbody></table>
+<p><code>&lt;cache&gt;</code> is <code>${XDG_CACHE_HOME:-~/.cache}/resume-pipeline/&lt;workspace folder name&gt;</code>.</p>
+<p><strong>The stem is not always derived.</strong> If a complete trio already exists in the folder, publishing reuses that name. Otherwise it is <code>&lt;Lastname&gt;_Resume</code>. This exists because publishing under a second convention does not replace a deliverable — it duplicates it.</p>
+<h2>The workspace</h2>
+<p>What <code>init</code> writes. Generic; nothing here is anyone's actual resume.</p>
+<pre><code>CLAUDE.md                        working rules, including anti-fabrication
+README.md                        orientation
+.claude/skills/career/SKILL.md   the agent skill
+Resume/resume.json               starter profile
+Resume/Archive/                  pre-edit snapshots, YYYYMMDD-description.ext
+Cover Letters/                   designed, unbuilt
+Applications/                    designed, unbuilt
+Reference/</code></pre>
+<p><code>init</code> never overwrites an existing file and reports what it skipped, so it is safe to re-run — which is also how <code>--skill-only</code> upgrades the skill in a workspace that already exists.</p>
+</main></body></html>

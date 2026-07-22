@@ -1,0 +1,73 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jsonresume/resume-schema/master/schema.json",
+  "_comment": "A fictional profile, used for the screenshots in the docs and as something to point the tool at before you have written your own. Nobody's real resume lives in this repo.",
+  "basics": {
+    "name": "Jane Smith",
+    "label": "Senior Software Engineer | Go · Python · Distributed Systems",
+    "email": "jane@example.com",
+    "phone": "(555) 555-0142",
+    "location": { "city": "Portland", "region": "OR", "countryCode": "US" },
+    "profiles": [
+      { "network": "LinkedIn", "username": "janesmith", "url": "https://www.linkedin.com/in/janesmith" },
+      { "network": "GitHub", "username": "janesmith", "url": "https://github.com/janesmith" },
+      { "network": "Website", "username": "janesmith", "url": "https://janesmith.example.com" }
+    ],
+    "summary": "Senior backend engineer with 9 years building and operating distributed systems in Go and Python. Works across the stack — API design, data modelling, and the observability that keeps a service honest at 3am — on teams of 5 to 20. Most recently led the billing platform rewrite at a payments company, moving 40 million monthly transactions onto a new ledger with no customer-visible downtime."
+  },
+  "skills": [
+    { "name": "Languages", "keywords": ["Go", "Python", "SQL", "TypeScript", "Bash"] },
+    { "name": "Infrastructure", "keywords": ["Kubernetes", "Terraform", "AWS", "Docker", "Kafka"] },
+    { "name": "Data", "keywords": ["PostgreSQL", "Redis", "Elasticsearch", "ClickHouse"] },
+    { "name": "Practices", "keywords": ["Distributed Tracing", "Load Testing", "CI/CD", "Incident Review", "Mentoring"] }
+  ],
+  "work": [
+    {
+      "name": "Northwind Payments",
+      "position": "Senior Software Engineer",
+      "location": "Portland, OR (Remote)",
+      "startDate": "2021-03",
+      "highlights": [
+        "Led the billing platform rewrite — migrated 40M monthly transactions from a legacy ledger to an event-sourced service in Go, with zero customer-visible downtime across a 6-month cutover.",
+        "Cut p99 checkout latency from 840ms to 190ms by replacing synchronous fan-out with a Kafka consumer group and a read model in Redis.",
+        "Designed the double-entry ledger schema now backing 4 product lines, including the reconciliation job that closes the books nightly against 3 payment processors.",
+        "Grew the integration suite to 1,400 tests against real Postgres and Kafka, taking the median CI run from 22 minutes to 6.",
+        "Ran the on-call rotation for 12 engineers — wrote the incident review practice, and reduced repeat pages by 60% over three quarters.",
+        "Mentored 4 engineers through their first production services; two have since become tech leads."
+      ]
+    },
+    {
+      "name": "Contoso Logistics",
+      "position": "Software Engineer",
+      "location": "Seattle, WA (Hybrid)",
+      "startDate": "2018-06",
+      "endDate": "2021-02",
+      "highlights": [
+        "Built the route-optimisation API in Python and Go, serving 9,000 daily dispatch requests across 120 depots.",
+        "Replaced 14 cron jobs with a single scheduler service, eliminating the overnight failure class that caused most Monday incidents.",
+        "Introduced distributed tracing across 11 services, which located a connection-pool leak that had caused intermittent timeouts for over a year.",
+        "Wrote the ETL pipeline moving 2M shipment events nightly into ClickHouse, cutting the analytics team's query times from minutes to seconds."
+      ]
+    },
+    {
+      "name": "Fabrikam Software",
+      "position": "Software Engineer",
+      "location": "Seattle, WA",
+      "startDate": "2016-08",
+      "endDate": "2018-05",
+      "highlights": [
+        "Shipped the customer-facing reporting UI in TypeScript and React, used weekly by 3,000 accounts.",
+        "Migrated the primary datastore from MySQL to PostgreSQL over 5 months, with a dual-write phase and no data loss.",
+        "Automated the release pipeline, taking deploys from a fortnightly manual ritual to 8 per week."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Oregon State University",
+      "location": "Corvallis, OR",
+      "studyType": "Bachelor of Science",
+      "area": "in Computer Science",
+      "endDate": "2016-06"
+    }
+  ]
+}
