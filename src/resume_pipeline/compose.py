@@ -144,6 +144,25 @@ def all_specs() -> list[Spec]:
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
 
+def _page_rules(full_bleed: bool, pad: str) -> str:
+    """Page boxes, and the reason the bleeding header needs two of them.
+
+    The `band` header is a dark banner that runs to the paper edge, which needs a
+    page with no margin. Setting that globally is what produced the bug this
+    guards: *every* page lost its margins, so a resume that ran to a second page
+    put body text 1.6pt from the edge — off the printable area of most printers,
+    and inside the region ATS parsers routinely crop.
+
+    So the bleed is scoped to the first page, where the banner actually is.
+    Subsequent pages keep normal vertical margins. Horizontal padding comes from
+    `.wrap` in the bleeding case, so body text stays inset on every page.
+    """
+    if not full_bleed:
+        return f"@page {{ size: Letter; margin: 0.55in {pad}; }}"
+    return (f"@page {{ size: Letter; margin: 0.55in 0; }}\n"
+            f"@page :first {{ margin: 0 0 0.55in; }}")
+
+
 def css(spec: Spec) -> str:
     _, accent, ink, tint, on_dark = PALETTES[spec.palette]
     _, body_font, display_font, _ = TYPEFACES[spec.typeface]
@@ -153,7 +172,7 @@ def css(spec: Spec) -> str:
     full_bleed = spec.header == "band"
 
     return f"""
-@page {{ size: Letter; margin: {"0" if full_bleed else f"0.55in {pad}"}; }}
+{_page_rules(full_bleed, pad)}
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 body {{ font-family:{body_font}; font-size:10.5pt; line-height:{leading};
         color:{ink}; background:#fff; }}

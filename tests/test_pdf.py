@@ -85,6 +85,47 @@ def test_text_is_not_scrambled_by_the_layout(rendered):
     assert text.index("Alex Rivera") < text.index("Northwind")
 
 
+@pytest.mark.parametrize("header", compose.HEADERS)
+def test_no_layout_prints_to_the_paper_edge(tmp_path, header):
+    """Every page of every layout keeps a real margin.
+
+    The `band` header bleeds a dark banner to the paper edge, which needs a page
+    box with no margin. Setting that globally cost *every* page its margins, so a
+    resume running onto a second page put body text 1.6pt from the edge — outside
+    the printable area of most printers. The bleed now applies only to the first
+    page, where the banner is.
+
+    A long profile is used deliberately: the bug was invisible on anything that
+    fitted on one page.
+    """
+    import json
+
+    from tests.conftest import CLEAN
+
+    long_profile = json.loads(json.dumps(CLEAN))
+    long_profile["work"] *= 4  # force a second page
+    source = tmp_path / "resume.json"
+    source.write_text(json.dumps(long_profile), encoding="utf-8")
+    resume = model.load(source)
+
+    spec = compose.Spec(0, 0, header, "pills", "ladder", 1)
+    out = tmp_path / f"{spec.name}.pdf"
+    pdf.write(compose.render(resume, spec), out)
+
+    with fitz.open(out) as document:
+        assert document.page_count > 1, "fixture no longer spans pages"
+        for number, page in enumerate(document):
+            blocks = page.get_text("blocks")
+            if not blocks:
+                continue
+            left = min(b[0] for b in blocks)
+            top = min(b[1] for b in blocks)
+            assert left >= 25, f"{spec.name} page {number + 1}: left margin {left:.1f}pt"
+            # Page 1 of a bleeding header is the banner itself, which is meant to
+            # touch the top edge; its text is still inset by the banner's padding.
+            assert top >= 25, f"{spec.name} page {number + 1}: top margin {top:.1f}pt"
+
+
 @pytest.mark.parametrize("spec", space.spread(3), ids=lambda s: s.name)
 def test_a_spread_of_layouts_all_extract_cleanly(tmp_path, spec):
     import json

@@ -111,7 +111,10 @@ _PAGE = r"""<!doctype html>
                transform-origin:top left;pointer-events:none}
   .shot .veil{position:absolute;inset:0}
 
-  .info{padding:9px 11px;display:flex;flex-direction:column;gap:7px}
+  /* Cards in a row are as tall as the tallest, and chip rows wrap to different
+     heights — so the actions are pinned to the bottom rather than floating
+     wherever the chips happen to end. */
+  .info{padding:9px 11px;display:flex;flex-direction:column;gap:7px;flex:1}
   .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .num{font-size:11px;font-weight:700;color:#fff;background:var(--accent);
        border-radius:20px;min-width:20px;text-align:center;padding:1px 6px}
@@ -122,7 +125,10 @@ _PAGE = r"""<!doctype html>
   .chips{display:flex;flex-wrap:wrap;gap:4px}
   .chip{font-size:10.5px;background:var(--bg);border:1px solid var(--line);
         border-radius:20px;padding:1px 7px;color:var(--muted)}
-  .acts{display:flex;gap:6px}
+  /* Pinned to the bottom: cards in a row are as tall as the tallest, and chip
+     rows wrap to different heights, so without this the buttons sit at a
+     different height on every card. */
+  .acts{display:flex;gap:6px;margin-top:auto}
   .acts button{flex:1;padding:5px 0;font-size:12px}
 
   dialog{border:0;border-radius:14px;padding:0;background:var(--card);color:var(--ink);
@@ -155,9 +161,9 @@ _PAGE = r"""<!doctype html>
     <b id="dlgName"></b>
     <span class="meta" id="dlgDesc"></span>
     <span class="grow"></span>
-    <button id="dlgCopy">Copy name</button>
+    <button id="dlgCopy">Copy Name</button>
     <button id="dlgExport" class="primary" hidden>Export PDF</button>
-    <button id="dlgClose" class="ghost">Close</button>
+    <button id="dlgClose">Close</button>
   </div>
   <iframe id="dlgFrame" title="preview"></iframe>
 </dialog>
@@ -209,7 +215,7 @@ function render(){
           .map(val => `<span class="chip">${val}</span>`).join("")}</div>
         <div class="acts">
           <button class="o">Open</button>
-          <button class="c">Copy name</button>
+          <button class="c">Copy Name</button>
         </div>
       </div>`;
     const frame = card.querySelector("iframe");
