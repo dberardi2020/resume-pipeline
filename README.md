@@ -13,11 +13,11 @@ you send drifts from the file you edit, and choosing how it *looks* means pickin
 handful of themes somebody else designed.
 
 This keeps one structured **profile** as the only thing you edit, generates a **space** of
-5,040 layouts from it, and lets you browse that space until something looks right. The
+10,080 layouts from it, and lets you browse that space until something looks right. The
 editing happens through your agent: you say what to change, it changes the data. Publishing
 writes one deliverable — PDF, HTML and Markdown — from the layout you chose.
 
-![Eight of 5,040 layouts, each a live render captioned with its axis values as chips](docs/assets/viewer.png)
+![Eight layouts from the space, each a live render captioned with its axis values as chips](docs/assets/viewer.png)
 
 **Not another resume generator.** That category is well served and mostly abandoned. Three
 things here do not exist elsewhere: layouts as a *design space* rather than a theme list, a
@@ -29,11 +29,13 @@ rather than a human to type.
 - **Profile** — your resume as structured data ([JSON Resume](https://jsonresume.org/schema)).
   The only file you edit. A *superset*: it holds everything you have ever done, including
   what no single resume would show.
-- **Axis** — one independent presentation choice. Six of them: palette, typeface, header,
-  skills, promo, density.
+- **Axis** — one independent presentation choice. Seven of them: palette, typeface, header,
+  skills, promo, density, grouping.
 - **Spec** — one point in the space, a value on every axis, named in full:
-  `harbor-grotesk-band-pills-ladder-airy`. Pure data — save it, share it, publish against it.
-- **Space** — the product of the axes. **5,040 layouts**, enumerated rather than curated.
+  `harbor-grotesk-band-pills-ladder-airy-grouped`. Pure data — save it, share it, publish
+  against it.
+- **Space** — the product of the axes. **10,080 layouts**, enumerated rather than curated.
+  Combinatorial, not curated: 28 hand-authored axis values over one skeleton.
 - **Variant** — a profile rendered through a spec. What you look at. Cheap and disposable.
 - **Deliverable** — the one published output you actually send.
 

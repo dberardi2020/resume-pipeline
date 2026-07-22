@@ -68,7 +68,7 @@ published spec silently starts pointing somewhere else.
 
 ### Space
 
-The product of all axes: **5,040 specs today**. Not a gallery someone curated — a
+The product of all axes: **10,080 specs today**. Not a gallery someone curated — a
 combinatorial space, enumerated exhaustively and browsed with facets. The axes *are* the
 facets, so "show me every layout in this palette" and "this layout in any palette but
 this one" are the same operation.
@@ -311,8 +311,8 @@ Honest ledger, so this document does not overstate the repo.
 | Area | State |
 |---|---|
 | Pure `render(profile, spec)` | **Exists** |
-| Six axes, 5,040-spec space | **Exists** |
-| Spec naming | **Exists** — fully worded and stable; every name round-trips, asserted across all 5,040 |
+| Seven axes, 10,080-spec space | **Exists** — combinatorial, not curated: 28 hand-authored axis values over one HTML skeleton |
+| Spec naming | **Exists** — fully worded and stable; every name round-trips, asserted across the whole space |
 | Layout + content linter | **Exists** |
 | Publish to PDF/HTML/Markdown | **Exists** |
 | `init` workspace scaffold | **Exists**, and ships the `career` skill |
@@ -330,13 +330,14 @@ Honest ledger, so this document does not overstate the repo.
 
 ## Open questions
 
-1. **Rendering 5,040 variants for browse.** On-demand rendering with pagination is the
+1. **Rendering the whole space for browse.** On-demand rendering with pagination is the
    obvious answer; whether the exported (static) catalogue can offer the same facets over
    a subset, and how that subset is chosen, is not settled.
 2. **Where the inspector runs.** The explorer already serves HTTP; whether the inspector
    is a route on the same server or a separate surface is undecided.
-3. **A seventh axis** would take the space past 5,040 and past what a static export can
-   hold. The threshold at which browse needs a different answer is unknown.
+3. **An eighth axis** would take the space past 10,080 and past what a static export can
+   hold. The threshold at which browse needs a different answer is unknown. The seventh
+   (`grouping`) also lengthened every spec name by a segment — adding axes is not free.
 4. **Retiring the hand-written themes.** One of them is two-column and deliberately not
    parse-safe, so it cannot be expressed as a spec. Keep it as the single exception, or
    drop it.
