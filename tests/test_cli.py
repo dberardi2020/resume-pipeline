@@ -135,3 +135,43 @@ def test_strict_lint_fails_on_warnings(workspace):
 
     assert cli.main(["lint", str(workspace / "resume.json")]) == 0
     assert cli.main(["lint", str(workspace / "resume.json"), "--strict"]) == 1
+
+
+# ── the deliverable's name ────────────────────────────────────────────────────
+
+def test_publishing_matches_a_name_already_in_the_folder(tmp_path, resume):
+    """Publishing must not invent a second naming convention.
+
+    A workspace may already call its deliverable something this tool would not
+    have chosen. Writing under a different name does not replace it — it leaves
+    two resumes side by side, one of them stale, which is exactly the "which file
+    do I send?" confusion publishing exists to end.
+    """
+    from resume_pipeline import deliverable
+    for suffix in (".pdf", ".html", ".md"):
+        (tmp_path / f"Resume_Rivera{suffix}").write_text("old", encoding="utf-8")
+
+    assert deliverable.existing_stem(tmp_path) == "Resume_Rivera"
+    assert deliverable.default_stem(resume, tmp_path) == "Resume_Rivera"
+
+
+def test_an_empty_folder_gets_the_derived_name(tmp_path, resume):
+    from resume_pipeline import deliverable
+    assert deliverable.existing_stem(tmp_path) is None
+    assert deliverable.default_stem(resume, tmp_path) == "Rivera_Resume"
+
+
+def test_an_ambiguous_folder_falls_back_to_the_derived_name(tmp_path, resume):
+    """Two complete trios: no way to tell which is *the* deliverable."""
+    from resume_pipeline import deliverable
+    for stem in ("Resume_Rivera", "Rivera_CV"):
+        for suffix in (".pdf", ".html", ".md"):
+            (tmp_path / f"{stem}{suffix}").write_text("x", encoding="utf-8")
+    assert deliverable.existing_stem(tmp_path) is None
+    assert deliverable.default_stem(resume, tmp_path) == "Rivera_Resume"
+
+
+def test_a_partial_trio_is_not_a_deliverable(tmp_path, resume):
+    from resume_pipeline import deliverable
+    (tmp_path / "Stray.pdf").write_text("x", encoding="utf-8")
+    assert deliverable.existing_stem(tmp_path) is None

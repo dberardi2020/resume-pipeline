@@ -14,8 +14,33 @@ from pathlib import Path
 from . import compose, markdown, pdf
 
 
-def default_stem(resume) -> str:
-    """`<Lastname>_Resume`, falling back to something sane for one-word names."""
+SUFFIXES = (".pdf", ".html", ".md")
+
+
+def existing_stem(out_dir: Path) -> str | None:
+    """The stem of a deliverable already in this folder, if there is exactly one.
+
+    A workspace may already name its deliverable something other than this tool
+    would choose — and publishing under a second convention does not replace the
+    first, it *duplicates* it: two resumes side by side, one of them stale, which
+    is precisely the "which file do I send?" confusion publishing exists to end.
+
+    Ambiguous cases (no trio, or more than one) return None and let the caller
+    fall back to the default.
+    """
+    out_dir = Path(out_dir)
+    if not out_dir.is_dir():
+        return None
+    stems = {p.stem for p in out_dir.iterdir() if p.suffix in SUFFIXES}
+    complete = [s for s in stems
+                if all((out_dir / f"{s}{suffix}").is_file() for suffix in SUFFIXES)]
+    return complete[0] if len(complete) == 1 else None
+
+
+def default_stem(resume, out_dir: Path | None = None) -> str:
+    """What to call the deliverable: match what is already there, else derive it."""
+    if out_dir is not None and (found := existing_stem(out_dir)):
+        return found
     parts = (resume.name or "").split()
     last = parts[-1] if parts else "Resume"
     return f"{last}_Resume".replace(" ", "_")
@@ -29,7 +54,7 @@ def write(resume, spec: compose.Spec, out_dir: Path, stem: str | None = None) ->
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    stem = stem or default_stem(resume)
+    stem = stem or default_stem(resume, out_dir)
 
     html = compose.render(resume, spec)
     (out_dir / f"{stem}.html").write_text(html, encoding="utf-8")

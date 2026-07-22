@@ -125,8 +125,8 @@ def cmd_catalogue(args) -> int:
     index, specs = catalogue.build(resume, args.count, out_dir)
     print(f"built {len(specs)} layouts of {space.TOTAL:,}")
     width = max((len(s.name) for s in specs), default=0)
-    for n, spec in enumerate(specs, 1):
-        print(f"  {n:>2}. {spec.name:<{width}}  {spec.description}")
+    for spec in specs:
+        print(f"  {spec.name:<{width}}  {spec.description}")
     print(f"\nopen: file://{index}")
     print("publish one with: resume-pipeline publish --theme <name>")
     return 0
@@ -158,7 +158,7 @@ def cmd_publish(args) -> int:
     spec = resolve_spec(args.theme)
     theme = compose.as_theme(spec)
     out_dir = Path(args.resume).parent
-    stem = args.name or deliverable.default_stem(resume)
+    stem = args.name or deliverable.default_stem(resume, out_dir)
 
     try:
         deliverable.write(resume, spec, out_dir, stem)

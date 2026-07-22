@@ -32,12 +32,12 @@ def test_catalogue_is_reproducible(tmp_path, resume):
 
 
 def test_catalogue_options_json_is_agent_readable(tmp_path, resume):
-    """`use number 7` has to resolve without parsing HTML."""
+    """An agent must be able to name a layout without parsing HTML."""
     _, specs = catalogue.build(resume, 5, tmp_path)
     payload = json.loads((tmp_path / "options.json").read_text())
 
-    assert [o["number"] for o in payload["options"]] == [1, 2, 3, 4, 5]
     assert [o["name"] for o in payload["options"]] == [s.name for s in specs]
+    assert not any("number" in o for o in payload["options"])
     for option in payload["options"]:
         assert (tmp_path / option["preview"]).exists()
         assert space.parse(option["name"]) is not None

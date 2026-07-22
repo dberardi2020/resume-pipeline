@@ -126,7 +126,8 @@ def serve(resume_path: Path, out_dir: Path, stem: str, count: int = 24,
         # Publishing writes beside the profile, never into the cache: that is
         # the whole distinction between an export and the deliverable.
         "publish_dir": Path(resume_path).parent,
-        "publish_stem": publish_stem or deliverable.default_stem(resume),
+        "publish_stem": publish_stem or deliverable.default_stem(
+            resume, Path(resume_path).parent),
         "specs": space.spread(count),
     }
     httpd = ThreadingHTTPServer(("127.0.0.1", port), partial(Handler, ctx=ctx))

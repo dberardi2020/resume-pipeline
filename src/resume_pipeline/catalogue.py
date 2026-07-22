@@ -26,12 +26,12 @@ def build(resume, count: int, out_dir: Path) -> tuple[Path, list]:
     index = out_dir / "index.html"
     index.write_text(viewer.page(specs, resume, preview="file"), encoding="utf-8")
 
-    # The page is for a human; this is for the agent standing next to them. It
-    # makes "use number 7" resolvable without parsing HTML or guessing.
+    # The page is for a human; this is for the agent standing next to them, so a
+    # layout can be named in conversation without parsing HTML. The spec name is
+    # the handle — it is stable, decodable, and unique, which an ordinal is not.
     (out_dir / "options.json").write_text(json.dumps({
         "options": [
-            dict(number=n, preview=f"{s.name}.html", **viewer.describe(s))
-            for n, s in enumerate(specs, 1)
+            dict(preview=f"{s.name}.html", **viewer.describe(s)) for s in specs
         ],
     }, indent=2) + "\n", encoding="utf-8")
     return index, specs

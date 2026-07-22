@@ -111,7 +111,7 @@ _PAGE = r"""<!doctype html>
 
   /* A real 8.5in-wide render, scaled down — not a screenshot. What you see here is
      exactly what publishes. */
-  .shot{position:relative;height:330px;overflow:hidden;background:#fff;cursor:pointer;
+  .shot{position:relative;height:400px;overflow:hidden;background:#fff;cursor:pointer;
         border-bottom:1px solid var(--line)}
   .shot iframe{position:absolute;top:0;left:0;width:816px;height:1056px;border:0;
                transform-origin:top left;pointer-events:none}
@@ -122,8 +122,6 @@ _PAGE = r"""<!doctype html>
      wherever the chips happen to end. */
   .info{padding:9px 11px;display:flex;flex-direction:column;gap:7px;flex:1}
   .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  .num{font-size:11px;font-weight:700;color:#fff;background:var(--accent);
-       border-radius:20px;min-width:20px;text-align:center;padding:1px 6px}
   /* Names are long and hyphenated by design. `break-all` would split them
      mid-word (`badge-co / mpact`); this wraps at the hyphens instead. */
   .nm{font-size:12px;font-weight:700;letter-spacing:-.1px;
@@ -165,9 +163,8 @@ _PAGE = r"""<!doctype html>
     <span class="grow"></span>
     <span class="meta"><kbd>↵</kbd> open · <kbd>Esc</kbd> close</span>
   </div>
-  <p class="hint">Open any layout, then <b>Make this my resume</b> to publish it — or tell
-  your agent “publish number 7”. Every preview is a live render, identical to what
-  gets published.</p>
+  <p class="hint">Open any layout, then <b>Make this my resume</b> to publish it — or give
+  your agent its name. Every preview is a live render, identical to what gets published.</p>
 </header>
 
 <div class="grid" id="grid"></div>
@@ -230,9 +227,8 @@ function render(){
       <div class="shot"><iframe loading="lazy" src="${previewUrl(v.name)}"
            title="${v.name}" scrolling="no"></iframe><div class="veil"></div></div>
       <div class="info">
-        <div class="row"><span class="num">${i+1}</span>
-          <div class="chips">${Object.values(v.axes)
-            .map(val => `<span class="chip">${val}</span>`).join("")}</div></div>
+        <div class="chips">${Object.values(v.axes)
+          .map(val => `<span class="chip">${val}</span>`).join("")}</div>
         <div class="acts">
           <button class="o">Open</button>
           <button class="c">Copy Name</button>
