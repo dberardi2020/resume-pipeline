@@ -32,6 +32,7 @@ The committed next few, in intended order.
 | [RP-0001](#rp-0001) | P1 | Feature | Import an existing resume (PDF/DOCX → `resume.json`) |
 | [RP-0007](#rp-0007) | P1 | Feature | Provenance model — asserted fact vs. model-generated prose |
 | [RP-0025](#rp-0025) | P1 | Feature | `import` as a skill, not a parser |
+| [RP-0039](#rp-0039) | P1 | Feature | Publish a subset of skills without deleting from the profile |
 | [RP-0003](#rp-0003) | P2 | Feature | Remix — pin a layout and vary one axis at a time |
 | [RP-0004](#rp-0004) | P2 | Feature | Global style locks + loadouts |
 | [RP-0008](#rp-0008) | P2 | Feature | Explain what an ATS actually is, evidence-first |
@@ -93,7 +94,9 @@ Pin axes (e.g. always `charter` + `moss`) so browsing covers only the remaining 
 ### RP-0005 — A content design space, alongside the style space {#rp-0005}
 **P3 · Feature · model**
 
-Today a `Spec` describes only *presentation*. Section ordering, per-section short/long bullet variants, and which subset of the master skill list renders are all *content* choices, and the explorer should browse the product of both spaces. This is also the correct home for per-variant skills curation — selection over the master profile, never deletion from it. Precondition for the drag-and-drop builder (RP-0006) and for RP-0013.
+Today a `Spec` describes only *presentation*. Section ordering, per-section short/long bullet variants, and which subset of the master skill list renders are all *content* choices, and the explorer should browse the product of both spaces. Precondition for the drag-and-drop builder (RP-0006).
+
+**Scope narrowed 2026-07-23 — skills selection moved to RP-0039.** This ticket used to also claim per-variant *skills curation* ("selection over the master profile, never deletion from it"). That slice became urgent on its own — a 33-skill profile against guidance of 8–12, with deletion forbidden by rule — so it was carved out as **RP-0039** and raised to P1 ahead of this. RP-0005 remains the home for the **general** content space: section ordering, bullet variants, and browsing content × style as one product. Don't re-implement skill selection here; consume RP-0039's.
 
 ### RP-0006 — Drag-and-drop builder {#rp-0006}
 **P3 · Feature · ux**
@@ -120,7 +123,9 @@ Same data model plus a job posting; the reason RenderCV was not adopted (its sch
 ### RP-0013 — Lint variants, not the master profile {#rp-0013}
 **P3 · Feature · lint**
 
-`skills/bloat` currently fires against `resume.json`, but the master profile is *supposed* to be a superset — the warning belongs on a rendered variant. Requires RP-0005.
+`skills/bloat` currently fires against `resume.json`, but the master profile is *supposed* to be a superset — the warning belongs on a rendered variant. Today the rule has no sanctioned remedy: the only way to satisfy it is a deletion the profile forbids.
+
+**Unblocked by RP-0039, not RP-0005 (revised 2026-07-23).** This used to say "Requires RP-0005", but it doesn't need the whole content space — it needs a rendered variant to carry *its own skill set*, which is exactly what **RP-0039** delivers. Once that lands, `skills/bloat` has something meaningful to fire against and can be re-pointed at the variant. RP-0005 remains a later generalisation, not a precondition.
 
 ### RP-0014 — `work[].promotions` is a local schema extension {#rp-0014}
 **P3 · Chore · model**
@@ -184,7 +189,9 @@ What survives is the genuinely valuable piece: **`import` (RP-0001) as a skill r
 ### RP-0026 — Per-skill confidence / weight {#rp-0026}
 **P3 · Feature · model**
 
-A number on each skill saying how strongly the person would claim it, so per-variant curation can surface the right subset for a target role instead of the whole master list — the missing input to RP-0005 and RP-0013. Two hard parts, both about *entry* rather than storage: rating 28 skills one at a time through an agent is miserable, so this wants a grid in the inspector — bulk, comparative, one screen — which means it lands **after** the inspector gains write access, not before. And a weight is a self-assessment, not a fact, so it must never be inferred on the user's behalf: an unrated skill stays unrated. Schema is trivial; JSON Resume already has a free-text `skills[].level`, so check whether that or a numeric extension is the right home.
+A number on each skill saying how strongly the person would claim it, so per-variant curation can surface the right subset for a target role instead of the whole master list — the missing input to **RP-0039**'s selection (and through it RP-0013).
+
+**An input, not a precondition (2026-07-23).** RP-0039 ships selection as a hand-picked set; weights would later make that selection *derivable* for a target role rather than hand-maintained. Don't gate RP-0039 on this. Two hard parts, both about *entry* rather than storage: rating 28 skills one at a time through an agent is miserable, so this wants a grid in the inspector — bulk, comparative, one screen — which means it lands **after** the inspector gains write access, not before. And a weight is a self-assessment, not a fact, so it must never be inferred on the user's behalf: an unrated skill stays unrated. Schema is trivial; JSON Resume already has a free-text `skills[].level`, so check whether that or a numeric extension is the right home.
 
 ### RP-0027 — Verify on Windows, then restore the badge {#rp-0027}
 **P2 · Chore · quality**
@@ -245,6 +252,24 @@ Fixture data, click-around, no backend. Ship a static site (GitHub Pages, matchi
 **Long-term arc:** grow it into *upload/import a resume (or paste JSON Resume) → browse layouts → export/save*, with browser-local state (eventually accounts) so the whole flow runs in the page and no server sees the resume — the privacy property RP-0023 wants. Sequence: the fixture demo first (cheap, high signal); the import/export flow after RP-0001. Enriches RP-0023 and RP-0016.
 
 **Raised P2 → P1 (2026-07-23):** the cheapest thing that changes the project's *reach* — it attacks RP-0023's install barrier at a fraction of the cost. Land **RP-0018** before or alongside it: a public link makes the viewer everyone's first impression.
+
+### RP-0039 — Publish a subset of skills without deleting from the profile {#rp-0039}
+**P1 · Feature · model**
+
+The master profile is a superset *by design*, and the rule is **never delete a skill from it** — but nothing renders a *subset*, so in practice the profile can only ever grow, and `skills/bloat` fires with no sanctioned remedy. The two rules collide: the only way to shrink what publishes is a deletion the profile forbids.
+
+Hit for real on 2026-07-23 — adding an `Agentic Engineering` bucket took a profile to **33 skills** against guidance of 8–12, and every low-signal entry crowding it out (`VSCode`, `SSMS`, `Jira`) was unremovable by rule. The user's framing: *"I don't want to cut low-value skills from the JSON, but I want to manage and publish the high-value ones."*
+
+Scope is deliberately **narrower than RP-0005**: choose which skills publish. Not section ordering, not short/long bullet variants, not a browsable content space.
+
+**Minimal shape — selection is data an agent edits; no UI.** Two candidate homes, and picking between them is this ticket's real question:
+
+- a per-skill flag in `resume.json` — content, travels with the profile, visible in diffs; or
+- a selection list in the `.resume-pipeline.json` sidecar — tool state, matching ADR-0009's precedent for remembered choices, keeping the profile pure. Also generalises to *per-target* selections later (one set for backend roles, another for agentic ones).
+
+**Explicitly deferred: visual/bulk management of the master list.** Selecting 30+ items one at a time through an agent is miserable — same reasoning as RP-0026 — so that wants a grid or inspector screen, and it lands after the inspector gains write access. Agent-plus-JSON is the acceptable interim.
+
+Carves the urgent slice out of **RP-0005**, which stays the home for the general content space. Partially unblocks **RP-0013**: once a rendered variant has its own skill set, `skills/bloat` finally has something meaningful to fire against. **RP-0026** (per-skill weight) is the better *input* to selection later, not a precondition.
 
 ## Conventions
 
