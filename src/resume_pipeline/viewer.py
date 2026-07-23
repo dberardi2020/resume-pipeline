@@ -56,12 +56,17 @@ def page(specs, resume, *, preview: str = "file", exportable: bool = False,
     # viewer can offer "this layout, that colour" as an instant re-render of a
     # neighbouring spec rather than a live edit. The swatch colour is the accent.
     palettes = [{"name": p[0], "accent": p[1]} for p in compose.PALETTES]
+    # Typeface is the same story on the second name segment: a small closed set, so
+    # it earns its own "hold this constant" bar too — but sample chips rather than
+    # swatches, each rendered in its own face, since a font can't be a dot. (RP-0037.)
+    typefaces = [{"name": t[0], "font": t[1]} for t in compose.TYPEFACES]
     return _PAGE.replace("__PAGES__", str(pages)) \
                 .replace("__TITLE__", title) \
                 .replace("__TOTAL__", f"{space.TOTAL:,}") \
                 .replace("__PREVIEW__", preview) \
                 .replace("__EXPORTABLE__", "true" if exportable else "false") \
                 .replace("__PALETTES__", json.dumps(palettes)) \
+                .replace("__TYPEFACES__", json.dumps(typefaces)) \
                 .replace("__OPTIONS__", json.dumps(options))
 
 
@@ -175,6 +180,18 @@ _PAGE = r"""<!doctype html>
   .sw-varied.on{border-color:var(--accent);color:var(--accent);font-weight:600}
   .dlg-palette{padding:8px 14px;border-bottom:1px solid var(--line)}
 
+  /* Type bar. Typeface is the second axis and the second name segment — the same
+     "hold one constant while the rest vary" control as colour, but a font is not a
+     dot: each chip is a text sample rendered in its own face, so you pick by the
+     look of the letters, not a label. Only four faces, so it costs less room than
+     the colour swatches. */
+  .tf{font-size:12.5px;line-height:1;padding:4px 11px;border-radius:20px;
+      border:1px solid var(--btn-line);background:var(--btn);color:var(--ink);
+      cursor:pointer;transition:border-color .12s,color .12s}
+  .tf:hover{border-color:var(--accent);color:var(--accent)}
+  .tf.on{border-color:var(--accent);color:var(--accent);font-weight:600}
+  .dlg-typeface{padding:8px 14px;border-bottom:1px solid var(--line)}
+
   .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
          background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;
          font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
@@ -195,11 +212,12 @@ _PAGE = r"""<!doctype html>
     </span>
   </div>
   <div class="palette" id="palette"></div>
+  <div class="palette" id="typeface"></div>
   <p class="hint">Layouts are <b>generated</b>, not templates — each is one combination of
   seven independent choices, so there are __TOTAL__ of them. The arrows walk the space in
-  order; <b>Shuffle</b> jumps somewhere else entirely. Pick a <b>colour</b> to hold it
-  constant while you judge the rest. Open any layout, then <b>Make this my resume</b> to
-  publish it — every preview is a live render, identical to what gets published.</p>
+  order; <b>Shuffle</b> jumps somewhere else entirely. Pick a <b>colour</b> or <b>typeface</b>
+  to hold it constant while you judge the rest. Open any layout, then <b>Make this my resume</b>
+  to publish it — every preview is a live render, identical to what gets published.</p>
 </header>
 
 <div class="grid" id="grid"></div>
@@ -218,6 +236,7 @@ _PAGE = r"""<!doctype html>
     </div>
   </div>
   <div class="palette dlg-palette" id="dlgPalette"></div>
+  <div class="palette dlg-typeface" id="dlgTypeface"></div>
   <iframe id="dlgFrame" title="preview"></iframe>
 </dialog>
 
@@ -231,21 +250,29 @@ const PREVIEW    = "__PREVIEW__";
 const EXPORTABLE = __EXPORTABLE__;
 const TOTAL      = "__TOTAL__";
 const PALETTES   = __PALETTES__;
+const TYPEFACES  = __TYPEFACES__;
 let   PALETTE    = null;   // null = as generated; otherwise a forced palette
+let   TYPEFACE   = null;   // null = as generated; otherwise a forced typeface
 
 const $ = s => document.querySelector(s);
 const previewUrl = name =>
   PREVIEW === "route" ? "/preview/" + encodeURIComponent(name) : name + ".html";
 
-// Palette is the first segment of a spec name. Forcing a colour is therefore just
-// swapping that segment — a different, equally-valid spec, rendered the same way,
-// so what you see stays exactly what would publish.
-const recolor = name => PALETTE ? name.replace(/^[^-]+/, PALETTE) : name;
+// Palette and typeface are the first two segments of a spec name. Holding one
+// constant is therefore just swapping its segment — a different, equally-valid
+// spec, rendered the same way, so what you see stays exactly what would publish.
+const pin = name => {
+  if(!PALETTE && !TYPEFACE) return name;
+  const parts = name.split("-");
+  if(PALETTE)  parts[0] = PALETTE;   // palette is segment 0
+  if(TYPEFACE) parts[1] = TYPEFACE;  // typeface is segment 1
+  return parts.join("-");
+};
 
 // The static catalogue writes previews as sibling files, only for the specs it
-// shipped — so a recoloured name may have no file. Recolouring is a served-viewer
+// shipped — so a pinned name may have no file. Holding an axis is a served-viewer
 // affordance; disable it when previews come from disk.
-const CAN_RECOLOR = PREVIEW === "route";
+const CAN_PIN = PREVIEW === "route";
 
 let toastTimer;
 function toast(msg){
@@ -269,6 +296,7 @@ let CURRENT = null;   // the spec currently open in the dialog
 
 function render(){
   paletteBar($("#palette"));
+  typefaceBar($("#typeface"));
   // When paging, every layout is reachable, so a per-page "12 of 10,080" reads as
   // a limit that is not there — the page counter says where you are instead. The
   // static catalogue is a genuinely fixed sample, so there the "N of TOTAL" holds.
@@ -283,10 +311,11 @@ function render(){
   const grid = $("#grid");
   grid.innerHTML = "";
   OPTIONS.forEach((v, i) => {
-    const name = recolor(v.name);
-    // The palette chip reflects the forced colour, since that is what shows.
+    const name = pin(v.name);
+    // The palette/typeface chips reflect a forced value, since that is what shows.
     const axes = { ...v.axes };
-    if(PALETTE) axes.palette = PALETTE;
+    if(PALETTE)  axes.palette  = PALETTE;
+    if(TYPEFACE) axes.typeface = TYPEFACE;
     const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `
@@ -311,7 +340,7 @@ function render(){
 }
 
 function paletteBar(el){
-  if(!CAN_RECOLOR){ el.hidden = true; return; }
+  if(!CAN_PIN){ el.hidden = true; return; }
   el.innerHTML = `<span class="lbl">Colour</span>` +
     `<button class="sw-varied${PALETTE?"":" on"}" data-p="">Varied</button>` +
     PALETTES.map(p =>
@@ -324,15 +353,42 @@ function paletteBar(el){
   });
 }
 
+// The typeface counterpart of the colour bar: same "hold one constant" idea on the
+// second name segment, but each chip is a sample rendered in its own face (a font
+// can't be a swatch), so you pick by how the letters look.
+function typefaceBar(el){
+  if(!CAN_PIN){ el.hidden = true; return; }
+  el.innerHTML = `<span class="lbl">Type</span>` +
+    `<button class="tf${TYPEFACE?"":" on"}" data-t="">Varied</button>` +
+    TYPEFACES.map(t =>
+      `<button class="tf${TYPEFACE===t.name?" on":""}" data-t="${t.name}"
+               style="font-family:${t.font.replace(/"/g,"&quot;")}" title="${t.name}">${t.name}</button>`).join("");
+  el.querySelectorAll("[data-t]").forEach(b => b.onclick = ()=>{
+    TYPEFACE = b.dataset.t || null;
+    render();
+    if($("#dlg").open && CURRENT) open(CURRENT);  // keep an open preview in sync
+  });
+}
+
+// The description is "palette · typeface · header header · …"; reflect any held
+// axis so the dialog subtitle matches the render on screen.
+function pinnedDesc(v){
+  if(!PALETTE && !TYPEFACE) return v.description;
+  const parts = v.description.split(" · ");
+  if(PALETTE)  parts[0] = PALETTE;
+  if(TYPEFACE) parts[1] = TYPEFACE;
+  return parts.join(" · ");
+}
+
 function open(v){
   CURRENT = v;
-  const name = recolor(v.name);
+  const name = pin(v.name);
   $("#dlgName").textContent = name;
-  $("#dlgDesc").textContent = PALETTE
-    ? PALETTE + v.description.slice(v.description.indexOf(" ·")) : v.description;
+  $("#dlgDesc").textContent = pinnedDesc(v);
   $("#dlgFrame").src = previewUrl(name);
   $("#dlgCopy").onclick = ()=>copy(name);
   paletteBar($("#dlgPalette"));
+  typefaceBar($("#dlgTypeface"));
 
   const post = (path, body) => fetch(path, {
     method:"POST", headers:{"Content-Type":"application/json"},

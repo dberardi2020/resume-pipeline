@@ -85,7 +85,33 @@ def test_the_served_viewer_offers_every_palette(resume):
     import re
     pals = json.loads(re.search(r"const PALETTES\s*=\s*(\[.*?\]);", html).group(1))
     assert [p["name"] for p in pals] == [p[0] for p in compose.PALETTES]
-    assert 'const CAN_RECOLOR = PREVIEW === "route"' in html
+    assert 'const CAN_PIN = PREVIEW === "route"' in html
+
+
+def test_the_served_viewer_offers_every_typeface(resume):
+    """The type bar is the colour bar's twin — every face, each carrying its own
+    font stack so the chip can be rendered in that face (RP-0037)."""
+    html = viewer.page(SPECS, resume, preview="route", exportable=True, pages=10)
+    tfs = json.loads(re.search(r"const TYPEFACES\s*=\s*(\[.*?\]);", html).group(1))
+    assert [t["name"] for t in tfs] == [t[0] for t in compose.TYPEFACES]
+    assert all(t["font"] == compose.TYPEFACES[i][1] for i, t in enumerate(tfs))
+
+
+def test_pinning_swaps_the_typeface_segment_only():
+    """The mechanism the type bar relies on: typeface is the *second* name segment,
+    so holding a face is a swap of that one segment — every other axis untouched."""
+    spec = compose.Spec(0, 0, "band", "pills", "ladder", 1, "grouped")
+    assert spec.name.split("-")[1] == "grotesk"
+    parts = spec.name.split("-")
+    parts[1] = "charter"
+    other = space.parse("-".join(parts))
+    assert other is not None
+    assert compose.TYPEFACES[other.typeface][0] == "charter"
+    # every axis but typeface is identical
+    assert (other.palette, other.header, other.skills,
+            other.promo, other.density, other.grouping) == \
+           (spec.palette, spec.header, spec.skills,
+            spec.promo, spec.density, spec.grouping)
 
 
 def test_recolouring_swaps_the_palette_segment_only():

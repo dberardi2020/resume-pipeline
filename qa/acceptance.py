@@ -178,12 +178,18 @@ def check_serve(qa: QA, tmp: Path, browser: bool, open_ui: bool = False) -> None
         # in a real (headless) browser and confirm the JS actually populated it. This is
         # the only check that exercises viewer.js; it uses the browser we already require.
         if browser:
-            from resume_pipeline import pdf
+            from resume_pipeline import compose, pdf
             dom = subprocess.run([pdf.find_browser(), "--headless", "--dump-dom", base + "/"],
                                  capture_output=True, text=True, timeout=30).stdout
             cards = dom.count('class="card')
             qa.ok("viewer JS builds the grid in a real browser", cards >= 1, f"{cards} cards")
             qa.ok("rendered grid carries the colour control", "Colour" in dom)
+            # RP-0037: the type bar is the colour bar's twin — its label and every
+            # face's sample chip must be built into the same rendered DOM.
+            faces = [t[0] for t in compose.TYPEFACES]
+            has_type = ">Type<" in dom and all(f">{f}<" in dom for f in faces)
+            qa.ok("rendered grid carries the typeface control", has_type,
+                  f"faces found: {[f for f in faces if f'>{f}<' in dom]}")
         else:
             qa.skip("viewer JS builds the grid in a real browser", "no browser")
         if browser:

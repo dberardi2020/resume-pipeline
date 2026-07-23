@@ -1,6 +1,6 @@
 # Testing
 
-The approach, what is covered, what is not, and how CI runs. 191 unit tests, ~30s locally,
+The approach, what is covered, what is not, and how CI runs. 193 unit tests, ~30s locally,
 plus a separate on-demand acceptance harness (see below).
 
 ```sh

@@ -35,6 +35,11 @@ Use `docs/assets/demo-profile.json` (Jane Smith) as the fixture — never a real
   `harbor ink moss clay plum slate crimson`. Click a swatch → every card recolours in place (first
   axis chip flips, e.g. `clay`→`moss`) **and the pin persists across paging**. Each swatch is a
   `<button class="sw" data-p="moss" title="moss">`.
+- **Type bar** (`#typeface`, RP-0037): the colour bar's twin. A `.tf` "Varied" button (default) + 4
+  `.tf` sample chips — `grotesk humanist charter mixed` — each rendered *in its own face*. Click one →
+  every card re-renders in that typeface (the **second** name segment swaps; the typeface axis chip
+  flips) and the pin **persists across paging** and **composes with the colour pin**. Each chip is a
+  `<button class="tf" data-t="charter" title="charter">`. The dialog carries the same bar (`#dlgTypeface`).
 - **Paging**: header shows `page N of 420`; `«` first, `‹`/`›` prev/next (top-right), `[`/`]` keys.
 - **Card** → `Open` → **detail modal**: buttons `Copy Name`, `Export PDF`, `★ Make this my resume`,
   `Close`, plus its own colour bar. `★ Make this my resume` → `POST /api/publish` → writes the
@@ -74,6 +79,7 @@ Re-verify each; expected result in parens. Add new rows as surface grows.
 | 4 | Paging | `›` → "page 2 of 420", new layouts | 2026-07-23 ✅ |
 | 5 | Detail modal | full-page render + publish controls | 2026-07-23 ✅ |
 | 6 | Viewer publish | deliverable + real PDF + sidecar records the picked layout + archive-on-overwrite | 2026-07-23 ✅ |
+| 7 | Typeface-pin (RP-0037) | click `charter` → all cards in that face, chip `grotesk`→`charter`, persists across paging, composes with colour | 2026-07-23 ⚠️ render + unit + dump-DOM only; **live click not yet driven** |
 
 ## Teardown (always — a QA cleans up)
 

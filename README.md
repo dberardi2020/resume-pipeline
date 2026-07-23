@@ -154,7 +154,7 @@ text comes back in document order.
 
 QA runs in three layers — run the ones a change touches, ship when they're green:
 
-- **Unit** — `pytest -q` (191 tests, ~30s): fast, mocked, property-based across the whole
+- **Unit** — `pytest -q` (193 tests, ~30s): fast, mocked, property-based across the whole
   10,080-layout space. The CI gate.
 - **Acceptance** — `python qa/acceptance.py`: the un-mockable surface as real processes — the
   installed CLI as a subprocess, a live `serve` server over real HTTP, a real headless-Chrome PDF,
