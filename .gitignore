@@ -6,4 +6,6 @@ build/
 *.egg-info/
 .pytest_cache/
 # The root README is the front door; GitHub renders the .md and it takes no twin.
-README.html
+# Leading slash anchors this to the repo root — a bare `README.html` would also ignore
+# every docs/**/README.html render and silently break the MD+HTML pairing.
+/README.html

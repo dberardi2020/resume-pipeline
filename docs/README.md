@@ -30,8 +30,8 @@ disagree, the ADR is right and the synthesis is stale.**
 
 | Path | Holds |
 |---|---|
-| [`product/`](product/) | What it is, who it is for, how to use it. |
-| [`technical/`](technical/) | Architecture, modules, data model, testing. |
+| [`product/`](product/README.md) | What it is, who it is for, how to use it. |
+| [`technical/`](technical/README.md) | Architecture, modules, data model, testing. |
 | [`decisions/`](decisions/README.md) | ADRs — numbered, never renumbered, never reused. |
 | [`tickets/tickets.md`](tickets/tickets.md) | The backlog. No external tracker. |
 | `assets/` | Screenshots, and `demo-profile.json` — the fictional profile every screenshot renders. |

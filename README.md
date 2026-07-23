@@ -1,4 +1,4 @@
-# resume-pipeline
+# Resume Pipeline
 
 **Browse thousands of resume layouts, check them for parse safety, and publish the one you
 pick — from inside your coding agent.**
