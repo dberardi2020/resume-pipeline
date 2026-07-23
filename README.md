@@ -152,17 +152,13 @@ The backlog is [`docs/tickets/tickets.md`](docs/tickets/tickets.md).
 
 ## Documentation
 
-Full docs live in [`docs/`](docs/README.md), routed by what you came to do:
+Full docs live in [`docs/`](docs/README.md):
 
-- **[Overview](docs/product/overview.md)** — the problem, the approach, the design principles.
-- **[Concepts](docs/product/concepts.md)** — the vocabulary. Read this second.
-- **[User guide](docs/product/user-guide.md)** — install, first run, the workflow end to end.
-- **[Platforms and status](docs/product/platforms-and-status.md)** — what works, what is
-  experimental, what is not built.
-- **[Architecture](docs/technical/architecture.md)** · **[Modules](docs/technical/module-reference.md)** ·
-  **[Data model](docs/technical/data-model-and-config.md)** · **[Testing](docs/technical/testing.md)**
-- **[Decisions](docs/decisions/README.md)** — ADRs. When a doc and an ADR disagree, the ADR wins.
-- **[llms.txt](llms.txt)** — the same orientation for an agent, without cloning.
+- **[Product](docs/product/README.md)** — the problem, the vocabulary, and how to use it, no code assumed.
+- **[Technical](docs/technical/README.md)** — architecture, modules, data model, testing.
+- **[Decisions](docs/decisions/README.md)** — the architecture decision records (*why* it's built this way).
+
+[`llms.txt`](llms.txt) is the same orientation for an agent, without cloning.
 
 ## License
 
