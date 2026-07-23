@@ -6,3 +6,4 @@ build/
 *.egg-info/
 .explore-session.json
 out/
+README.html
