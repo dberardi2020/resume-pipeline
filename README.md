@@ -105,10 +105,24 @@ It needs Python 3.11+, and a Chromium-family browser for PDF export only. Tell m
 anything is missing.
 ```
 
-## Commands
+## Driving it from your agent
 
-The CLI is the substrate. The intended interface is your agent — `init` installs skills so
-it knows all of this without being briefed.
+The intended interface is not the CLI — it's your coding agent. `init` installs two
+[Claude Code skills](https://docs.claude.com/en/docs/claude-code/skills) into the workspace's
+`.claude/skills/`, and your agent picks them up automatically. You never type a command; you
+say what you want, and the agent triggers the right skill and runs the tool for you:
+
+| Skill | Say something like | It handles |
+|---|---|---|
+| **`career`** | "update my summary", "lint my resume", "publish a PDF" | editing content, linting, publishing — and the anti-fabrication rule (it will not invent a metric) |
+| **`career-layouts`** | "show me some layouts", "try a different look", "make it one column" | browsing the design space, then publishing the one you pick |
+
+You don't invoke them by name — describe the task and the matching skill fires (your agent may
+also let you call `/career` directly). The skills carry no personal data, so
+`resume-pipeline init --skill-only` re-installs or refreshes them at any time. Everything below
+is the substrate they drive — documented so nothing is hidden, not so you type it.
+
+## Commands
 
 | Verb | What it does |
 |---|---|
