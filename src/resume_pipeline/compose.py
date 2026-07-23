@@ -253,10 +253,14 @@ a {{ color:{accent}; text-decoration:none; }}
 .hdr-minimal .label {{ opacity:.75; font-weight:500; }}
 
 /* skills */
-.skill-row {{ display:flex; align-items:baseline; gap:8px; margin-bottom:5px; }}
+/* Grouping is carried entirely by spacing, so the gap *between* groups has to
+   decisively beat the gap *within* one: `.pills` gap applies on both axes, so a
+   wrapped second line of pills sits at that gap — keep it tighter than the row
+   margin, not equal to it, or every group melts into one field of pills. */
+.skill-row {{ display:flex; align-items:baseline; gap:9px; margin-bottom:10px; }}
 .skill-label {{ flex:0 0 8.4em; text-align:right; font-size:9.6pt;
-                font-weight:700; opacity:.85; }}
-.pills {{ display:flex; flex-wrap:wrap; gap:4px; }}
+                font-weight:700; opacity:.85; line-height:1.3; }}
+.pills {{ display:flex; flex-wrap:wrap; gap:3px 4px; }}
 .pill {{ background:{tint}; color:{accent}; border:0.5pt solid {accent}33;
          border-radius:3pt; padding:1pt 5.5pt; font-size:9.5pt; font-weight:600; }}
 .skill-inline {{ margin-bottom:3px; }}
