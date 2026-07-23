@@ -85,6 +85,7 @@ Re-verify each; expected result in parens. Add new rows as surface grows.
 | 6 | Viewer publish | deliverable + real PDF + sidecar records the picked layout + archive-on-overwrite | 2026-07-23 ✅ |
 | 7 | Typeface hold + compose (RP-0037) | click `charter` → all cards that face; `moss`+`charter` → "360 layouts · page 1 of 15", both held; release → back to 10,080/420 | 2026-07-23 ✅ (driven live) |
 | 8 | Counts follow the filter (RP-0035) | header total & page count recompute per hold; `/api/page` returns live `total` | 2026-07-23 ✅ (driven live + acceptance) |
+| 9 | Header holds its shape under long status | with both axes held (long "holding … · …" text) the `« ‹ Shuffle ›` nav stays on row 1; status is on its own line (`.statusline`) | 2026-07-23 ✅ (measured live at 704px) |
 
 ## Teardown (always — a QA cleans up)
 

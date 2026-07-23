@@ -104,6 +104,7 @@ _PAGE = r"""<!doctype html>
   .bar{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
   h1{font-size:15px;margin:0;letter-spacing:-.2px;font-weight:700}
   .meta{color:var(--muted);font-size:12.5px}
+  .statusline{margin-top:5px}
   .grow{flex:1}
   .hint{margin:6px 0 0;color:var(--muted);font-size:12.5px;max-width:82ch}
   .nav{display:flex;gap:6px;align-items:center}
@@ -202,7 +203,6 @@ _PAGE = r"""<!doctype html>
 <header>
   <div class="bar">
     <h1>__TITLE__ — Layouts</h1>
-    <span class="meta" id="meta"></span>
     <span class="grow"></span>
     <span class="meta" id="pageMeta"></span>
     <span class="nav" id="nav" hidden>
@@ -212,6 +212,9 @@ _PAGE = r"""<!doctype html>
       <button id="next" title="Next page">›</button>
     </span>
   </div>
+  <!-- The layout count / active holds live on their own line: variable-length text
+       here used to push the nav buttons onto a second row once an axis was held. -->
+  <div class="meta statusline" id="meta"></div>
   <div class="palette" id="palette"></div>
   <div class="palette" id="typeface"></div>
   <p class="hint">Layouts are <b>generated</b>, not templates — each is one combination of
