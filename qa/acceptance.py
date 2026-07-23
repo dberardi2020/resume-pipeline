@@ -20,10 +20,9 @@ Exit:  non-zero if any check fails, so CI or an agent can gate on it.
 Chrome-dependent checks SKIP cleanly when no Chromium-family browser is present,
 so the harness runs anywhere; a full run needs one for the PDF leg.
 
-This is a proof of concept for a reusable *agentic QA harness* — see the writeup
-in Private KB (`Private KB/Notes/agentic-qa-harness.md`). It is intended to grow
-(and split) as the tool does, and to gain browser-driven checks of the viewer's
-JavaScript, which nothing currently exercises.
+See `qa/README.md` and `qa/product-map.md`. It is intended to grow (and split) as
+the tool does; interaction-level checks of the viewer's JavaScript are handled by
+an agent with browser control (the agentic layer), not by this harness.
 """
 from __future__ import annotations
 
