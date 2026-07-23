@@ -50,6 +50,7 @@ The committed next few, in intended order.
 | [RP-0019](#rp-0019) | P3 | Feature | Copy/paste blocks for LinkedIn and application forms |
 | [RP-0022](#rp-0022) | P3 | Feature | Merge two specs — browse what sits between them |
 | [RP-0024](#rp-0024) | P3 | Chore | `work[].stints` is experimental |
+| [RP-0040](#rp-0040) | P3 | Chore | `work[].note` ignores the promo axis |
 | [RP-0026](#rp-0026) | P3 | Feature | Per-skill confidence / weight |
 | [RP-0029](#rp-0029) | P3 | Idea | Consume palettes from a brand kit (cross-project) |
 | [RP-0031](#rp-0031) | P3 | Feature | Additive publish — keep several designs at once |
@@ -270,6 +271,20 @@ Scope is deliberately **narrower than RP-0005**: choose which skills publish. No
 **Explicitly deferred: visual/bulk management of the master list.** Selecting 30+ items one at a time through an agent is miserable — same reasoning as RP-0026 — so that wants a grid or inspector screen, and it lands after the inspector gains write access. Agent-plus-JSON is the acceptable interim.
 
 Carves the urgent slice out of **RP-0005**, which stays the home for the general content space. Partially unblocks **RP-0013**: once a rendered variant has its own skill set, `skills/bloat` finally has something meaningful to fire against. **RP-0026** (per-skill weight) is the better *input* to selection later, not a precondition.
+
+### RP-0040 — `work[].note` ignores the promo axis {#rp-0040}
+**P3 · Chore · model**
+
+`_note()` hardcodes `class="promo-inline"` and never consults `spec.promo`, so a note renders identically under `badge`, `ladder`, `stacked` and `inline`. The axis that exists to govern *how a promotion is shown* does not reach the one field most documents actually use — RP-0024 records that the author's own resume migrated to `stints` and then back, because "a flat bullet list plus a `note`" said what he wanted. `note` is the common path; `stints` is the exception.
+
+The consequence is that **any** change to note presentation is necessarily global. On 2026-07-23 the note was given the accent at full weight (a `.note` rule, deliberately scoped away from `.promo-inline` because that class also lands on the *stints container* when `promo=inline`, where accenting a whole block of titles would be wrong). The scoping is correct, but the styling still applies to all 10,080 layouts: a taste decision baked into the whole space rather than offered as a choice, which inverts how every other presentation decision in this tool works.
+
+What to decide:
+
+- **Route note presentation through `spec.promo`** — each promo value styles its own note, and an emphasised treatment becomes a fifth value, added rather than imposed. Cheaper, and reuses an axis whose meaning already fits.
+- **Or admit a note is not a promotion treatment at all** and give it its own axis. Honest to the model, but widens the space for a single line of text.
+
+Check for an upstream JSON Resume field before either (same caution as RP-0014). Sits with **RP-0014** and **RP-0024** as the unsettled promotion-model cluster; none of the three should be resolved without the other two in view.
 
 ## Conventions
 
