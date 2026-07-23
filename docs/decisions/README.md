@@ -21,3 +21,4 @@ ADR is superseded.
 | [0008](0008-stints-as-a-local-schema-extension.md) | Per-title bullets as a local schema extension | Experimental |
 | [0009](0009-publish-remembers-your-choices.md) | Publish remembers the chosen layout and formats in a sidecar | Accepted |
 | [0010](0010-publish-preserves-the-previous-design.md) | Publish snapshots the previous deliverable to `Archive/` before overwriting | Accepted |
+| [0011](0011-skills-split-by-intent.md) | Two generic skills split by intent; personal context in the workspace; `init --skill-only` refreshes | Accepted |

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>0011 — Skills split by intent, generic and refreshable</title><style>
+:root{--bg:#f7f8fa;--fg:#181820;--muted:#565666;--line:#e5e7ec;--code-bg:#eef0f4;--accent:#4577d1;--link:#3a67b8}
+@media(prefers-color-scheme:dark){:root{--bg:#080a0e;--fg:#e9ecf3;--muted:#a2a7b8;--line:#232735;--code-bg:#12141b;--accent:#5b8de0;--link:#6f9ae6}}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:64px 28px 120px}
+h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
+h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
+h3{font-size:1.08rem;margin:1.8em 0 .4em}
+p{margin:.7em 0}
+a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
+a:hover{border-bottom-color:var(--link)}
+code{background:var(--code-bg);padding:.12em .4em;border-radius:4px;font:.86em/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
+pre{background:var(--code-bg);padding:16px 18px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:.85em}
+ul,ol{padding-left:1.4em;margin:.7em 0}
+li{margin:.3em 0}
+blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
+blockquote strong{color:var(--fg)}
+table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+th{background:var(--code-bg);font-weight:600}
+hr{border:none;border-top:1px solid var(--line);margin:2em 0}
+strong{font-weight:650}
+</style></head><body><main class="wrap">
+<h1>0011 — Skills split by intent, generic and refreshable</h1>
+<p><strong>Status:</strong> Accepted · 2026-07-23</p>
+<h2>Context</h2>
+<p><code>init</code> shipped one <code>career</code> skill: a prose blob teaching the whole workflow. Two problems surfaced in use. First, the single skill mixed two distinct intents — <em>work on the resume's content</em> (edit, lint, publish) and <em>choose its look</em> (browse the layout space) — so every invocation loaded all of it. Second, the deployed copy in a real workspace had <strong>drifted</strong> from the shipped template: it listed commands that no longer existed, because a hand-customised skill and the template had no way to re-converge. The drift was possible because personal context (target roles, a specific notes path) had been baked <em>into</em> the skill, so nobody dared overwrite it.</p>
+<h2>Decision</h2>
+<p><strong>Two skills, split by intent, both generic; personal context lives in the workspace <code>CLAUDE.md</code>; <code>init --skill-only</code> refreshes them in place.</strong></p>
+<ul><li><code>career</code> — resume <em>content</em>: edit, lint, publish, cover letters. Carries the content-change workflow and points at <code>CLAUDE.md</code> for the anti-fabrication rule.</li><li><code>career-layouts</code> — the resume's <em>look</em>: browse the design space, pick a layout, publish it.</li></ul>
+<p>Neither skill contains anything about a particular person. Because they are generic, overwriting them is safe, so <code>init --skill-only</code> force-writes them — that command is how a workspace re-syncs to the current version rather than silently drifting.</p>
+<h2>Rationale</h2>
+<ul><li><strong>Intent-shaped.</strong> "Update my resume" and "show me other layouts" are different requests; separate skills match them precisely and keep each small and individually invocable.</li><li><strong>Generic skills, personal workspace.</strong> The rule that must never be missed — the anti-fabrication rule — lives in one place (<code>CLAUDE.md</code>), not copied across skills where it could drift. A skill that names no person is a skill any workspace can share and any <code>init</code> can overwrite.</li><li><strong>Drift becomes impossible to sustain.</strong> The whole failure was a customised skill with no re-sync path. Generic + <code>--skill-only</code> refresh closes it: the workspace's skills can always be made identical to what ships.</li></ul>
+<h2>Consequences</h2>
+<ul><li>A consuming workspace keeps its specifics (target roles, voice, open questions) in <code>CLAUDE.md</code> and <code>resume.json</code>; its two skills stay byte-identical to the shipped templates.</li><li>Splitting <code>import</code> (RP-0001) into its own skill later fits this shape — another intent, another generic skill — but is out of scope here.</li><li>The skill and workspace-<code>CLAUDE.md</code> texts are covered by the docs-match-the-code tests, so a command that stops existing fails CI rather than reaching a newcomer's quickstart.</li></ul>
+</main></body></html>

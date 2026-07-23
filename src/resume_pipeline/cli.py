@@ -265,7 +265,8 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("init", help="scaffold a career workspace")
     p.add_argument("directory", nargs="?", help="where to create it (default: here)")
     p.add_argument("--skill-only", action="store_true",
-                   help="install just the Claude Code skill into an existing workspace")
+                   help="install (or refresh) just the Claude Code skills in an "
+                        "existing workspace")
     p.set_defaults(func=cmd_init)
 
     return parser

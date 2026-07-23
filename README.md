@@ -77,7 +77,7 @@ python3 -m resume_pipeline --help
 Then scaffold somewhere to keep your resume:
 
 ```sh
-resume-pipeline init ~/Career     # the workspace, including the agent skill
+resume-pipeline init ~/Career     # the workspace, including the agent skills
 cd ~/Career/Resume                # fill in resume.json, then:
 resume-pipeline lint
 resume-pipeline catalogue
@@ -96,8 +96,8 @@ Install resume-pipeline from https://github.com/dberardi2020/resume-pipeline
   repo, make a venv, `pip install -e .`, and symlink `.venv/bin/resume-pipeline` onto my
   PATH instead.
 - Then run `resume-pipeline init <where I keep my documents>` to scaffold a career
-  workspace. That also installs a `career` skill into the workspace's .claude/skills/,
-  which teaches you the workflow and the rules — read it before touching my resume.
+  workspace. That also installs `career` skills into the workspace's .claude/skills/,
+  which teach you the workflow and the rules — read them before touching my resume.
 - Then help me fill in Resume/resume.json, run `resume-pipeline lint`, and build me a
   catalogue of layouts to look at.
 
@@ -107,12 +107,12 @@ anything is missing.
 
 ## Commands
 
-The CLI is the substrate. The intended interface is your agent — `init` installs a skill so
+The CLI is the substrate. The intended interface is your agent — `init` installs skills so
 it knows all of this without being briefed.
 
 | Verb | What it does |
 |---|---|
-| `init [dir]` | Scaffold a workspace: `resume.json`, folders, working rules, and the agent skill. `--skill-only` installs just the skill into a folder you already have. |
+| `init [dir]` | Scaffold a workspace: `resume.json`, folders, working rules, and the agent skills (`career` for content, `career-layouts` for the look). `--skill-only` installs or refreshes just the skills in a folder you already have. |
 | `lint` | Check the profile and a layout: parse safety, structure, vague or unquantified claims. |
 | `catalogue` | Build a static, browsable folder of layout options. Opens from `file://`, no server. |
 | `serve` | The same viewer with a process behind it — previews rendered on request, plus PDF export. |

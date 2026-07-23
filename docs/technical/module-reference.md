@@ -178,12 +178,14 @@ recorded), so a PDF-only deliverable still matches; ambiguous cases fall back to
 ## `scaffold.py`
 
 Everything `init` writes, as module-level strings: the starter profile, the workspace
-`CLAUDE.md`, a `README.md`, and `SKILL_MD` — the `career` agent skill. Never overwrites an
-existing file; reports what it skipped.
+`CLAUDE.md`, a `README.md`, and two agent skills — `SKILL_CAREER_MD` (resume content) and
+`SKILL_LAYOUTS_MD` (browsing the layout space), split by intent (ADR-0011). A full `init` never
+overwrites an existing file and reports what it skipped; `init --skill-only` force-writes the
+skills, since they carry no personal data and that command is how a workspace re-syncs them.
 
 **This module is shipped content**, so it is held to the same bar as the README: no personal
-details, no assumptions about the reader, and every command it documents must exist. Tests
-parse this prose and assert both.
+details, no assumptions about the reader, and every command it documents must exist. Tests parse
+this prose — both skills and the workspace `CLAUDE.md` — and assert both.
 
 ## `cli.py`
 

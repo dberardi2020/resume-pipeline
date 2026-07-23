@@ -118,7 +118,7 @@ cp Resume/resume.json "Resume/Archive/$(date +%Y%m%d)-pre-<change>.json"
 
 ## Commands
 
-You should rarely need these — ask your agent instead; it has the `career` skill. They
+You should rarely need these — ask your agent instead; it has the `career` skills. They
 are here so nothing is hidden.
 
 ```
@@ -135,9 +135,9 @@ Scratch renders go to `~/.cache/resume-pipeline/`; only `publish` and `catalogue
 Drive, a NAS). Virtualenvs carry absolute paths and per-machine binaries.
 """
 
-SKILL_MD = """---
+SKILL_CAREER_MD = """---
 name: career
-description: Work on the user's resume, cover letters, and job applications — render, lint, explore layouts, or edit content. Use whenever the request involves their resume, a cover letter, a job posting or application, or resume layouts/themes/PDFs. Handles "update my resume", "render my resume", "show me layouts", "lint my resume", "export a PDF", "write a cover letter". (Named `career`, not `resume` — `/resume` is a built-in Claude Code command.)
+description: Work on the user's resume content — edit, lint, render, and publish it, plus cover letters and job applications. Use whenever the request involves updating, rewriting, linting, or exporting their resume, or a cover letter or application. Handles "update my resume", "regenerate my resume", "lint my resume", "export a PDF", "write a cover letter". For choosing or changing the layout/design/theme, use the `career-layouts` skill. (Named `career`, not `resume` — `/resume` is a built-in Claude Code command.)
 ---
 
 # Career
@@ -147,34 +147,25 @@ Everything beside it is **generated** — never hand-edit a `.md`, `.html`, or `
 the next publish silently overwrites it.
 
 The tool is `resume-pipeline`. It finds `resume.json` by walking up from the working
-directory, so the path argument is optional.
+directory, so the path argument is optional. **You run these, not the user** — they work in an
+agent session; if a turn would end by telling them to run a command, run it instead.
 
 ## Commands
 
 ```bash
 resume-pipeline lint                       # ATS + content checks
-resume-pipeline catalogue                  # browsable page of layout options
-resume-pipeline serve                      # the same viewer, with PDF export
 resume-pipeline publish                    # (re)write the deliverable beside resume.json
 ```
 
-**You run these, not the user.** They work in an agent session and should not be handed a
-command to type — if a turn ends by telling them to run something, run it instead.
-
-**`catalogue` vs `publish`.** `catalogue` writes a folder of HTML options to look at.
 `publish` overwrites the canonical deliverable beside `resume.json` — that *is* the file
-attached to an application. Use it after any content change.
+attached to an application. It snapshots the previous one into `Archive/` first, so a publish
+never destroys the last version.
 
 **Publish remembers the layout and formats.** A bare `publish` re-renders the layout and
 formats last used (recorded in `.resume-pipeline.json`), so after a content edit you do **not**
-re-pick the design. Change it only when asked:
-
-- `--theme` — a preset (`default`, `plain`, `editorial`, `warm`) or any layout id from the
-  catalogue, e.g. `moss-charter-band-pills-ladder-airy`.
-- `--formats` — a comma-separated subset of `pdf,html,md` (all three by default), e.g.
-  `--formats pdf` for the PDF alone.
-
-`serve` blocks until ctrl-c — run it in the background.
+re-pick the design. Change them only when asked — `--theme <preset|layout-id>` or
+`--formats <subset of pdf,html,md>`. To browse and choose a layout, use the `career-layouts`
+skill.
 
 ## Before editing content — the rule that overrides everything
 
@@ -202,6 +193,48 @@ choice, not a deletion.
 5. Report what changed, and list anything you needed but did not have.
 """
 
+SKILL_LAYOUTS_MD = """---
+name: career-layouts
+description: Browse the space of resume layouts and choose one. Use when the request is about the resume's look — its layout, design, theme, colour, or output format — e.g. "show me layouts", "change my resume's design", "try a different look", "make it one column", "pick a layout". For editing resume content, use the `career` skill.
+---
+
+# Career — layouts
+
+A layout is not a template: it is one point in a design space of thousands, built from seven
+independent choices (palette, typeface, header, skills, promotion, density, grouping) over one
+renderer. Browsing that space and publishing the one the user picks is what this skill does;
+editing resume *content* is the `career` skill.
+
+The tool is `resume-pipeline`, run from the resume folder (it walks up to find `resume.json`).
+**You run these, not the user.**
+
+## Commands
+
+```bash
+resume-pipeline serve                      # interactive viewer: browse, colour-pin, page, publish
+resume-pipeline catalogue                  # a static browsable page of options
+```
+
+`serve` opens a local viewer in the browser and blocks until ctrl-c — run it in the
+background. It shows a grid of live renders of the user's *own* resume in different layouts, a
+colour bar to hold one palette constant while the rest vary, and paging/shuffle to move through
+the space.
+
+## Choosing a layout
+
+- The user reacts to what they see and says it in words — "the serif one", "the moss one",
+  "number 7". Resolve that to a layout, then publish it; don't make them copy an id.
+- Publish the choice: `resume-pipeline publish --theme <layout-id>` (or a preset —
+  `default`, `plain`, `editorial`, `warm`). That overwrites the deliverable, snapshots the
+  previous design to `Archive/` first, and records the layout so later content edits keep it.
+- In the viewer, **Make this my resume** publishes the layout on screen directly.
+- `--formats <subset of pdf,html,md>` narrows which files are written (all three by default).
+
+Changing the layout does not touch content — but publishing still writes the file an employer
+sees, so the anti-fabrication rule in the workspace `CLAUDE.md` still governs: never introduce
+a claim that is not the user's.
+"""
+
 WORKSPACE_README = """# Career workspace
 
 Scaffolded by [`resume-pipeline`](https://github.com/dberardi2020/resume-pipeline) —
@@ -215,8 +248,8 @@ Scaffolded by [`resume-pipeline`](https://github.com/dberardi2020/resume-pipelin
 3. `resume-pipeline catalogue` — build a page of layout options and open it.
 4. `resume-pipeline publish --theme <id>` — writes the file you actually send.
 
-Better still, ask your coding agent for any of the above — `init` installs a `career`
-skill that teaches it the workflow and the rules.
+Better still, ask your coding agent for any of the above — `init` installs `career`
+skills (content, and layouts) that teach it the workflow and the rules.
 
 ## What goes where
 
@@ -231,24 +264,37 @@ skill that teaches it the workflow and the rules.
 letting any agent edit your resume.
 """
 
-def _write(path: Path, content: str) -> str:
-    if path.exists():
+# The skills are generic — they carry no personal data — so refreshing them to
+# the current shipped version is always safe. Personal context belongs in the
+# workspace `CLAUDE.md`, never in a skill.
+SKILLS = {"career": SKILL_CAREER_MD, "career-layouts": SKILL_LAYOUTS_MD}
+
+
+def _write(path: Path, content: str, *, force: bool = False) -> str:
+    if path.exists() and not force:
         return f"  skip  {path}  (exists)"
+    existed = path.exists()
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
-    return f"  write {path}"
+    return f"  {'update' if existed else 'write '} {path}"
+
+
+def _write_skills(root: Path, *, force: bool) -> list[str]:
+    return [_write(root / ".claude" / "skills" / name / "SKILL.md", md, force=force)
+            for name, md in SKILLS.items()]
 
 
 def init(root: Path, *, skill_only: bool = False) -> list[str]:
-    """Create the workspace. Never overwrites an existing file."""
-    out: list[str] = []
+    """Create the workspace. Never overwrites an existing file — except that
+    `skill_only` refreshes the skills in place, since they carry no user data and
+    `init --skill-only` is how a workspace re-syncs them to the current version."""
     if skill_only:
-        out.append(_write(root / ".claude" / "skills" / "career" / "SKILL.md", SKILL_MD))
-        return out
+        return _write_skills(root, force=True)
 
+    out: list[str] = []
     out.append(_write(root / "CLAUDE.md", WORKSPACE_CLAUDE_MD))
     out.append(_write(root / "README.md", WORKSPACE_README))
-    out.append(_write(root / ".claude" / "skills" / "career" / "SKILL.md", SKILL_MD))
+    out.extend(_write_skills(root, force=False))
     out.append(_write(root / "Resume" / "resume.json", STARTER_RESUME))
     for folder in ("Resume/Archive", "Cover Letters", "Applications", "Reference"):
         target = root / folder
