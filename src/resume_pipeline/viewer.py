@@ -231,10 +231,15 @@ function fitShot(frame){
 let cursor = 0;
 
 function render(){
-  $("#meta").textContent = `${OPTIONS.length} of ${TOTAL} possible layouts`;
+  // When paging, every layout is reachable, so a per-page "12 of 10,080" reads as
+  // a limit that is not there — the page counter says where you are instead. The
+  // static catalogue is a genuinely fixed sample, so there the "N of TOTAL" holds.
   if(PAGES > 1){
+    $("#meta").textContent = `${TOTAL} layouts`;
     $("#nav").hidden = false;
     $("#pageMeta").textContent = `page ${PAGE_INDEX + 1} of ${PAGES.toLocaleString()}`;
+  } else {
+    $("#meta").textContent = `${OPTIONS.length} of ${TOTAL} possible layouts`;
   }
   const grid = $("#grid");
   grid.innerHTML = "";
