@@ -118,7 +118,7 @@ cp Resume/resume.json "Resume/Archive/$(date +%Y%m%d)-pre-<change>.json"
 
 ## Commands
 
-You should rarely need these — ask your agent instead; it has the `career` skills. They
+You should rarely need these — ask your agent instead; it has the `career-*` skills. They
 are here so nothing is hidden.
 
 ```
@@ -135,12 +135,12 @@ Scratch renders go to `~/.cache/resume-pipeline/`; only `publish` and `catalogue
 Drive, a NAS). Virtualenvs carry absolute paths and per-machine binaries.
 """
 
-SKILL_CAREER_MD = """---
-name: career
-description: Work on the user's resume content — edit, lint, render, and publish it, plus cover letters and job applications. Use whenever the request involves updating, rewriting, linting, or exporting their resume, or a cover letter or application. Handles "update my resume", "regenerate my resume", "lint my resume", "export a PDF", "write a cover letter". For choosing or changing the layout/design/theme, use the `career-layouts` skill. (Named `career`, not `resume` — `/resume` is a built-in Claude Code command.)
+SKILL_RESUME_UPDATE_MD = """---
+name: career-resume-update
+description: Update the user's resume content — edit, lint, and publish it. Use whenever the request is to change, rewrite, regenerate, lint, or export/publish their resume. Handles "update my resume", "rewrite my summary", "lint my resume", "publish a PDF". For choosing or changing the layout/design/theme, use the `career-layouts-browse` skill. (Named with the `career-` prefix, not `resume`, because `/resume` is a built-in Claude Code command.)
 ---
 
-# Career
+# Career — resume update
 
 The resume lives at `Resume/resume.json` ([JSON Resume](https://jsonresume.org/schema)).
 Everything beside it is **generated** — never hand-edit a `.md`, `.html`, or `.pdf`, because
@@ -164,8 +164,8 @@ never destroys the last version.
 **Publish remembers the layout and formats.** A bare `publish` re-renders the layout and
 formats last used (recorded in `.resume-pipeline.json`), so after a content edit you do **not**
 re-pick the design. Change them only when asked — `--theme <preset|layout-id>` or
-`--formats <subset of pdf,html,md>`. To browse and choose a layout, use the `career-layouts`
-skill.
+`--formats <subset of pdf,html,md>`. To browse and choose a layout, use the
+`career-layouts-browse` skill.
 
 ## Before editing content — the rule that overrides everything
 
@@ -193,17 +193,17 @@ choice, not a deletion.
 5. Report what changed, and list anything you needed but did not have.
 """
 
-SKILL_LAYOUTS_MD = """---
-name: career-layouts
-description: Browse the space of resume layouts and choose one. Use when the request is about the resume's look — its layout, design, theme, colour, or output format — e.g. "show me layouts", "change my resume's design", "try a different look", "make it one column", "pick a layout". For editing resume content, use the `career` skill.
+SKILL_LAYOUTS_BROWSE_MD = """---
+name: career-layouts-browse
+description: Browse the space of resume layouts and choose one to publish. Use when the request is about the resume's look — its layout, design, theme, colour, or output format — e.g. "show me layouts", "change my resume's design", "try a different look", "make it one column", "pick a layout". For editing resume content, use the `career-resume-update` skill.
 ---
 
-# Career — layouts
+# Career — layouts browse
 
 A layout is not a template: it is one point in a design space of thousands, built from seven
 independent choices (palette, typeface, header, skills, promotion, density, grouping) over one
 renderer. Browsing that space and publishing the one the user picks is what this skill does;
-editing resume *content* is the `career` skill.
+editing resume *content* is the `career-resume-update` skill.
 
 The tool is `resume-pipeline`, run from the resume folder (it walks up to find `resume.json`).
 **You run these, not the user.**
@@ -248,8 +248,8 @@ Scaffolded by [`resume-pipeline`](https://github.com/dberardi2020/resume-pipelin
 3. `resume-pipeline catalogue` — build a page of layout options and open it.
 4. `resume-pipeline publish --theme <id>` — writes the file you actually send.
 
-Better still, ask your coding agent for any of the above — `init` installs `career`
-skills (content, and layouts) that teach it the workflow and the rules.
+Better still, ask your coding agent for any of the above — `init` installs the
+`career-resume-update` and `career-layouts-browse` skills that teach it the workflow and the rules.
 
 ## What goes where
 
@@ -267,7 +267,8 @@ letting any agent edit your resume.
 # The skills are generic — they carry no personal data — so refreshing them to
 # the current shipped version is always safe. Personal context belongs in the
 # workspace `CLAUDE.md`, never in a skill.
-SKILLS = {"career": SKILL_CAREER_MD, "career-layouts": SKILL_LAYOUTS_MD}
+SKILLS = {"career-resume-update": SKILL_RESUME_UPDATE_MD,
+          "career-layouts-browse": SKILL_LAYOUTS_BROWSE_MD}
 
 
 def _write(path: Path, content: str, *, force: bool = False) -> str:

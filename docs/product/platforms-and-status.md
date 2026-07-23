@@ -25,8 +25,8 @@ Python 3.11 is the floor (`pyproject.toml`); the code uses `X | Y` unions and `:
 | Layout + content linter | Works. 20 rules, three severities. Reports only. |
 | The viewer | Works, in both deliveries — static folder and served. Served adds paging, shuffle, a colour hold, and publish-in-place. |
 | Publish (PDF / HTML / Markdown) | Works. PDF needs a browser; the other two do not. |
-| `init` workspace scaffold | Works, and ships the `career` agent skill. |
-| Tests + CI | 172 tests. Green on macOS + Linux × Python 3.11/3.13. |
+| `init` workspace scaffold | Works, and ships the `career-resume-update` + `career-layouts-browse` agent skills. |
+| Tests + CI | 191 tests, plus an on-demand acceptance harness (`qa/`). Green on macOS + Linux × Python 3.11/3.13. |
 
 ## Experimental
 

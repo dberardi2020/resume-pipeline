@@ -6,7 +6,7 @@
 
 The user's resume is **structured data** (JSON Resume), not a document. One profile is the
 only authored file; layouts are generated; the published deliverable is derived. If you are
-working in someone's career workspace, read its `CLAUDE.md` and the `career` skill first —
+working in someone's career workspace, read its `CLAUDE.md` and the `career-*` skills first —
 they carry rules that override anything convenient.
 
 ## Vocabulary

@@ -8,6 +8,13 @@ that burns tokens rediscovering the obvious. Update it *last* with anything you 
 This doubles as the **regression baseline**: the checklist at the bottom is what must still work.
 Each run, re-verify it and add any new surface. Point-in-time — update the "last verified" line.
 
+**This is a QA lens, not a second product doc.** Canonical facts live in the repo's own docs — the
+[`## Testing`](../README.md#testing) section and [`docs/technical/testing.md`](../docs/technical/testing.md)
+for the layers and run story, [`docs/`](../docs/README.md) and the ADRs for the product and its
+decisions. This file **links** there and holds only the QA *delta*: exact selectors, drive techniques,
+gotchas, and the regression checklist. If something here is really a product fact, move it to the doc
+that owns it and link — duplication drifts.
+
 ## Run the app
 
 ```bash

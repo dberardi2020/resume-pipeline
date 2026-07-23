@@ -17,9 +17,15 @@ path) had been baked *into* the skill, so nobody dared overwrite it.
 **Two skills, split by intent, both generic; personal context lives in the workspace `CLAUDE.md`;
 `init --skill-only` refreshes them in place.**
 
-- `career` — resume *content*: edit, lint, publish, cover letters. Carries the content-change
+- `career-resume-update` — resume *content*: edit, lint, publish. Carries the content-change
   workflow and points at `CLAUDE.md` for the anti-fabrication rule.
-- `career-layouts` — the resume's *look*: browse the design space, pick a layout, publish it.
+- `career-layouts-browse` — the resume's *look*: browse the design space, pick a layout, publish it.
+
+**Names are verb-forward and prefixed.** `career` alone said nothing about what the skill *did*; the
+names now lead with the object-and-verb (`resume-update`, `layouts-browse`) so an agent — or a human
+scanning the `/` menu — reads the job off the name, while the shared `career-` prefix groups them and
+dodges the built-in `/resume` command. Cover letters and applications are *not* in scope: the tool is
+resume-only, so a `resume-update`-named skill no longer claims capability it lacks.
 
 Neither skill contains anything about a particular person. Because they are generic, overwriting
 them is safe, so `init --skill-only` force-writes them — that command is how a workspace re-syncs to

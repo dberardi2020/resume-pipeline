@@ -96,8 +96,9 @@ Install resume-pipeline from https://github.com/dberardi2020/resume-pipeline
   repo, make a venv, `pip install -e .`, and symlink `.venv/bin/resume-pipeline` onto my
   PATH instead.
 - Then run `resume-pipeline init <where I keep my documents>` to scaffold a career
-  workspace. That also installs `career` skills into the workspace's .claude/skills/,
-  which teach you the workflow and the rules — read them before touching my resume.
+  workspace. That also installs the `career-resume-update` and `career-layouts-browse` skills into
+  the workspace's .claude/skills/, which teach you the workflow and the rules — read them before
+  touching my resume.
 - Then help me fill in Resume/resume.json, run `resume-pipeline lint`, and build me a
   catalogue of layouts to look at.
 
@@ -109,24 +110,25 @@ anything is missing.
 
 The intended interface is not the CLI — it's your coding agent. `init` installs two
 [Claude Code skills](https://docs.claude.com/en/docs/claude-code/skills) into the workspace's
-`.claude/skills/`, and your agent picks them up automatically. You never type a command; you
-say what you want, and the agent triggers the right skill and runs the tool for you:
+`.claude/skills/`, and your agent picks them up automatically. Either just say what you want and
+the matching skill fires, or call it by name — both work:
 
 | Skill | Say something like | It handles |
 |---|---|---|
-| **`career`** | "update my summary", "lint my resume", "publish a PDF" | editing content, linting, publishing — and the anti-fabrication rule (it will not invent a metric) |
-| **`career-layouts`** | "show me some layouts", "try a different look", "make it one column" | browsing the design space, then publishing the one you pick |
+| **`career-resume-update`** | "update my summary", "lint my resume", "publish a PDF" | editing content, linting, publishing — and the anti-fabrication rule (it will not invent a metric) |
+| **`career-layouts-browse`** | "show me some layouts", "try a different look", "make it one column" | browsing the design space, then publishing the one you pick |
 
-You don't invoke them by name — describe the task and the matching skill fires (your agent may
-also let you call `/career` directly). The skills carry no personal data, so
-`resume-pipeline init --skill-only` re-installs or refreshes them at any time. Everything below
+You don't have to invoke them by name — describe the task and the right skill fires — but you can:
+`/career-resume-update` and `/career-layouts-browse` are there when you want them. The skills carry
+no personal data, so `resume-pipeline init --skill-only` re-installs or refreshes them at any time.
+Everything below
 is the substrate they drive — documented so nothing is hidden, not so you type it.
 
 ## Commands
 
 | Verb | What it does |
 |---|---|
-| `init [dir]` | Scaffold a workspace: `resume.json`, folders, working rules, and the agent skills (`career` for content, `career-layouts` for the look). `--skill-only` installs or refreshes just the skills in a folder you already have. |
+| `init [dir]` | Scaffold a workspace: `resume.json`, folders, working rules, and the agent skills (`career-resume-update` for content, `career-layouts-browse` for the look). `--skill-only` installs or refreshes just the skills in a folder you already have. |
 | `lint` | Check the profile and a layout: parse safety, structure, vague or unquantified claims. |
 | `catalogue` | Build a static, browsable folder of layout options. Opens from `file://`, no server. |
 | `serve` | The same viewer with a process behind it — previews rendered on request, plus PDF export. |
@@ -147,6 +149,22 @@ extract text top-to-bottom and left-to-right, so a two-column layout genuinely s
 reading order. That is verifiable, it is sufficient, and it is why every generated layout is
 single-column and ≥10pt *by construction* — a test re-extracts published PDFs and asserts the
 text comes back in document order.
+
+## Testing
+
+QA runs in three layers — run the ones a change touches, ship when they're green:
+
+- **Unit** — `pytest -q` (191 tests, ~30s): fast, mocked, property-based across the whole
+  10,080-layout space. The CI gate.
+- **Acceptance** — `python qa/acceptance.py`: the un-mockable surface as real processes — the
+  installed CLI as a subprocess, a live `serve` server over real HTTP, a real headless-Chrome PDF,
+  and the viewer's JavaScript asserted in a real browser. Non-zero exit on failure; skips cleanly
+  when no browser is present. Runs standalone — no extra tooling.
+- **Agentic browser pass** — the interactions and *looks-right* a harness can't assert, driven live
+  against `serve`. The repo's testable surfaces, flows and gotchas live in
+  [`qa/product-map.md`](qa/product-map.md).
+
+Full approach, coverage and CI: [`docs/technical/testing.md`](docs/technical/testing.md).
 
 ## Roadmap
 

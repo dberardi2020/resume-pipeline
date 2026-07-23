@@ -9,7 +9,7 @@ lives wherever you keep it. The path argument is optional because commands walk 
 from the working directory to find it.
 
 This is the substrate, not the interface. The intended way to drive all of this is
-an agent working in the workspace (see the `career` skill in `scaffold.py`); a human
+an agent working in the workspace (see the `career-*` skills in `scaffold.py`); a human
 should not have to remember any of these verbs.
 """
 from __future__ import annotations

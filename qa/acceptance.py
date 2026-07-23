@@ -83,14 +83,14 @@ def check_init(qa: QA, tmp: Path) -> None:
     print("== init: a fresh workspace ==")
     ws = tmp / "fresh"
     cli("init", str(ws))
-    for rel in ("CLAUDE.md", "README.md", ".claude/skills/career/SKILL.md",
-                ".claude/skills/career-layouts/SKILL.md", "Resume/resume.json",
+    for rel in ("CLAUDE.md", "README.md", ".claude/skills/career-resume-update/SKILL.md",
+                ".claude/skills/career-layouts-browse/SKILL.md", "Resume/resume.json",
                 "Resume/Archive", "Cover Letters", "Applications", "Reference"):
         qa.ok(f"init wrote {rel}", (ws / rel).exists())
     # the two skills must reference only real subcommands
     real = {"lint", "catalogue", "serve", "publish", "init"}
     import re
-    for name in ("career", "career-layouts"):
+    for name in ("career-resume-update", "career-layouts-browse"):
         text = (ws / ".claude/skills" / name / "SKILL.md").read_text()
         cmds = set(re.findall(r"resume-pipeline\s+([a-z-]+)", text))
         qa.ok(f"{name} documents only real commands", cmds <= real, str(cmds - real))

@@ -132,7 +132,8 @@ What `init` writes. Generic; nothing here is anyone's actual resume.
 ```
 CLAUDE.md                        working rules, including anti-fabrication
 README.md                        orientation
-.claude/skills/career/SKILL.md   the agent skill
+.claude/skills/career-resume-update/    resume-content skill
+.claude/skills/career-layouts-browse/   layout-browsing skill
 Resume/resume.json               starter profile
 Resume/Archive/                  pre-edit snapshots, YYYYMMDD-description.ext
 Cover Letters/                   designed, unbuilt

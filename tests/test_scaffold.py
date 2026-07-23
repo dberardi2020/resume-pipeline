@@ -15,14 +15,14 @@ import pytest
 from resume_pipeline import cli, compose, scaffold, space
 
 WRITTEN = ("CLAUDE.md", "README.md",
-           ".claude/skills/career/SKILL.md",
-           ".claude/skills/career-layouts/SKILL.md",
+           ".claude/skills/career-resume-update/SKILL.md",
+           ".claude/skills/career-layouts-browse/SKILL.md",
            "Resume/resume.json")
 FOLDERS = ("Resume/Archive", "Cover Letters", "Applications", "Reference")
 
-SHIPPED_TEXT = (scaffold.WORKSPACE_CLAUDE_MD, scaffold.SKILL_CAREER_MD,
-                scaffold.SKILL_LAYOUTS_MD, scaffold.WORKSPACE_README)
-SHIPPED_IDS = ("claude_md", "career_skill", "layouts_skill", "readme")
+SHIPPED_TEXT = (scaffold.WORKSPACE_CLAUDE_MD, scaffold.SKILL_RESUME_UPDATE_MD,
+                scaffold.SKILL_LAYOUTS_BROWSE_MD, scaffold.WORKSPACE_README)
+SHIPPED_IDS = ("claude_md", "resume_update_skill", "layouts_browse_skill", "readme")
 
 
 @pytest.fixture
@@ -52,8 +52,8 @@ def test_init_reports_what_it_skipped(tmp_path):
 
 def test_skill_only_installs_just_the_skills(tmp_path):
     scaffold.init(tmp_path, skill_only=True)
-    assert (tmp_path / ".claude/skills/career/SKILL.md").is_file()
-    assert (tmp_path / ".claude/skills/career-layouts/SKILL.md").is_file()
+    assert (tmp_path / ".claude/skills/career-resume-update/SKILL.md").is_file()
+    assert (tmp_path / ".claude/skills/career-layouts-browse/SKILL.md").is_file()
     assert not (tmp_path / "CLAUDE.md").exists()
     assert not (tmp_path / "Resume").exists()
 
@@ -61,16 +61,16 @@ def test_skill_only_installs_just_the_skills(tmp_path):
 def test_skill_only_refreshes_a_stale_skill(tmp_path):
     """`init --skill-only` is the re-sync button: it overwrites the skills (which
     carry no user data) so a workspace cannot drift from the shipped version."""
-    skill = tmp_path / ".claude/skills/career/SKILL.md"
+    skill = tmp_path / ".claude/skills/career-resume-update/SKILL.md"
     skill.parent.mkdir(parents=True)
     skill.write_text("stale: resume-pipeline build --theme all", encoding="utf-8")
     scaffold.init(tmp_path, skill_only=True)
-    assert skill.read_text() == scaffold.SKILL_CAREER_MD
+    assert skill.read_text() == scaffold.SKILL_RESUME_UPDATE_MD
 
 
 def test_init_does_not_overwrite_skills_without_skill_only(tmp_path):
     """A full init still never clobbers an existing file."""
-    skill = tmp_path / ".claude/skills/career/SKILL.md"
+    skill = tmp_path / ".claude/skills/career-resume-update/SKILL.md"
     skill.parent.mkdir(parents=True)
     skill.write_text("mine", encoding="utf-8")
     scaffold.init(tmp_path)

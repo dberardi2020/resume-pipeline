@@ -40,7 +40,8 @@ That writes a workspace and does not overwrite anything that already exists:
 ~/Career/
   CLAUDE.md                        the working rules, including anti-fabrication
   README.md                        orientation
-  .claude/skills/career/SKILL.md   the agent skill
+  .claude/skills/career-resume-update/    resume-content skill
+  .claude/skills/career-layouts-browse/   layout-browsing skill
   Resume/resume.json               a starter profile to fill in
   Resume/Archive/                  pre-edit snapshots go here
   Cover Letters/  Applications/  Reference/
