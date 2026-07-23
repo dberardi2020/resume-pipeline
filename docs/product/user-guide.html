@@ -76,6 +76,10 @@ resume-pipeline serve          # the same viewer, with a process behind it</code
 <h3>4. Publish — write the deliverable</h3>
 <pre><code>resume-pipeline publish --theme harbor-grotesk-band-pills-ladder-airy-grouped</code></pre>
 <p><code>--theme</code> takes a preset (<code>default</code>, <code>plain</code>, <code>editorial</code>, <code>warm</code>) or any spec name. Writes <code>&lt;Name&gt;.pdf</code>, <code>.html</code> and <code>.md</code> beside the profile, overwriting in place — the folder always answers "which file do I send?" If a deliverable is already there under another name, that name is kept.</p>
+<p><strong>Publish remembers your choices.</strong> The chosen layout and formats are recorded in a hidden <code>.resume-pipeline.json</code> sidecar, so after a content edit a bare <code>resume-pipeline publish</code> re-renders <strong>the same layout in the same formats</strong> rather than reverting to the default. Pass <code>--theme</code> or <code>--formats</code> to change and re-record; the sidecar outlives deleting the deliverables (ADR-0009).</p>
+<pre><code>resume-pipeline publish --formats pdf     # only the PDF; html and md are skipped
+resume-pipeline publish                    # keep last layout and formats after editing content</code></pre>
+<p><code>--formats</code> takes any comma-separated subset of <code>pdf,html,md</code> (all three by default).</p>
 <p>From the viewer, <strong>Make this my resume</strong> does the same thing with no name typed.</p>
 <h3>5. Cover letters — not built</h3>
 <p>Designed, unbuilt (RP-0009). <code>Cover Letters/</code> and <code>Applications/</code> are scaffolded and empty.</p>

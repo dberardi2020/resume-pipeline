@@ -132,6 +132,19 @@ resume-pipeline publish --theme harbor-grotesk-band-pills-ladder-airy-grouped
 answers "which file do I send?" If a deliverable is already there under another name, that
 name is kept.
 
+**Publish remembers your choices.** The chosen layout and formats are recorded in a hidden
+`.resume-pipeline.json` sidecar, so after a content edit a bare `resume-pipeline publish`
+re-renders **the same layout in the same formats** rather than reverting to the default. Pass
+`--theme` or `--formats` to change and re-record; the sidecar outlives deleting the deliverables
+(ADR-0009).
+
+```sh
+resume-pipeline publish --formats pdf     # only the PDF; html and md are skipped
+resume-pipeline publish                    # keep last layout and formats after editing content
+```
+
+`--formats` takes any comma-separated subset of `pdf,html,md` (all three by default).
+
 From the viewer, **Make this my resume** does the same thing with no name typed.
 
 ### 5. Cover letters — not built

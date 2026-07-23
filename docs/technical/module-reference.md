@@ -157,14 +157,19 @@ request on an mtime change, since an agent edits it while the viewer watches.
 
 ## `deliverable.py`
 
-Writing the published trio, extracted so the command and the viewer cannot diverge.
-`write(resume, spec, out_dir, stem)` renders HTML, Markdown and PDF; PDF goes last because it
-is the step that can fail.
+Writing the deliverable, extracted so the command and the viewer cannot diverge.
+`write(resume, spec, out_dir, stem, formats)` renders and writes the chosen `formats` (a subset
+of `pdf, html, md`; all three by default); PDF goes last because it is the step that can fail.
 
-`existing_stem(out_dir)` finds a complete `.pdf`/`.html`/`.md` trio already present so
-publishing **reuses that name** instead of introducing a second convention — otherwise
-publishing duplicates a deliverable rather than replacing it. Ambiguous cases fall back to
-`default_stem()`.
+Publishing records two choices in a hidden `.resume-pipeline.json` sidecar so a bare re-publish
+after a content edit repeats them (ADR-0009): `write_prefs`/`read_prefs` persist and read it,
+and `recorded_layout(out_dir)` / `recorded_formats(out_dir)` return the last chosen layout id and
+format set, or None to fall back.
+
+`existing_stem(out_dir)` finds the deliverable already present so publishing **reuses that name**
+instead of introducing a second convention — otherwise publishing duplicates a deliverable rather
+than replacing it. "Present" means the recorded formats are all there (all three if none
+recorded), so a PDF-only deliverable still matches; ambiguous cases fall back to `default_stem()`.
 
 ## `scaffold.py`
 

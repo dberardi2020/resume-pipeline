@@ -19,3 +19,4 @@ ADR is superseded.
 | [0006](0006-the-linter-reports-it-never-edits.md) | The linter reports; it never edits | Accepted |
 | [0007](0007-keep-the-in-house-renderer.md) | Keep the in-house renderer rather than adopting RenderCV | Accepted |
 | [0008](0008-stints-as-a-local-schema-extension.md) | Per-title bullets as a local schema extension | Experimental |
+| [0009](0009-publish-remembers-your-choices.md) | Publish remembers the chosen layout and formats in a sidecar | Accepted |

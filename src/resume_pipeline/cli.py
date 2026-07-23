@@ -81,6 +81,21 @@ def resolve_layout(name: str):
     return compose.as_theme(resolve_spec(name))
 
 
+def parse_formats(raw: str) -> list[str]:
+    """A comma-separated subset of the output formats, in canonical order."""
+    wanted = {f.strip().lower() for f in raw.split(",") if f.strip()}
+    unknown = wanted - set(deliverable.FORMATS)
+    if unknown:
+        raise SystemExit(
+            f"error: unknown format(s): {', '.join(sorted(unknown))}.\n"
+            f"  choose from: {', '.join(deliverable.FORMATS)}")
+    formats = [f for f in deliverable.FORMATS if f in wanted]
+    if not formats:
+        raise SystemExit("error: --formats needs at least one of "
+                         f"{', '.join(deliverable.FORMATS)}.")
+    return formats
+
+
 def _load(path: str):
     try:
         resume = model.load(path)
@@ -155,17 +170,34 @@ def cmd_publish(args) -> int:
     """
     args.resume = str(find_resume(args.resume))
     resume = _load(args.resume)
-    spec = resolve_spec(args.theme)
-    theme = compose.as_theme(spec)
     out_dir = Path(args.resume).parent
+
+    # Neither flag given? Keep what the last publish recorded, so a content edit
+    # re-renders the same design rather than snapping back to the defaults.
+    if args.theme:
+        spec, kept_layout = resolve_spec(args.theme), None
+    else:
+        kept_layout = deliverable.recorded_layout(out_dir)
+        spec = resolve_spec(kept_layout or "default")
+    theme = compose.as_theme(spec)
+
+    if args.formats:
+        formats, kept_formats = parse_formats(args.formats), None
+    else:
+        kept_formats = deliverable.recorded_formats(out_dir)
+        formats = kept_formats or list(deliverable.FORMATS)
+
     stem = args.name or deliverable.default_stem(resume, out_dir)
 
     try:
-        deliverable.write(resume, spec, out_dir, stem)
+        deliverable.write(resume, spec, out_dir, stem, formats)
     except (pdf.BrowserNotFound, RuntimeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
-    print(f"published {stem}.pdf / .html / .md to {out_dir}  (theme: {theme.name})")
+    kept = [n for n, on in (("layout", kept_layout), ("formats", kept_formats)) if on]
+    note = f"  (kept your last {' & '.join(kept)})" if kept else ""
+    wrote = " / ".join(f"{stem}.{f}" for f in deliverable.FORMATS if f in formats)
+    print(f"published {wrote} to {out_dir}  (theme: {theme.name}){note}")
     if not theme.ats_safe:
         print(f"note: {theme.name!r} is not ATS-safe - do not submit it through a portal.",
               file=sys.stderr)
@@ -218,8 +250,12 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("publish",
                        help="write the deliverable beside the resume")
     p.add_argument("resume", nargs="?")
-    p.add_argument("--theme", default="default",
-                   help="preset name or generated layout id (default: default)")
+    p.add_argument("--theme", default=None,
+                   help="preset name or generated layout id; omit to keep the "
+                        "layout you last published (default when none recorded)")
+    p.add_argument("--formats", default=None,
+                   help="comma-separated subset of pdf,html,md; omit to keep the "
+                        "formats you last published (all three when none recorded)")
     p.add_argument("--name", help="output basename (default: <Lastname>_Resume)")
     p.set_defaults(func=cmd_publish)
 

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>0009 — Publish remembers your choices in a sidecar</title><style>
+:root{--bg:#f7f8fa;--fg:#181820;--muted:#565666;--line:#e5e7ec;--code-bg:#eef0f4;--accent:#4577d1;--link:#3a67b8}
+@media(prefers-color-scheme:dark){:root{--bg:#080a0e;--fg:#e9ecf3;--muted:#a2a7b8;--line:#232735;--code-bg:#12141b;--accent:#5b8de0;--link:#6f9ae6}}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:64px 28px 120px}
+h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
+h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
+h3{font-size:1.08rem;margin:1.8em 0 .4em}
+p{margin:.7em 0}
+a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
+a:hover{border-bottom-color:var(--link)}
+code{background:var(--code-bg);padding:.12em .4em;border-radius:4px;font:.86em/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
+pre{background:var(--code-bg);padding:16px 18px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:.85em}
+ul,ol{padding-left:1.4em;margin:.7em 0}
+li{margin:.3em 0}
+blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
+blockquote strong{color:var(--fg)}
+table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+th{background:var(--code-bg);font-weight:600}
+hr{border:none;border-top:1px solid var(--line);margin:2em 0}
+strong{font-weight:650}
+</style></head><body><main class="wrap">
+<h1>0009 — Publish remembers your choices in a sidecar</h1>
+<p><strong>Status:</strong> Accepted · 2026-07-23</p>
+<h2>Context</h2>
+<p>The common loop is not "pick a layout once" — it is edit the content, re-publish, edit again. But <code>publish</code> took the layout as a <code>--theme</code> argument that defaulted to <code>default</code>, and recorded nothing. So a bare re-publish after a content edit <strong>silently switched the layout</strong> back to the default, discarding whatever the user had chosen in the viewer. The chosen layout lived only in the user's memory. Separately, not everyone wants all three formats, but <code>publish</code> always wrote <code>.pdf</code> + <code>.html</code> + <code>.md</code> with no way to narrow the set — and any per-user "which formats" choice would have the same forgetting problem.</p>
+<p>Both are the same gap: two publish <em>choices</em> — which layout, which formats — with nowhere to persist between runs.</p>
+<h2>Decision</h2>
+<p><strong>Publish records the chosen layout and formats in a hidden sidecar, <code>.resume-pipeline.json</code>, beside the deliverable. A bare re-publish reuses them; an explicit <code>--theme</code> or <code>--formats</code> overrides and re-records.</strong></p>
+<pre><code>{ "layout": "ink-charter-masthead-inline-stacked-normal-grouped", "formats": ["pdf"] }</code></pre>
+<p>Rejected alternatives: an HTML comment in the deliverable (lost the moment the file is deleted — the choice must outlive the generated files); a key inside <code>resume.json</code> (the tool must not write the hand-edited source of truth); a global <code>~/.config</code> file (it would not cross the file-sync that carries the workspace between machines, so two machines would disagree).</p>
+<h2>Rationale</h2>
+<ul><li><strong>Durable.</strong> The sidecar outlives deleting every deliverable; only deleting the sidecar itself — an explicit reset — clears the choice.</li><li><strong>Folder-local, so it composes.</strong> The record sits beside the deliverable it describes, so each folder remembers its own — the main resume, and later each tailored application — with no path-keyed global state.</li><li><strong>Same pattern as the name.</strong> <code>existing_stem</code> already reuses the deliverable's <em>name</em>; this reuses its <em>layout</em> and <em>formats</em>. "Complete deliverable" now means the recorded formats are present, so a PDF-only deliverable still matches its name.</li></ul>
+<h2>Consequences</h2>
+<ul><li>Bare <code>publish</code> after a content edit keeps the design; switching layout or formats is explicit.</li><li>The folder gains one hidden file. It is tool state, not a document, and never the answer to "which file do I send?".</li><li>The schema is intentionally room-to-grow: a future set of <em>named</em> loadouts (RP-0004) extends this record rather than replacing it. Surfacing format choice in the viewer is RP-0030.</li><li>A deliverable published before this exists has no sidecar; the tool falls back to the defaults.</li></ul>
+</main></body></html>

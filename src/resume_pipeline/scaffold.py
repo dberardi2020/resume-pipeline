@@ -155,18 +155,24 @@ directory, so the path argument is optional.
 resume-pipeline lint                       # ATS + content checks
 resume-pipeline catalogue                  # browsable page of layout options
 resume-pipeline serve                      # the same viewer, with PDF export
-resume-pipeline publish --theme default    # write the deliverable beside resume.json
+resume-pipeline publish                    # (re)write the deliverable beside resume.json
 ```
 
 **You run these, not the user.** They work in an agent session and should not be handed a
 command to type — if a turn ends by telling them to run something, run it instead.
 
 **`catalogue` vs `publish`.** `catalogue` writes a folder of HTML options to look at.
-`publish` overwrites the canonical `.pdf/.html/.md` beside `resume.json` — that trio *is*
-the deliverable attached to an application. Use it after any content change.
+`publish` overwrites the canonical deliverable beside `resume.json` — that *is* the file
+attached to an application. Use it after any content change.
 
-`--theme` takes a preset (`default`, `plain`, `editorial`, `warm`) or any layout id from
-the catalogue, e.g. `moss-charter-band-pills-ladder-airy`.
+**Publish remembers the layout and formats.** A bare `publish` re-renders the layout and
+formats last used (recorded in `.resume-pipeline.json`), so after a content edit you do **not**
+re-pick the design. Change it only when asked:
+
+- `--theme` — a preset (`default`, `plain`, `editorial`, `warm`) or any layout id from the
+  catalogue, e.g. `moss-charter-band-pills-ladder-airy`.
+- `--formats` — a comma-separated subset of `pdf,html,md` (all three by default), e.g.
+  `--formats pdf` for the PDF alone.
 
 `serve` blocks until ctrl-c — run it in the background.
 
@@ -192,7 +198,7 @@ choice, not a deletion.
 2. Edit `resume.json` only.
 3. `resume-pipeline lint` — compare against the pre-edit baseline; never silence a finding
    with invented data.
-4. `resume-pipeline publish --theme default`
+4. `resume-pipeline publish` — keeps the layout and formats already chosen.
 5. Report what changed, and list anything you needed but did not have.
 """
 

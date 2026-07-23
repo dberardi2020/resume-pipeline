@@ -119,6 +119,115 @@ def test_publish_reports_a_pdf_failure(workspace, monkeypatch):
                      "--theme", "default"]) == 1
 
 
+# ── keeping the layout across a content edit ──────────────────────────────────
+
+def _fake_pdf(monkeypatch):
+    monkeypatch.setattr("resume_pipeline.pdf.write",
+                        lambda html, path, **kw: path.write_bytes(b"%PDF-fake"))
+
+
+def test_publish_records_the_chosen_layout(workspace, monkeypatch):
+    """The sidecar must remember which layout produced the deliverable."""
+    from resume_pipeline import compose, deliverable
+    _fake_pdf(monkeypatch)
+    cli.main(["publish", str(workspace / "resume.json"),
+              "--theme", "plain", "--name", "Out"])
+    assert (workspace / deliverable.SIDECAR).is_file()
+    assert deliverable.recorded_layout(workspace) == compose.preset("plain").name
+
+
+def test_bare_publish_keeps_the_last_layout(workspace, monkeypatch, capsys):
+    """A content edit re-published without --theme keeps the chosen layout,
+    rather than silently snapping back to the default."""
+    from resume_pipeline import compose, deliverable
+    _fake_pdf(monkeypatch)
+    plain = compose.preset("plain").name
+    assert plain != compose.preset("default").name  # otherwise the test proves nothing
+    cli.main(["publish", str(workspace / "resume.json"),
+              "--theme", "plain", "--name", "Out"])
+    capsys.readouterr()
+
+    cli.main(["publish", str(workspace / "resume.json"), "--name", "Out"])
+    assert deliverable.recorded_layout(workspace) == plain
+    assert "kept your last layout" in capsys.readouterr().out
+
+
+def test_the_layout_survives_deleting_every_deliverable(workspace, monkeypatch):
+    """The whole point of the sidecar: the choice outlives the generated files."""
+    from resume_pipeline import compose, deliverable
+    _fake_pdf(monkeypatch)
+    cli.main(["publish", str(workspace / "resume.json"),
+              "--theme", "plain", "--name", "Out"])
+    for f in workspace.glob("Out.*"):
+        f.unlink()
+    assert deliverable.recorded_layout(workspace) == compose.preset("plain").name
+
+
+def test_bare_publish_defaults_when_nothing_is_recorded(workspace, monkeypatch, capsys):
+    from resume_pipeline import compose, deliverable
+    _fake_pdf(monkeypatch)
+    cli.main(["publish", str(workspace / "resume.json"), "--name", "Out"])
+    assert deliverable.recorded_layout(workspace) == compose.preset("default").name
+    assert "kept your last layout" not in capsys.readouterr().out
+
+
+def test_explicit_theme_overrides_the_recorded_layout(workspace, monkeypatch):
+    from resume_pipeline import compose, deliverable
+    _fake_pdf(monkeypatch)
+    cli.main(["publish", str(workspace / "resume.json"),
+              "--theme", "plain", "--name", "Out"])
+    cli.main(["publish", str(workspace / "resume.json"),
+              "--theme", "default", "--name", "Out"])
+    assert deliverable.recorded_layout(workspace) == compose.preset("default").name
+
+
+def test_recorded_layout_is_none_without_a_sidecar(tmp_path):
+    """A deliverable from before this feature has no sidecar — fall back."""
+    from resume_pipeline import deliverable
+    for suffix in (".pdf", ".html", ".md"):
+        (tmp_path / f"Out{suffix}").write_text("legacy", encoding="utf-8")
+    assert deliverable.recorded_layout(tmp_path) is None
+
+
+# ── choosing which formats to emit ────────────────────────────────────────────
+
+def test_publish_writes_only_the_selected_formats(workspace, monkeypatch):
+    from resume_pipeline import deliverable
+    _fake_pdf(monkeypatch)
+    cli.main(["publish", str(workspace / "resume.json"),
+              "--formats", "pdf", "--name", "Out"])
+    assert (workspace / "Out.pdf").exists()
+    assert not (workspace / "Out.html").exists()
+    assert not (workspace / "Out.md").exists()
+    assert deliverable.recorded_formats(workspace) == ["pdf"]
+
+
+def test_bare_publish_keeps_the_last_formats(workspace, monkeypatch, capsys):
+    _fake_pdf(monkeypatch)
+    cli.main(["publish", str(workspace / "resume.json"),
+              "--formats", "pdf", "--name", "Out"])
+    capsys.readouterr()
+    cli.main(["publish", str(workspace / "resume.json"), "--name", "Out"])
+    assert not (workspace / "Out.html").exists()
+    assert "kept your last" in capsys.readouterr().out
+
+
+def test_a_pdf_only_deliverable_still_matches_its_name(workspace, monkeypatch):
+    """Name reuse must survive a subset: a lone PDF is a complete deliverable
+    when the sidecar records pdf-only."""
+    from resume_pipeline import deliverable
+    _fake_pdf(monkeypatch)
+    cli.main(["publish", str(workspace / "resume.json"),
+              "--formats", "pdf", "--name", "OnlyPdf"])
+    assert deliverable.existing_stem(workspace) == "OnlyPdf"
+
+
+def test_an_unknown_format_is_rejected(workspace, monkeypatch):
+    _fake_pdf(monkeypatch)
+    with pytest.raises(SystemExit):
+        cli.main(["publish", str(workspace / "resume.json"), "--formats", "docx"])
+
+
 def test_lint_exit_code_reflects_errors(workspace, capsys):
     assert cli.main(["lint", str(workspace / "resume.json")]) == 0
 
