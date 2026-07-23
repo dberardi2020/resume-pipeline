@@ -69,9 +69,15 @@ def inline(text: str) -> str:
     # 3) links [text](url)
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)",
                   lambda m: f'<a href="{m.group(2)}">{m.group(1)}</a>', text)
-    # 4) bold then italic
-    text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
-    text = re.sub(r"(?<!\*)\*(?!\*)([^*]+)\*(?!\*)", r"<em>\1</em>", text)
+    # 4) bold, then italic. Bold may wrap an italic (`**a *b* c**`), so match the
+    #    bold body non-greedily (it can contain single `*`) and resolve any italics
+    #    inside it first; then italicise what remains. An italic wrapping a bold
+    #    (`*a **b** c*`) falls out too, since the inner bold is consumed first.
+    def italic(s: str) -> str:
+        return re.sub(r"(?<!\*)\*(?!\*)([^*]+)\*(?!\*)", r"<em>\1</em>", s)
+    text = re.sub(r"\*\*(.+?)\*\*",
+                  lambda m: f"<strong>{italic(m.group(1))}</strong>", text)
+    text = italic(text)
     # 5) restore code spans (escaped)
     text = re.sub(r"\x00(\d+)\x00", lambda m: f"<code>{esc(spans[int(m.group(1))])}</code>", text)
     return text

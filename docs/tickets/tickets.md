@@ -1,10 +1,12 @@
-# resume-pipeline — Tickets
+# Tickets
 
-A lightweight backlog — persist and review open items without a ticketing system.
+The backlog. Board-first: a lightweight tracker until a real one is warranted. IDs are `RP-NNNN`, uppercase, never reused.
+
+**What is *not* here:** the steps to *take the repo public* — secrets scan, private-content sweep, the flip. Those are a **pre-flight checklist run once when the project is ready**, kept as a separate release runbook, not backlog. This board tracks *building the product*.
 
 ## In progress
 
-_(none)_
+*(none)*
 
 ## Open
 
