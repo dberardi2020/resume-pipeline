@@ -259,6 +259,17 @@ def test_the_archived_copy_is_the_old_design_not_the_new(workspace, monkeypatch)
     assert (workspace / "Out.html").read_text() != old_html
 
 
+def test_rapid_publishes_do_not_collide_in_the_archive(workspace, monkeypatch):
+    """Two publishes in the same second must produce two distinct snapshots, not
+    one clobbering the other — the guarantee is *never lose a design*."""
+    from resume_pipeline import deliverable
+    _fake_pdf(monkeypatch)
+    for theme in ("plain", "editorial", "default"):  # three publishes, back to back
+        cli.main(["publish", str(workspace / "resume.json"), "--theme", theme, "--name", "Out"])
+    snaps = list((workspace / deliverable.ARCHIVE_DIR).iterdir())
+    assert len(snaps) == 2, [p.name for p in snaps]  # 1st archives nothing; 2nd and 3rd each once
+
+
 def test_publish_never_touches_existing_archive_contents(workspace, monkeypatch):
     """The user's Archive is preserved: publishing only ever adds folders."""
     from resume_pipeline import deliverable

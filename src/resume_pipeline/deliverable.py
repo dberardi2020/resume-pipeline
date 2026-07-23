@@ -116,7 +116,11 @@ def archive_existing(out_dir: Path) -> str | None:
         return None
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     dest = out_dir / ARCHIVE_DIR / stamp
-    dest.mkdir(parents=True, exist_ok=True)
+    n = 2  # two publishes in the same second must not collide and clobber a snapshot
+    while dest.exists():
+        dest = out_dir / ARCHIVE_DIR / f"{stamp}-{n}"
+        n += 1
+    dest.mkdir(parents=True)
     for f in (*files, out_dir / SIDECAR):  # sidecar too, so the snapshot is self-describing
         if f.is_file():
             shutil.copy2(f, dest / f.name)
