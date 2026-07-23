@@ -63,6 +63,7 @@ def page(specs, resume, *, preview: str = "file", exportable: bool = False,
     return _PAGE.replace("__PAGES__", str(pages)) \
                 .replace("__TITLE__", title) \
                 .replace("__TOTAL__", f"{space.TOTAL:,}") \
+                .replace("__TOTAL_N__", str(space.TOTAL)) \
                 .replace("__PREVIEW__", preview) \
                 .replace("__EXPORTABLE__", "true" if exportable else "false") \
                 .replace("__PALETTES__", json.dumps(palettes)) \
@@ -244,11 +245,11 @@ _PAGE = r"""<!doctype html>
 
 <script>
 let   OPTIONS    = __OPTIONS__;
-const PAGES      = __PAGES__;
+let   PAGES      = __PAGES__;   // updated as filtering narrows the set
 let   PAGE_INDEX = 0;
 const PREVIEW    = "__PREVIEW__";
 const EXPORTABLE = __EXPORTABLE__;
-const TOTAL      = "__TOTAL__";
+let   TOTAL      = __TOTAL_N__; // the (filtered) layout count, a number
 const PALETTES   = __PALETTES__;
 const TYPEFACES  = __TYPEFACES__;
 let   PALETTE    = null;   // null = as generated; otherwise a forced palette
@@ -297,16 +298,19 @@ let CURRENT = null;   // the spec currently open in the dialog
 function render(){
   paletteBar($("#palette"));
   typefaceBar($("#typeface"));
-  // When paging, every layout is reachable, so a per-page "12 of 10,080" reads as
-  // a limit that is not there — the page counter says where you are instead. The
-  // static catalogue is a genuinely fixed sample, so there the "N of TOTAL" holds.
-  if(PAGES > 1){
-    $("#meta").textContent = `${TOTAL} layouts`;
-    $("#nav").hidden = false;
-    $("#pageMeta").textContent = `page ${PAGE_INDEX + 1} of ${PAGES.toLocaleString()}`;
+  // Served, the count follows the held axes: hold a colour and "10,080 layouts"
+  // becomes the size of that filtered subset, with the page counter tracking where
+  // you are in it. The static catalogue is a fixed sample, so it keeps "N of TOTAL".
+  if(PREVIEW === "route"){
+    const held = [PALETTE, TYPEFACE].filter(Boolean);
+    $("#meta").textContent = `${TOTAL.toLocaleString()} layout${TOTAL===1?"":"s"}`
+                           + (held.length ? ` · holding ${held.join(" · ")}` : "");
+    $("#nav").hidden = PAGES <= 1;
+    $("#pageMeta").textContent =
+      PAGES > 1 ? `page ${PAGE_INDEX + 1} of ${PAGES.toLocaleString()}` : "";
     $("#first").disabled = PAGE_INDEX === 0;   // already home
   } else {
-    $("#meta").textContent = `${OPTIONS.length} of ${TOTAL} possible layouts`;
+    $("#meta").textContent = `${OPTIONS.length} of ${TOTAL.toLocaleString()} possible layouts`;
   }
   const grid = $("#grid");
   grid.innerHTML = "";
@@ -348,8 +352,7 @@ function paletteBar(el){
                style="background:${p.accent}" title="${p.name}"></button>`).join("");
   el.querySelectorAll("[data-p]").forEach(b => b.onclick = ()=>{
     PALETTE = b.dataset.p || null;
-    render();
-    if($("#dlg").open && CURRENT) open(CURRENT);  // keep an open preview in sync
+    onPin();
   });
 }
 
@@ -365,8 +368,7 @@ function typefaceBar(el){
                style="font-family:${t.font.replace(/"/g,"&quot;")}" title="${t.name}">${t.name}</button>`).join("");
   el.querySelectorAll("[data-t]").forEach(b => b.onclick = ()=>{
     TYPEFACE = b.dataset.t || null;
-    render();
-    if($("#dlg").open && CURRENT) open(CURRENT);  // keep an open preview in sync
+    onPin();
   });
 }
 
@@ -418,15 +420,32 @@ function open(v){
   }
 }
 
+// Held axes travel with every page request, so paging walks only the filtered
+// subset and the server reports its true size.
+function filterQuery(){
+  const p = new URLSearchParams();
+  if(PALETTE)  p.set("palette",  PALETTE);
+  if(TYPEFACE) p.set("typeface", TYPEFACE);
+  const q = p.toString();
+  return q ? "&" + q : "";
+}
+
 async function goto(index){
   const nav = $("#nav"); nav.style.opacity = ".5";
-  const r = await fetch("/api/page?i=" + index).then(r=>r.json())
+  const r = await fetch("/api/page?i=" + index + filterQuery()).then(r=>r.json())
                   .catch(e=>({error:String(e)}));
   nav.style.opacity = "1";
   if(r.error){ toast("Could not load page: " + r.error); return; }
-  OPTIONS = r.options; PAGE_INDEX = r.index; cursor = 0;
+  OPTIONS = r.options; PAGE_INDEX = r.index; PAGES = r.pages; TOTAL = r.total; cursor = 0;
   render();
   scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// Holding or releasing an axis re-queries from the top of the now-filtered set,
+// so the layouts, the page count and the total all move together (RP-0033/0035).
+function onPin(){
+  goto(0);
+  if($("#dlg").open && CURRENT) open(CURRENT);  // keep an open preview in sync
 }
 
 if(PAGES > 1){

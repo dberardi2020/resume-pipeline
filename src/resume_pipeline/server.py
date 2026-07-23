@@ -97,10 +97,17 @@ class Handler(BaseHTTPRequestHandler):
         if route == "/api/page":
             query = parse_qs(urlparse(self.path).query)
             index = int((query.get("i") or ["0"])[0] or 0)
-            specs = space.page(index, ctx["count"])
+            # A held axis (colour/type) arrives as a query param named for the axis,
+            # and narrows the browse to that value — so paging walks only matching
+            # layouts, not the whole space re-tinted (RP-0033).
+            filters = {axis: query[axis][0] for axis, _ in space.AXES
+                       if query.get(axis) and query[axis][0]}
+            total_pages = space.pages(ctx["count"], filters)
+            specs = space.page(index, ctx["count"], filters)
             return self._json({
-                "index": index % space.pages(ctx["count"]),
-                "pages": space.pages(ctx["count"]),
+                "index": index % total_pages if total_pages else 0,
+                "pages": total_pages,
+                "total": space.total(filters),
                 "options": [viewer.describe(s) for s in specs],
             })
 

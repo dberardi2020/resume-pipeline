@@ -158,18 +158,54 @@ def browse_order() -> list[Spec]:
     return _ORDER
 
 
-def pages(count: int) -> int:
-    """How many pages of `count` the space divides into."""
+def _axis_value(spec: Spec, axis: str) -> str:
+    """The spec's value on one axis, as the string a filter compares against — the
+    same strings the chips and spec name use."""
+    if axis == "palette":
+        return PALETTES[spec.palette][0]
+    if axis == "typeface":
+        return TYPEFACES[spec.typeface][0]
+    if axis == "density":
+        return DENSITIES[spec.density][0]
+    return getattr(spec, axis)  # header, skills, promo, grouping are stored as strings
+
+
+def matches(spec: Spec, filters: dict[str, str]) -> bool:
+    """True if the spec holds every filtered axis at the required value."""
+    return all(_axis_value(spec, axis) == value for axis, value in filters.items())
+
+
+def _order(filters: dict[str, str] | None) -> list[Spec]:
+    """Browse order, narrowed to the specs that match every filter. Filtering is a
+    view over the enumeration, not a separate space — holding an axis constant just
+    hides the rest, which is what makes 'hold this colour/type' shrink the browse
+    instead of paging the same layout in seven shades."""
+    order = browse_order()
+    if not filters:
+        return order
+    return [s for s in order if matches(s, filters)]
+
+
+def total(filters: dict[str, str] | None = None) -> int:
+    """How many layouts are in the (optionally filtered) browse set."""
+    return TOTAL if not filters else len(_order(filters))
+
+
+def pages(count: int, filters: dict[str, str] | None = None) -> int:
+    """How many pages of `count` the (optionally filtered) space divides into."""
     if count <= 0:
         return 0
-    return -(-TOTAL // count)
+    return -(-total(filters) // count)
 
 
-def page(index: int, count: int) -> list[Spec]:
-    """One page of `count` layouts. Wraps, so any index is valid."""
+def page(index: int, count: int, filters: dict[str, str] | None = None) -> list[Spec]:
+    """One page of `count` layouts from the (optionally filtered) space. Wraps, so
+    any index is valid."""
     if count <= 0:
         return []
-    order = browse_order()
-    total_pages = pages(count)
+    order = _order(filters)
+    total_pages = pages(count, filters)
+    if total_pages == 0:
+        return []
     start = (index % total_pages) * count
     return order[start:start + count]

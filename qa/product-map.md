@@ -32,15 +32,19 @@ Use `docs/assets/demo-profile.json` (Jane Smith) as the fixture — never a real
   checks see nothing; you must render in a real browser to test it (`--dump-dom` counts cards, or
   drive it live). A full page is 24 cards.
 - **Colour bar** (`#palette`): a `.sw-varied` "Varied" button (default) + 7 `.sw` swatches —
-  `harbor ink moss clay plum slate crimson`. Click a swatch → every card recolours in place (first
-  axis chip flips, e.g. `clay`→`moss`) **and the pin persists across paging**. Each swatch is a
-  `<button class="sw" data-p="moss" title="moss">`.
-- **Type bar** (`#typeface`, RP-0037): the colour bar's twin. A `.tf` "Varied" button (default) + 4
-  `.tf` sample chips — `grotesk humanist charter mixed` — each rendered *in its own face*. Click one →
-  every card re-renders in that typeface (the **second** name segment swaps; the typeface axis chip
-  flips) and the pin **persists across paging** and **composes with the colour pin**. Each chip is a
-  `<button class="tf" data-t="charter" title="charter">`. The dialog carries the same bar (`#dlgTypeface`).
-- **Paging**: header shows `page N of 420`; `«` first, `‹`/`›` prev/next (top-right), `[`/`]` keys.
+  `harbor ink moss clay plum slate crimson`. Each swatch is `<button class="sw" data-p="moss" title="moss">`.
+- **Type bar** (`#typeface`): its twin. A `.tf` "Varied" button (default) + 4 `.tf` sample chips —
+  `grotesk humanist charter mixed` — each rendered *in its own face*. Each chip is
+  `<button class="tf" data-t="charter" title="charter">`. Both bars appear in the detail dialog too
+  (`#dlgPalette`, `#dlgTypeface`).
+- **Holds FILTER the browse, server-side (RP-0033, changed 2026-07-23 — was an in-place overlay).**
+  Clicking a swatch/chip sends the held axis as a query param to `/api/page`, which returns only
+  matching layouts. So the browse **narrows**: hold `moss` → 1,440 layouts / 60 pages, `moss`+`charter`
+  → 360 / 15; every card matches; **no 7×/4× redundancy** (the old overlay paged the full 10,080
+  re-tinted). Holds **compose** and **persist across paging**; "Varied" (`data-p=""`/`data-t=""`)
+  releases that axis. The header count **follows the filter** (see below).
+- **Paging**: header shows `page N of <pages>` where `<pages>` tracks the *filtered* set (420
+  unfiltered, 60 holding one palette, 15 holding palette+type); `«` first, `‹`/`›` prev/next, `[`/`]` keys.
 - **Card** → `Open` → **detail modal**: buttons `Copy Name`, `Export PDF`, `★ Make this my resume`,
   `Close`, plus its own colour bar. `★ Make this my resume` → `POST /api/publish` → writes the
   deliverable (real PDF + HTML + MD) + `.resume-pipeline.json` sidecar, archiving the previous.
@@ -74,12 +78,13 @@ Re-verify each; expected result in parens. Add new rows as surface grows.
 | # | Behaviour | Expected | Last verified |
 |---|---|---|---|
 | 1 | Grid renders in a real browser | 24 cards from an empty `#grid` | 2026-07-23 ✅ |
-| 2 | Colour-pin | click `moss` → all cards green, chip `clay`→`moss` | 2026-07-23 ✅ |
-| 3 | Pin persists across paging | page 2 cards still moss | 2026-07-23 ✅ |
-| 4 | Paging | `›` → "page 2 of 420", new layouts | 2026-07-23 ✅ |
+| 2 | Colour hold = **filter** | click `moss` → header "1,440 layouts · holding moss · page 1 of 60", every card moss | 2026-07-23 ✅ (driven live) |
+| 3 | Hold persists + no redundancy across paging | page 2 still all moss, different layouts (not the same design re-tinted) | 2026-07-23 ✅ (driven live) |
+| 4 | Paging | `›` → "page 2 of 420" unfiltered, new layouts | 2026-07-23 ✅ |
 | 5 | Detail modal | full-page render + publish controls | 2026-07-23 ✅ |
 | 6 | Viewer publish | deliverable + real PDF + sidecar records the picked layout + archive-on-overwrite | 2026-07-23 ✅ |
-| 7 | Typeface-pin (RP-0037) | click `charter` → all cards in that face, chip flips to `charter`, persists across paging, composes with colour | 2026-07-23 ✅ (driven live: charter re-typed both cards, moss+charter composed, both held on page 2) |
+| 7 | Typeface hold + compose (RP-0037) | click `charter` → all cards that face; `moss`+`charter` → "360 layouts · page 1 of 15", both held; release → back to 10,080/420 | 2026-07-23 ✅ (driven live) |
+| 8 | Counts follow the filter (RP-0035) | header total & page count recompute per hold; `/api/page` returns live `total` | 2026-07-23 ✅ (driven live + acceptance) |
 
 ## Teardown (always — a QA cleans up)
 

@@ -171,6 +171,15 @@ def check_serve(qa: QA, tmp: Path, browser: bool, open_ui: bool = False) -> None
         qa.ok("home page renders the viewer", "palette" in home.lower() or "layout" in home.lower())
         page = json.loads(urllib.request.urlopen(base + "/api/page?i=1", timeout=3).read())
         qa.ok("/api/page returns options", bool(page.get("options")))
+        full_total, full_pages = page["total"], page["pages"]
+        # RP-0033/0035: holding an axis narrows the browse to that subset — the total
+        # and page count must drop, and every returned layout must match the hold.
+        held = json.loads(urllib.request.urlopen(
+            base + "/api/page?i=0&palette=moss", timeout=3).read())
+        narrowed = held["total"] < full_total and held["pages"] < full_pages
+        all_moss = all(o["axes"]["palette"] == "moss" for o in held["options"])
+        qa.ok("holding a palette narrows the browse (filter, not overlay)",
+              narrowed and all_moss, f"total {full_total}->{held['total']}, all_moss={all_moss}")
         spec = page["options"][0]["name"]
         preview = urllib.request.urlopen(base + f"/preview/{spec}", timeout=3).read().decode()
         qa.ok("/preview renders a layout", "<html" in preview.lower())

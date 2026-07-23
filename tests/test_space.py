@@ -154,3 +154,52 @@ def test_spread_of_nothing_is_empty(count):
 
 def test_spread_cannot_exceed_the_space():
     assert len(space.spread(space.TOTAL + 50)) == space.TOTAL
+
+
+# ── filtering: holding an axis narrows the browse set (RP-0033/0035) ────────────
+
+PALETTE = compose.PALETTES[0][0]    # "harbor"
+TYPEFACE = compose.TYPEFACES[0][0]  # "grotesk"
+
+
+def test_no_filter_is_the_whole_space():
+    assert space.total() == space.TOTAL
+    assert space.total({}) == space.TOTAL
+    assert space.page(3, 12, {}) == space.page(3, 12) == space.page(3, 12, None)
+
+
+def test_holding_one_axis_divides_the_space_by_that_axis():
+    # Every palette holds an equal share, so fixing one is TOTAL / #palettes.
+    assert space.total({"palette": PALETTE}) == space.TOTAL // len(compose.PALETTES)
+    assert space.total({"typeface": TYPEFACE}) == space.TOTAL // len(compose.TYPEFACES)
+
+
+def test_holding_two_axes_divides_by_both():
+    expected = space.TOTAL // (len(compose.PALETTES) * len(compose.TYPEFACES))
+    assert space.total({"palette": PALETTE, "typeface": TYPEFACE}) == expected  # 360
+
+
+def test_a_filtered_page_holds_only_matching_layouts():
+    filters = {"palette": PALETTE, "typeface": TYPEFACE}
+    for spec in space.page(0, 24, filters):
+        assert compose.PALETTES[spec.palette][0] == PALETTE
+        assert compose.TYPEFACES[spec.typeface][0] == TYPEFACE
+
+
+def test_pages_and_total_follow_the_filter():
+    filters = {"palette": PALETTE}
+    total = space.total(filters)
+    assert space.pages(24, filters) == -(-total // 24)           # ceil, over the subset
+    assert space.pages(24, filters) < space.pages(24)            # fewer than the whole space
+
+
+def test_filtered_paging_covers_the_subset_once():
+    """Paging a filter reaches every matching layout, and no page repeats one."""
+    filters = {"typeface": TYPEFACE}
+    count = 24
+    seen: list[str] = []
+    for index in range(space.pages(count, filters)):
+        seen += [s.name for s in space.page(index, count, filters)]
+    matching = {s.name for s in ALL if compose.TYPEFACES[s.typeface][0] == TYPEFACE}
+    assert set(seen) == matching
+    assert len(seen) == len(matching)   # no repeats
