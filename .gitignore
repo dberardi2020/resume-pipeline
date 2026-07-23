@@ -4,6 +4,6 @@ __pycache__/
 dist/
 build/
 *.egg-info/
-.explore-session.json
-out/
+.pytest_cache/
+# The root README is the front door; GitHub renders the .md and it takes no twin.
 README.html
