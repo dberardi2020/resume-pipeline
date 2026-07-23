@@ -32,6 +32,6 @@ set of generated files belongs there, and only because it is the answer.
 - `publish` overwrites one fixed trio in place rather than accumulating layout-suffixed
   variants.
 - **Publishing reuses a deliverable name already present in the folder.** Deriving one instead
-  produced `Berardi_Resume.*` beside an existing `Resume_Berardi.*` — which does not replace a
+  produced `Smith_Resume.*` beside an existing `Resume_Smith.*` — which does not replace a
   deliverable, it duplicates it, leaving two resumes and one of them stale.
 - The workspace `CLAUDE.md` states the rule, so an agent working there inherits it.

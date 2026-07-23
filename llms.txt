@@ -45,8 +45,9 @@ The profile path is optional: commands walk up from the working directory lookin
 `resume.json`, or read `RESUME_PIPELINE_RESUME`. `--theme` accepts a preset (`default`,
 `plain`, `editorial`, `warm`) or any spec name.
 
-`catalogue` also writes `options.json` — numbered entries with spec name, description, axes,
-and preview path — so "use number 7" resolves without parsing HTML.
+`catalogue` also writes `options.json` — each entry is a spec name, description, axes and
+preview path — so a layout can be named in conversation without parsing HTML. The spec name
+is the handle; there are no ordinals.
 
 ## Source
 

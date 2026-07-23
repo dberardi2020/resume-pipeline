@@ -75,7 +75,11 @@ The space as pure data. Knows nothing about rendering.
 - `neighbours(spec, radius)` — every spec within *radius* axis-changes.
 - `spread(count)` — `count` layouts spread across the space by greedy farthest-point
   selection, deterministic, no seed. Tracks each candidate's distance to the chosen set
-  incrementally; doing it naively is cubic in the size of the space and does not finish.
+  incrementally; doing it naively is cubic in the size of the space and does not finish. Used
+  by the static catalogue, where a small representative sample is the point.
+- `browse_order()` / `page(i, n)` / `pages(n)` — the served viewer's paging. Every spec sorted
+  once by a hash of its name (so a page is well-mixed rather than seven shades of one design),
+  then sliced. Deterministic and wrapping: page *i* is the same layouts on every machine.
 - `parse(name)` — decode a name back to a `Spec`, or `None`. A lookup per segment, not a scan.
 
 ## `markdown.py`
@@ -124,6 +128,12 @@ per-spec payload embedded as JSON — name, description, and axis values — and
 `preview="file"` points at sibling `<name>.html`; `preview="route"` points at
 `/preview/<name>`. `exportable` reveals the actions only a server can honour.
 
+**Colour** is surfaced specially. Palette is one axis but the one the eye reacts to first, so
+the served viewer offers a colour bar: forcing a colour swaps the first segment of each spec
+name (palette) and re-requests the preview — an instant re-render of a neighbouring spec, not
+a live edit, so what shows is still what publishes. Disabled for the static catalogue, whose
+preview files exist only for the specs it shipped.
+
 ## `catalogue.py`
 
 Static delivery. Renders `count` layouts, writes the viewer as `index.html` beside them, plus
@@ -137,11 +147,13 @@ Served delivery. A stdlib `ThreadingHTTPServer` on loopback with four routes:
 | Route | Does |
 |---|---|
 | `GET /` | The viewer, in route mode, exportable |
+| `GET /api/page?i=<n>` | One page of specs as JSON; wraps, so any index is valid |
 | `GET /preview/<name>` | Render one spec on request; 404 on an unparseable name |
 | `POST /api/export` | Write a scratch PDF into the cache |
 | `POST /api/publish` | Write the deliverable beside the profile |
 
-The context dict is built at startup and never mutated.
+The context dict is built at startup and holds no session. The **profile** is re-read per
+request on an mtime change, since an agent edits it while the viewer watches.
 
 ## `deliverable.py`
 

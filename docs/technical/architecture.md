@@ -38,10 +38,12 @@ surface exists.
 
 ## End-to-end flow
 
-**Browsing.** `cli` locates the profile → `model.load` validates it → `space.spread(n)` picks
-layouts spread across the space → `viewer.page` builds one HTML page embedding those specs →
+**Browsing.** `cli` locates the profile → `model.load` validates it → the space is ordered
+for browsing (`space.browse_order`, a hash sort so pages are well-mixed and deterministic) and
+sliced into a page (`space.page`) → `viewer.page` builds one HTML page embedding those specs →
 each card is an `<iframe>` whose content is `compose.render` output, either written beside the
-page (`catalogue`) or served on request (`server`).
+page (`catalogue`) or served on request (`server`). The static catalogue instead shows a
+`space.spread` — a fixed, representative sample rather than a place in a sequence.
 
 **Publishing.** A spec name arrives from the CLI or the viewer → `space.parse` decodes it →
 `deliverable.write` renders HTML, Markdown and PDF, and writes all three beside the profile.
@@ -78,15 +80,22 @@ The one external dependency. `find_browser()` resolves it at runtime across macO
 Linux, honouring `RESUME_PIPELINE_CHROME`, and raises `BrowserNotFound` rather than failing
 obscurely. Everything except PDF works without it.
 
-## The server holds no state
+## The server holds no session state
 
-`server.py` builds a context dict at startup — profile, output directories, the specs to
-show — and **never mutates it**. No favourites, no verdicts, no persisted batch, no session
-file. A test asserts the context keys, so state cannot creep back in unnoticed.
+`server.py` builds a context dict at startup — the output directories, the page size, the
+profile path — and keeps **no per-user session**: no favourites, no verdicts, no persisted
+batch. The page you are on lives in the URL you request (`/api/page?i=…`), not in server
+state. A test asserts the context keys, so a session cannot creep back in.
 
-This falls out of [`../decisions/0002-browse-not-search.md`](../decisions/0002-browse-not-search.md),
-and it is what keeps a hosted future open: there is nothing here that would need scoping to a
-user.
+One thing it *does* re-read: the **profile**, on every request, when its mtime changes. An
+agent is expected to be editing it while the viewer is open — that is the premise — so a copy
+cached at startup would mean silently showing a document that no longer exists. A malformed
+edit caught mid-write is ignored in favour of the last good copy rather than blanking the
+page.
+
+This all falls out of [`../decisions/0002-browse-not-search.md`](../decisions/0002-browse-not-search.md),
+and the no-session part is what keeps a hosted future open: there is nothing here that would
+need scoping to a user.
 
 ## Where a hosted version would strain
 

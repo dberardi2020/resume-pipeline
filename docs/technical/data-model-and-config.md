@@ -49,7 +49,8 @@ section that is not an array, or whose entries are not objects; a date not match
 array.
 
 **Non-fatal** (a note on stderr): an unrecognised top-level section. Reported rather than
-ignored, so `experience` instead of `work` surfaces immediately.
+ignored, so `experience` instead of `work` surfaces immediately. Keys beginning `_` or `$`
+(`_comment`, `$schema`) are the universal "not data" convention and are passed over silently.
 
 Dates are compared as **strings**, which is why the ISO format is enforced rather than
 suggested — zero-padded ISO 8601 sorts lexicographically.

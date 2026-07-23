@@ -32,6 +32,10 @@ _(none)_
 
 ## Done
 
+*Entries describe what each item delivered at the time it closed, so figures in them
+(test counts, the layout total, an axis list) are historical, not the current state — the
+living numbers are in the docs.*
+
 | ID | Title |
 |---|---|
 | RP-0017 | **README + `llms.txt`, agent-forward.** Written from the concept and matched to the shape of `terminal-launcher` and `claude-statusline-kit`: one-line value proposition, badges, the problem in the reader's terms, a screenshot, the six-word vocabulary, requirements, install, a "hand it to your coding agent" paste block, a command table, roadmap, docs index. Plus `llms.txt` so an agent can orient without cloning. The screenshot renders the generic test fixture, never a real resume. 2026-07-21. |

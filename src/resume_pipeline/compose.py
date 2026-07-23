@@ -243,7 +243,7 @@ a {{ color:{accent}; text-decoration:none; }}
 .hdr-split {{ display:flex; align-items:flex-end; gap:18px;
               padding-bottom:9px; border-bottom:1px solid {tint}; }}
 /* The contact column is full of nowrap items, so without a min-width the name
-   column collapses and "Dimitri Berardi" wraps mid-name. */
+   column collapses and a two-word name wraps mid-name. */
 .hdr-split .who {{ flex:1 1 auto; min-width:3.1in; }}
 .hdr-split .contact {{ flex:0 1 auto; text-align:right; font-size:9.4pt;
                        margin-top:0; line-height:1.5; }}

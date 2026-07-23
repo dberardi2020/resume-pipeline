@@ -1,6 +1,6 @@
 # Testing
 
-The approach, what is covered, what is not, and how CI runs. 158 tests, ~30s locally.
+The approach, what is covered, what is not, and how CI runs. 172 tests, ~30s locally.
 
 ```sh
 pytest -q                    # everything
@@ -37,7 +37,7 @@ belt-and-braces: it caught a shipped quickstart that documented two deleted comm
 | `test_lint.py` | Each rule, by breaking one thing. Plus that the linter cannot edit. |
 | `test_stints.py` | The model, legacy normalisation, validation, and that no bullet is dropped by either grouping. |
 | `test_viewer.py` | The embedded payload, both deliveries, and that they differ *only* in the two documented switches. |
-| `test_catalogue_and_server.py` | Both deliveries end to end over a live loopback server; publish and export; that no session state exists. |
+| `test_catalogue_and_server.py` | Both deliveries end to end over a live loopback server; paging partitions the space; the profile is re-read on change; publish and export; that no session state exists. |
 | `test_cli.py` | Command surface, profile resolution, layout resolution, publish, exit codes, deliverable naming. |
 | `test_pdf.py` | PDF production, text extraction, page margins, one-page output. |
 
@@ -87,8 +87,10 @@ Honest list.
 - **No visual regression.** Rendering correctness is structural — content present, single
   column, margins, escaping. Whether a layout looks *good* is unchecked, and several real
   defects were found by looking rather than by testing.
-- **No clean-machine install test.** `pipx install` from the published repo followed by
-  `init` — a stranger's first two commands — has never been exercised.
+- **No *automated* clean-machine install test.** A fresh venv install from the packaged repo,
+  then `init`/`lint`/`catalogue`/`serve`/`publish`, was run by hand once before release and
+  passed — but nothing in CI installs the built package and exercises the entry point, so a
+  packaging regression could slip through.
 - **`viewer.py`'s JavaScript is untested.** It is asserted as a string, never executed. There
   is no browser in the loop.
 - **No performance guard.** `spread()` was cubic and shipped that way; nothing would have

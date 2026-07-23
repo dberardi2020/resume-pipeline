@@ -17,15 +17,17 @@ This keeps one structured **profile** as the only thing you edit, generates a **
 editing happens through your agent: you say what to change, it changes the data. Publishing
 writes one deliverable — PDF, HTML and Markdown — from the layout you chose.
 
-![Eight resume layouts side by side, each a live render of the same profile, captioned with
-its palette, typeface, header, skills, promo, density and grouping as chips](docs/assets/viewer.png)
+![The layout viewer: a grid of resume layouts, each a live render of the same profile with
+its seven axis values shown as chips, above a colour bar for holding one palette constant and
+controls for paging and shuffling through the space](docs/assets/viewer.png)
 
 **Layouts are generated, not templates.** There is one renderer and seven independent
 choices — palette, typeface, header treatment, skills treatment, promotion treatment, density
 and grouping. A **spec** is one combination of the seven, and every combination renders, which
 is where 10,080 comes from. Adding a value to any one choice multiplies the catalogue instead
-of adding a single entry to it. Browse them a page at a time, or **Shuffle** to land somewhere
-else in the space entirely.
+of adding a single entry to it. Browse them a page at a time, **Shuffle** to land somewhere
+else in the space entirely, or hold a **colour** constant so you can judge structure without
+it swinging the decision.
 
 **Not another resume generator.** That category is well served and mostly abandoned. Three
 things here do not exist elsewhere: layouts as a *design space* rather than a theme list, a
@@ -120,7 +122,7 @@ The profile path is optional everywhere: commands walk up from the working direc
 for `resume.json`, or read `RESUME_PIPELINE_RESUME`. `--theme` takes a preset (`default`,
 `plain`, `editorial`, `warm`) or any spec name from the catalogue.
 
-**Generated files never sit beside your source.** Scratch renders go to
+**Scratch renders never sit beside your source.** Catalogues and exports go to
 `~/.cache/resume-pipeline/`; only `publish` writes into the workspace, and only as the one
 canonical deliverable — so the folder always answers "which file do I send?" instantly.
 
@@ -139,8 +141,8 @@ These are not built yet:
 
 - **Import** an existing resume (PDF/DOCX → profile) — the biggest gap, since today you
   transcribe once before anything works.
-- **Faceted browse** — filter and group the space by axis, rather than viewing a spread
-  of it.
+- **Faceted filtering** — narrow the space to, say, only `charter` or only `moss`. Paging,
+  shuffle and holding a colour constant exist; filtering it down by an axis is the next step.
 - **An inspector** — a live, read-only view of the profile as it is edited, showing what
   changed.
 - **Provenance** — per claim, whether it is your asserted fact or model-generated prose.

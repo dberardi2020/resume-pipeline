@@ -53,7 +53,7 @@ strong{font-weight:650}
 <h2>Validation</h2>
 <p>Hand-rolled in <code>model.py</code>, not run against the published schema — a deliberate limit, recorded in <a href="../product/platforms-and-status.md"><code>../product/platforms-and-status.md</code></a>.</p>
 <p><strong>Fatal</strong> (<code>ResumeError</code>, exit 2): a non-object top level; a missing <code>basics.name</code>; a dated section that is not an array, or whose entries are not objects; a date not matching <code>YYYY</code>, <code>YYYY-MM</code> or <code>YYYY-MM-DD</code>; an entry ending before it starts; <code>highlights</code> that is not an array.</p>
-<p><strong>Non-fatal</strong> (a note on stderr): an unrecognised top-level section. Reported rather than ignored, so <code>experience</code> instead of <code>work</code> surfaces immediately.</p>
+<p><strong>Non-fatal</strong> (a note on stderr): an unrecognised top-level section. Reported rather than ignored, so <code>experience</code> instead of <code>work</code> surfaces immediately. Keys beginning <code>_</code> or <code>$</code> (<code>_comment</code>, <code>$schema</code>) are the universal "not data" convention and are passed over silently.</p>
 <p>Dates are compared as <strong>strings</strong>, which is why the ISO format is enforced rather than suggested — zero-padded ISO 8601 sorts lexicographically.</p>
 <h2>Local extensions</h2>
 <p>Two fields JSON Resume has no equivalent for. Both are harmless locally; both would be rejected by the JSON Resume <strong>registry</strong>, which validates against a stricter draft-04 schema with <code>additionalProperties: false</code>. That is one more reason not to use it.</p>
