@@ -18,9 +18,10 @@ editing happens through your agent: you say what to change, it changes the data.
 writes one deliverable — PDF, HTML and Markdown — from the layout you chose.
 
 ![The layout viewer: a row of resume layouts, each a live render of the same profile in a
-different design, its axis values shown as chips. Above them a colour bar (green held here) and
-a typeface bar hold one axis constant while the rest vary; the header shows the held subset's
-size ("1,440 layouts · holding moss") and paging controls](docs/assets/viewer.png)
+different design, its axis values shown as chips beneath it. The header keeps identity on the
+left — the title and the held subset's size ("1,440 layouts · holding moss") — and the controls
+on the right: paging, a colour bar (green held here) and a typeface bar, each holding one axis
+constant while the rest vary](docs/assets/viewer.png)
 
 **Layouts are generated, not templates.** There is one renderer and seven independent
 choices — palette, typeface, header treatment, skills treatment, promotion treatment, density

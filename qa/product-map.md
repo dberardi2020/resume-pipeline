@@ -31,6 +31,10 @@ Use `docs/assets/demo-profile.json` (Jane Smith) as the fixture — never a real
 - **Grid** is `<div id="grid">` — **empty in the served HTML; JavaScript builds the cards.** So HTTP
   checks see nothing; you must render in a real browser to test it (`--dump-dom` counts cards, or
   drive it live). A full page is 24 cards.
+- **Header** is a two-column grid (`.hdr`, RP-0018): identity on the left (`h1`, `.statusline`,
+  the `#hintBtn` explainer toggle), controls on the right (`#pageMeta` + `.nav`, then the colour
+  and type bars). The explainer `<p id="hint">` sits below the grid, shown on a first visit and
+  hidden once dismissed.
 - **Colour bar** (`#palette`): a `.sw-varied` "Varied" button (default) + 7 `.sw` swatches —
   `harbor ink moss clay plum slate crimson`. Each swatch is `<button class="sw" data-p="moss" title="moss">`.
 - **Type bar** (`#typeface`): its twin. A `.tf` "Varied" button (default) + 4 `.tf` sample chips —
@@ -85,7 +89,8 @@ Re-verify each; expected result in parens. Add new rows as surface grows.
 | 6 | Viewer publish | deliverable + real PDF + sidecar records the picked layout + archive-on-overwrite | 2026-07-23 ✅ |
 | 7 | Typeface hold + compose (RP-0037) | click `charter` → all cards that face; `moss`+`charter` → "360 layouts · page 1 of 15", both held; release → back to 10,080/420 | 2026-07-23 ✅ (driven live) |
 | 8 | Counts follow the filter (RP-0035) | header total & page count recompute per hold; `/api/page` returns live `total` | 2026-07-23 ✅ (driven live + acceptance) |
-| 9 | Header holds its shape under long status | with both axes held (long "holding … · …" text) the `« ‹ Shuffle ›` nav stays on row 1; status is on its own line (`.statusline`) | 2026-07-23 ✅ (measured live at 704px) |
+| 9 | Header holds its shape under long status | with both axes held (long "holding … · …" text) the `« ‹ Shuffle ›` nav stays on row 1; status is on its own line (`.statusline`) | 2026-07-23 ✅ (re-measured live at 1500 / 760 / 620px after the RP-0018 two-column rebuild) |
+| 10 | Explainer collapses and stays collapsed (RP-0018) | `#hintBtn` toggles `#hint` and flips its label between "What is this?" and "Hide"; the choice persists across a reload via `localStorage["resume-pipeline:hint-hidden"]` | 2026-07-23 ✅ (driven live) |
 
 ## Teardown (always — a QA cleans up)
 

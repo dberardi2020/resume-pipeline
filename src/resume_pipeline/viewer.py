@@ -101,14 +101,21 @@ _PAGE = r"""<!doctype html>
 
   header{position:sticky;top:0;z-index:20;padding:14px 20px 10px;background:var(--card);
          border-bottom:1px solid var(--line)}
-  .bar{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  /* Two columns: identity/status on the left, controls on the right. Keeping the
+     hold bars out of the left gutter stops the header becoming one tall stack that
+     pushes the grid down and leaves the right half empty. */
+  .hdr{display:grid;grid-template-columns:1fr auto;gap:11px 20px;align-items:center}
   h1{font-size:15px;margin:0;letter-spacing:-.2px;font-weight:700}
   .meta{color:var(--muted);font-size:12.5px}
-  .statusline{margin-top:5px}
-  .grow{flex:1}
-  .hint{margin:6px 0 0;color:var(--muted);font-size:12.5px;max-width:82ch}
+  .navwrap{display:flex;align-items:center;gap:14px;justify-self:end}
+  .hint{margin:8px 0 0;color:var(--muted);font-size:12.5px;max-width:82ch}
+  .hint[hidden]{display:none}
   .nav{display:flex;gap:6px;align-items:center}
   .nav button{padding:5px 11px}
+  /* A quiet, text-weight toggle — onboarding copy a returning user doesn't need. */
+  .hintbtn{padding:2px 0;background:none;border:0;color:var(--muted);font-size:12.5px;
+           text-decoration:underline;text-underline-offset:3px;justify-self:start}
+  .hintbtn:hover{color:var(--accent)}
 
   button{font:inherit;font-size:13px;font-weight:500;color:var(--ink);
          background:var(--btn);border:1px solid var(--btn-line);border-radius:8px;
@@ -171,7 +178,8 @@ _PAGE = r"""<!doctype html>
      lifted out of the chips into its own always-visible control: pick a colour
      and every layout re-renders in it, so structure can be judged with colour
      held constant. Purely a re-render of a neighbouring spec — no live edit. */
-  .palette{display:flex;align-items:center;gap:7px;margin:9px 0 2px;flex-wrap:wrap}
+  .palette{display:flex;align-items:center;gap:7px;margin:0;flex-wrap:wrap;
+           justify-content:flex-end}
   .palette .lbl{font-size:12px;color:var(--muted)}
   .sw{width:20px;height:20px;border-radius:50%;border:2px solid transparent;
       cursor:pointer;padding:0;background-clip:padding-box;transition:transform .1s}
@@ -201,23 +209,28 @@ _PAGE = r"""<!doctype html>
 </style></head><body>
 
 <header>
-  <div class="bar">
+  <!-- Three rows, two columns. Left: who/where you are. Right: the controls that act
+       on the grid. The layout count / active holds keep their own line — variable-length
+       text on the nav row used to push the buttons onto a second row once an axis was held. -->
+  <div class="hdr">
     <h1>__TITLE__ — Layouts</h1>
-    <span class="grow"></span>
-    <span class="meta" id="pageMeta"></span>
-    <span class="nav" id="nav" hidden>
-      <button id="first" title="Back to page 1">«</button>
-      <button id="prev" title="Previous page">‹</button>
-      <button id="shuffle">Shuffle</button>
-      <button id="next" title="Next page">›</button>
+    <span class="navwrap">
+      <span class="meta" id="pageMeta"></span>
+      <span class="nav" id="nav" hidden>
+        <button id="first" title="Back to page 1">«</button>
+        <button id="prev" title="Previous page">‹</button>
+        <button id="shuffle">Shuffle</button>
+        <button id="next" title="Next page">›</button>
+      </span>
     </span>
+
+    <div class="meta statusline" id="meta"></div>
+    <div class="palette" id="palette"></div>
+
+    <button class="hintbtn" id="hintBtn" aria-expanded="true" aria-controls="hint">What is this?</button>
+    <div class="palette" id="typeface"></div>
   </div>
-  <!-- The layout count / active holds live on their own line: variable-length text
-       here used to push the nav buttons onto a second row once an axis was held. -->
-  <div class="meta statusline" id="meta"></div>
-  <div class="palette" id="palette"></div>
-  <div class="palette" id="typeface"></div>
-  <p class="hint">Layouts are <b>generated</b>, not templates — each is one combination of
+  <p class="hint" id="hint">Layouts are <b>generated</b>, not templates — each is one combination of
   seven independent choices, so there are __TOTAL__ of them. The arrows walk the space in
   order; <b>Shuffle</b> jumps somewhere else entirely. Pick a <b>colour</b> or <b>typeface</b>
   to hold it constant while you judge the rest. Open any layout, then <b>Make this my resume</b>
@@ -297,6 +310,22 @@ function fitShot(frame){
 
 let cursor = 0;
 let CURRENT = null;   // the spec currently open in the dialog
+
+// The explainer is for a first visit. It's the tallest thing in the header and pure
+// onboarding, so once dismissed it stays dismissed and the grid starts that much higher.
+const HINT_KEY = "resume-pipeline:hint-hidden";
+function setHint(hidden){
+  $("#hint").hidden = hidden;
+  const b = $("#hintBtn");
+  b.textContent = hidden ? "What is this?" : "Hide";
+  b.setAttribute("aria-expanded", String(!hidden));
+}
+try{ setHint(localStorage.getItem(HINT_KEY) === "1"); }catch(e){ setHint(false); }
+$("#hintBtn").addEventListener("click", () => {
+  const hidden = !$("#hint").hidden;
+  setHint(hidden);
+  try{ localStorage.setItem(HINT_KEY, hidden ? "1" : "0"); }catch(e){}
+});
 
 function render(){
   paletteBar($("#palette"));

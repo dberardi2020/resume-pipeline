@@ -141,10 +141,14 @@ Feedback: it "could use a lot of tuning and refining". Now unblocked — RP-0015
 
 **Raised P2 → P1 (2026-07-23):** RP-0038 makes the viewer the **first impression for everyone**, not just for people who already installed it — polish stops being optional the moment there's a public link.
 
-**Concrete findings from the hero-shot review (2026-07-23)** — the header is a five-item left-aligned stack (title, statusline, colour bar, type bar, a three-line explanatory paragraph), while the entire right side below the nav is empty. Two distinct problems:
+**Header slice landed 2026-07-23.** The hero-shot review found the header was a five-item left-aligned stack (title, statusline, colour bar, type bar, a three-line explanatory paragraph) with the entire right side below the nav empty — so it read as cluttered on the left, barren on the right, and pushed the grid down. Two fixes shipped:
 
-1. **Vertical bulk pushes the grid down.** The explanatory paragraph is the tallest element and is pure onboarding copy a returning user never needs, yet it sits *between* the controls and the product. Make it dismissible, collapse it behind a "?", or show it first-run only.
-2. **Left/right imbalance.** Every control hugs the left margin and trails into whitespace; the right column holds only `page N of M` + nav. Move the colour/type bars under the nav on the right to balance the gutters, and consider compacting the two labelled rows into a single toolbar.
+1. **The header is a two-column grid** (`.hdr`) — identity on the left (title, status, explainer toggle), controls on the right (paging/nav, colour bar, type bar). The hold bars leaving the left gutter is what stops the header being one tall stack.
+2. **The explainer is collapsible and remembers.** It's pure onboarding copy, so it shows on a first visit and stays hidden once dismissed (`localStorage`), rather than sitting permanently between the controls and the product.
+
+Measured result: **header height 230px → 115px**, so a full row of cards (tags *and* the Open / Copy Name buttons) is visible where the old shot cut cards off mid-content. Verified live at 1500 / 760 / 620px — the nav still holds row 1 under the longest status text, which was the RP-0035/0037 regression risk. Hero shot regenerated. Covered by product-map rows 9 and 10.
+
+**Still open here:** empty/error states, loading behaviour while the iframes render, and the keyboard affordances currently discoverable only from the hint strip. The axis chips themselves — pills, icons — have not been restyled.
 
 ### RP-0019 — Copy/paste blocks for LinkedIn and application forms {#rp-0019}
 **P3 · Feature · export**
