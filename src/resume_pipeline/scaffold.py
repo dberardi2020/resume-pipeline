@@ -215,10 +215,16 @@ resume-pipeline serve                      # interactive viewer: browse, colour-
 resume-pipeline catalogue                  # a static browsable page of options
 ```
 
-`serve` opens a local viewer in the browser and blocks until ctrl-c — run it in the
-background. It shows a grid of live renders of the user's *own* resume in different layouts, a
-colour bar to hold one palette constant while the rest vary, and paging/shuffle to move through
-the space.
+`serve` opens the viewer **in the user's own browser** — it calls their default browser for
+them — and then blocks until ctrl-c, so **run it in the background** and let their browser open on
+its own. It shows a grid of live renders of the user's *own* resume in different layouts, a colour
+bar to hold one palette constant while the rest vary, and paging/shuffle to move through the space.
+
+**This viewer is for the user to look at, not for you to drive.** Do **not** open or navigate it
+with browser automation (Claude for Chrome / a Claude-controlled tab) — just start `serve` and their
+browser opens by itself. The user browses and reacts in words; your job is to publish the layout
+they pick (below). *(Driving `serve` yourself is a QA activity — a different, dev-only skill — never
+this one.)*
 
 ## Choosing a layout
 
