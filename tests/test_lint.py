@@ -166,3 +166,18 @@ def test_the_unquantified_message_asks_rather_than_supplies(make_resume):
     r = make_resume(lambda d: d["work"][0].update(highlights=["Built the API."]))
     message = next(f.message for f in lint.check(r) if f.rule == "work/unquantified")
     assert "never invent" in message.lower()
+
+
+def test_underscore_prefixed_keys_are_not_flagged(make_resume):
+    """`_comment` / `$schema` are the universal "ignore me" convention.
+
+    The demo profile carries a `_comment` marking it fictional; warning on it
+    every publish would be noise, not help.
+    """
+    r = make_resume(lambda d: d.update(_comment="fictional", _note="x"))
+    assert not any("Unknown top-level" in note for note in r.notes)
+
+
+def test_a_genuine_unknown_section_is_still_flagged(make_resume):
+    r = make_resume(lambda d: d.update(experiance="typo of experience"))
+    assert any("Unknown top-level" in note and "experiance" in note for note in r.notes)

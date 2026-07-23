@@ -175,3 +175,25 @@ def test_a_partial_trio_is_not_a_deliverable(tmp_path, resume):
     from resume_pipeline import deliverable
     (tmp_path / "Stray.pdf").write_text("x", encoding="utf-8")
     assert deliverable.existing_stem(tmp_path) is None
+
+
+# ── the tool works without a workspace ────────────────────────────────────────
+
+def test_publish_works_with_a_bare_profile_and_no_init(tmp_path, data, monkeypatch):
+    """`init` is optional. A lone resume.json anywhere must still publish.
+
+    Publishing writes beside the profile it found — wherever that is — so the
+    answer to "where does publish go if init was never run" is: next to your
+    resume.json, not into some workspace that does not exist.
+    """
+    monkeypatch.setattr("resume_pipeline.pdf.write",
+                        lambda html, path, **kw: path.write_bytes(b"%PDF-fake"))
+    loose = tmp_path / "somewhere"
+    loose.mkdir()
+    (loose / "resume.json").write_text(json.dumps(data), encoding="utf-8")
+    monkeypatch.chdir(loose)
+    monkeypatch.delenv("RESUME_PIPELINE_RESUME", raising=False)
+
+    assert cli.main(["publish", "--theme", "default"]) == 0
+    for suffix in (".pdf", ".html", ".md"):
+        assert (loose / f"Smith_Resume{suffix}").exists()

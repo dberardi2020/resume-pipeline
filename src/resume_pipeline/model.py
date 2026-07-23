@@ -181,6 +181,10 @@ def _validate(data: dict) -> list[str]:
 
     notes: list[str] = []
     for unknown in sorted(set(data) - KNOWN_SECTIONS):
+        # A leading `_` (or `$`) is the near-universal "not data, ignore me"
+        # convention — `_comment`, `$schema`. Warning on those is noise, not help.
+        if unknown[:1] in ("_", "$"):
+            continue
         notes.append(
             f"Unknown top-level section {unknown!r} — not part of JSON Resume, "
             f"so no theme will render it."

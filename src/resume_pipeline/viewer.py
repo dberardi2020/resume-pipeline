@@ -52,11 +52,16 @@ def page(specs, resume, *, preview: str = "file", exportable: bool = False,
     """
     options = [describe(s) for s in specs]
     title = html.escape(resume.name or "Resume")
+    # Palette is one axis, and the first segment of every spec name — so the
+    # viewer can offer "this layout, that colour" as an instant re-render of a
+    # neighbouring spec rather than a live edit. The swatch colour is the accent.
+    palettes = [{"name": p[0], "accent": p[1]} for p in compose.PALETTES]
     return _PAGE.replace("__PAGES__", str(pages)) \
                 .replace("__TITLE__", title) \
                 .replace("__TOTAL__", f"{space.TOTAL:,}") \
                 .replace("__PREVIEW__", preview) \
                 .replace("__EXPORTABLE__", "true" if exportable else "false") \
+                .replace("__PALETTES__", json.dumps(palettes)) \
                 .replace("__OPTIONS__", json.dumps(options))
 
 
@@ -154,6 +159,22 @@ _PAGE = r"""<!doctype html>
   /* With a dialog open, reaching the bottom of the preview handed the scroll
      back to the grid behind it. Lock the page while the modal is up. */
   body.modal-open{overflow:hidden}
+
+  /* Colour bar. Palette is one axis but the one people react to first, so it is
+     lifted out of the chips into its own always-visible control: pick a colour
+     and every layout re-renders in it, so structure can be judged with colour
+     held constant. Purely a re-render of a neighbouring spec — no live edit. */
+  .palette{display:flex;align-items:center;gap:7px;margin:9px 0 2px;flex-wrap:wrap}
+  .palette .lbl{font-size:12px;color:var(--muted)}
+  .sw{width:20px;height:20px;border-radius:50%;border:2px solid transparent;
+      cursor:pointer;padding:0;background-clip:padding-box;transition:transform .1s}
+  .sw:hover{transform:scale(1.15)}
+  .sw.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--card),0 0 0 3px var(--ink)}
+  .sw-varied{width:auto;height:auto;border-radius:20px;padding:2px 10px;font-size:12px;
+             border:1px solid var(--btn-line);background:var(--btn);color:var(--ink)}
+  .sw-varied.on{border-color:var(--accent);color:var(--accent);font-weight:600}
+  .dlg-palette{padding:8px 14px;border-bottom:1px solid var(--line)}
+
   .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
          background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;
          font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
@@ -167,16 +188,18 @@ _PAGE = r"""<!doctype html>
     <span class="grow"></span>
     <span class="meta" id="pageMeta"></span>
     <span class="nav" id="nav" hidden>
+      <button id="first" title="Back to page 1">«</button>
       <button id="prev" title="Previous page">‹</button>
       <button id="shuffle">Shuffle</button>
       <button id="next" title="Next page">›</button>
     </span>
   </div>
+  <div class="palette" id="palette"></div>
   <p class="hint">Layouts are <b>generated</b>, not templates — each is one combination of
-  seven independent choices, so there are __TOTAL__ of them. <b>Next</b> walks the space in
-  order; <b>Shuffle</b> jumps somewhere else entirely. Open any layout, then
-  <b>Make this my resume</b> to publish it. Every preview is a live render, identical to what
-  gets published.</p>
+  seven independent choices, so there are __TOTAL__ of them. The arrows walk the space in
+  order; <b>Shuffle</b> jumps somewhere else entirely. Pick a <b>colour</b> to hold it
+  constant while you judge the rest. Open any layout, then <b>Make this my resume</b> to
+  publish it — every preview is a live render, identical to what gets published.</p>
 </header>
 
 <div class="grid" id="grid"></div>
@@ -194,6 +217,7 @@ _PAGE = r"""<!doctype html>
       <button id="dlgClose">Close</button>
     </div>
   </div>
+  <div class="palette dlg-palette" id="dlgPalette"></div>
   <iframe id="dlgFrame" title="preview"></iframe>
 </dialog>
 
@@ -206,10 +230,22 @@ let   PAGE_INDEX = 0;
 const PREVIEW    = "__PREVIEW__";
 const EXPORTABLE = __EXPORTABLE__;
 const TOTAL      = "__TOTAL__";
+const PALETTES   = __PALETTES__;
+let   PALETTE    = null;   // null = as generated; otherwise a forced palette
 
 const $ = s => document.querySelector(s);
 const previewUrl = name =>
   PREVIEW === "route" ? "/preview/" + encodeURIComponent(name) : name + ".html";
+
+// Palette is the first segment of a spec name. Forcing a colour is therefore just
+// swapping that segment — a different, equally-valid spec, rendered the same way,
+// so what you see stays exactly what would publish.
+const recolor = name => PALETTE ? name.replace(/^[^-]+/, PALETTE) : name;
+
+// The static catalogue writes previews as sibling files, only for the specs it
+// shipped — so a recoloured name may have no file. Recolouring is a served-viewer
+// affordance; disable it when previews come from disk.
+const CAN_RECOLOR = PREVIEW === "route";
 
 let toastTimer;
 function toast(msg){
@@ -229,8 +265,10 @@ function fitShot(frame){
 }
 
 let cursor = 0;
+let CURRENT = null;   // the spec currently open in the dialog
 
 function render(){
+  paletteBar($("#palette"));
   // When paging, every layout is reachable, so a per-page "12 of 10,080" reads as
   // a limit that is not there — the page counter says where you are instead. The
   // static catalogue is a genuinely fixed sample, so there the "N of TOTAL" holds.
@@ -238,19 +276,24 @@ function render(){
     $("#meta").textContent = `${TOTAL} layouts`;
     $("#nav").hidden = false;
     $("#pageMeta").textContent = `page ${PAGE_INDEX + 1} of ${PAGES.toLocaleString()}`;
+    $("#first").disabled = PAGE_INDEX === 0;   // already home
   } else {
     $("#meta").textContent = `${OPTIONS.length} of ${TOTAL} possible layouts`;
   }
   const grid = $("#grid");
   grid.innerHTML = "";
   OPTIONS.forEach((v, i) => {
+    const name = recolor(v.name);
+    // The palette chip reflects the forced colour, since that is what shows.
+    const axes = { ...v.axes };
+    if(PALETTE) axes.palette = PALETTE;
     const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `
-      <div class="shot"><iframe loading="lazy" src="${previewUrl(v.name)}"
-           title="${v.name}" scrolling="no"></iframe><div class="veil"></div></div>
+      <div class="shot"><iframe loading="lazy" src="${previewUrl(name)}"
+           title="${name}" scrolling="no"></iframe><div class="veil"></div></div>
       <div class="info">
-        <div class="chips">${Object.values(v.axes)
+        <div class="chips">${Object.values(axes)
           .map(val => `<span class="chip">${val}</span>`).join("")}</div>
         <div class="acts">
           <button class="o">Open</button>
@@ -262,16 +305,34 @@ function render(){
     new ResizeObserver(()=>fitShot(frame)).observe(card.querySelector(".shot"));
     card.querySelector(".shot").onclick = ()=>{ cursor=i; open(v); };
     card.querySelector(".o").onclick = ()=>{ cursor=i; open(v); };
-    card.querySelector(".c").onclick = ()=>copy(v.name);
+    card.querySelector(".c").onclick = ()=>copy(name);
     grid.appendChild(card);
   });
 }
 
+function paletteBar(el){
+  if(!CAN_RECOLOR){ el.hidden = true; return; }
+  el.innerHTML = `<span class="lbl">Colour</span>` +
+    `<button class="sw-varied${PALETTE?"":" on"}" data-p="">Varied</button>` +
+    PALETTES.map(p =>
+      `<button class="sw${PALETTE===p.name?" on":""}" data-p="${p.name}"
+               style="background:${p.accent}" title="${p.name}"></button>`).join("");
+  el.querySelectorAll("[data-p]").forEach(b => b.onclick = ()=>{
+    PALETTE = b.dataset.p || null;
+    render();
+    if($("#dlg").open && CURRENT) open(CURRENT);  // keep an open preview in sync
+  });
+}
+
 function open(v){
-  $("#dlgName").textContent = v.name;
-  $("#dlgDesc").textContent = v.description;
-  $("#dlgFrame").src = previewUrl(v.name);
-  $("#dlgCopy").onclick = ()=>copy(v.name);
+  CURRENT = v;
+  const name = recolor(v.name);
+  $("#dlgName").textContent = name;
+  $("#dlgDesc").textContent = PALETTE
+    ? PALETTE + v.description.slice(v.description.indexOf(" ·")) : v.description;
+  $("#dlgFrame").src = previewUrl(name);
+  $("#dlgCopy").onclick = ()=>copy(name);
+  paletteBar($("#dlgPalette"));
 
   const post = (path, body) => fetch(path, {
     method:"POST", headers:{"Content-Type":"application/json"},
@@ -280,7 +341,7 @@ function open(v){
 
   const act = async (button, label, busy, path, done) => {
     button.disabled = true; button.textContent = busy;
-    const r = await post(path, { name: v.name });
+    const r = await post(path, { name });   // publish/export the recoloured spec
     button.disabled = false; button.textContent = label;
     toast(r.error ? (label + " failed: " + r.error) : done(r));
   };
@@ -295,8 +356,10 @@ function open(v){
     pub.onclick = ()=>act(pub, "★ Make this my resume", "Publishing…", "/api/publish",
                           r => "Published " + r.stem + ".pdf / .html / .md");
   }
-  $("#dlg").showModal();
-  document.body.classList.add("modal-open");
+  if(!$("#dlg").open){   // re-entrant when a swatch recolours an open dialog
+    $("#dlg").showModal();
+    document.body.classList.add("modal-open");
+  }
 }
 
 async function goto(index){
@@ -311,6 +374,7 @@ async function goto(index){
 }
 
 if(PAGES > 1){
+  $("#first").onclick   = ()=>goto(0);
   $("#next").onclick    = ()=>goto(PAGE_INDEX + 1);
   $("#prev").onclick    = ()=>goto(PAGE_INDEX - 1 + PAGES);
   // Somewhere else in the space entirely, rather than the next twelve along.

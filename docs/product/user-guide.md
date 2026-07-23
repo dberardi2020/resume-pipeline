@@ -106,9 +106,20 @@ Every preview is a **live render** — the same function that publishes — so n
 can drift from what you get. Cards show each spec's axis values as chips; the full name is in
 the detail view, and **Copy Name** puts it on the clipboard.
 
-> **Faceted filtering is not built yet.** The viewer currently shows a deterministic *spread*
-> across the space — `spread(n)` picks layouts that are maximally different from each other,
-> so a handful of cards shows the range rather than seven shades of one design.
+**Moving through the space** (served viewer): the arrows step one page at a time, **«** jumps
+back to the first, and **Shuffle** lands somewhere else entirely. `[` and `]` page from the
+keyboard. The static `catalogue` has no pages — it is a fixed spread across the whole space.
+
+**Holding colour constant.** Palette is one of the seven axes, but the one the eye reacts to
+first, so it has its own control. Pick a colour from the bar and every layout re-renders in
+it — letting you judge *structure* without colour swinging the decision — or leave it on
+**Varied** to see each layout's own palette. It works in the detail view too, so you can try a
+layout you like in each colour. This is not a live edit: forcing a colour just asks for the
+same layout's neighbouring spec, which is exactly what would publish.
+
+> **Facet *filtering* is not built yet** (RP-0004) — you cannot yet say "only `charter`, only
+> `moss`". Colour-pinning and paging are the pieces that exist; filtering the space down by any
+> axis is the next step.
 
 ### 4. Publish — write the deliverable
 
