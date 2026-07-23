@@ -79,7 +79,7 @@ Re-verify each; expected result in parens. Add new rows as surface grows.
 | 4 | Paging | `›` → "page 2 of 420", new layouts | 2026-07-23 ✅ |
 | 5 | Detail modal | full-page render + publish controls | 2026-07-23 ✅ |
 | 6 | Viewer publish | deliverable + real PDF + sidecar records the picked layout + archive-on-overwrite | 2026-07-23 ✅ |
-| 7 | Typeface-pin (RP-0037) | click `charter` → all cards in that face, chip `grotesk`→`charter`, persists across paging, composes with colour | 2026-07-23 ⚠️ render + unit + dump-DOM only; **live click not yet driven** |
+| 7 | Typeface-pin (RP-0037) | click `charter` → all cards in that face, chip flips to `charter`, persists across paging, composes with colour | 2026-07-23 ✅ (driven live: charter re-typed both cards, moss+charter composed, both held on page 2) |
 
 ## Teardown (always — a QA cleans up)
 
