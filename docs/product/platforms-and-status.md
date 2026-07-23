@@ -23,10 +23,10 @@ Python 3.11 is the floor (`pyproject.toml`); the code uses `X | Y` unions and `:
 | The 7-axis, 10,080-spec space | Works. Every name round-trips, asserted across the whole space. |
 | Rendering | Works. `render(profile, spec)` is pure; every spec in the space renders. |
 | Layout + content linter | Works. 20 rules, three severities. Reports only. |
-| The viewer | Works, in both deliveries — static folder and served. Served adds paging, shuffle, a colour hold, and publish-in-place. |
+| The viewer | Works, in both deliveries — static folder and served. Served adds paging, shuffle, colour + typeface holds that **filter** the browse to the held subset, and publish-in-place. |
 | Publish (PDF / HTML / Markdown) | Works. PDF needs a browser; the other two do not. |
 | `init` workspace scaffold | Works, and ships the `career-resume-update` + `career-layouts-browse` agent skills. |
-| Tests + CI | 193 tests, plus an on-demand acceptance harness (`qa/`). Green on macOS + Linux × Python 3.11/3.13. |
+| Tests + CI | 208 tests, plus an on-demand acceptance harness (`qa/`). Green on macOS + Linux × Python 3.11/3.13. |
 
 ## Experimental
 
@@ -48,7 +48,7 @@ In rough order of how much they matter:
 | | |
 |---|---|
 | **Import an existing resume** (RP-0001) | PDF/DOCX → profile. The adoption cliff for this whole category — today you transcribe once before anything works. |
-| **Faceted filtering** | Paging, shuffle and holding a colour constant exist. Narrowing the space to an axis value — only `charter`, only `moss` — is the missing half. |
+| **Badge-click filter + axis grouping** (RP-0033) | Holding a colour or typeface already filters the browse to that subset (`moss` → 1,440); still missing: clicking a *card's* chip to filter, and clustering the grid by an axis. |
 | **The inspector** | A live, read-only view of the profile as it is edited, showing what changed. The answer to "watching an agent rewrite my career history is unnerving". |
 | **Provenance** (RP-0007) | Per claim: human-asserted fact, or model-generated prose. The necessary counterweight to a linter that asks for numbers. |
 | **Cover letters and applications** (RP-0009) | Same data model plus a job posting. Folders are scaffolded and empty. |

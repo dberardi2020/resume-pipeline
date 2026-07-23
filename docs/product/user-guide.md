@@ -111,16 +111,13 @@ the detail view, and **Copy Name** puts it on the clipboard.
 back to the first, and **Shuffle** lands somewhere else entirely. `[` and `]` page from the
 keyboard. The static `catalogue` has no pages — it is a fixed spread across the whole space.
 
-**Holding colour constant.** Palette is one of the seven axes, but the one the eye reacts to
-first, so it has its own control. Pick a colour from the bar and every layout re-renders in
-it — letting you judge *structure* without colour swinging the decision — or leave it on
-**Varied** to see each layout's own palette. It works in the detail view too, so you can try a
-layout you like in each colour. This is not a live edit: forcing a colour just asks for the
-same layout's neighbouring spec, which is exactly what would publish.
-
-> **Facet *filtering* is not built yet** (RP-0004) — you cannot yet say "only `charter`, only
-> `moss`". Colour-pinning and paging are the pieces that exist; filtering the space down by any
-> axis is the next step.
+**Holding an axis constant.** Palette and typeface are the two axes the eye reacts to first, so
+each has its own control — a **colour** bar and a **typeface** bar. Pick one and the browse
+**narrows to that subset**: hold `moss` and you see only the 1,440 moss layouts, with the header
+count and paging following, so you can judge *structure* against a fixed colour or type. The two
+**compose** — hold `moss` *and* `charter` and you are down to 360 — and **Varied** releases an
+axis. It works in the detail view too. This is not a live edit: holding an axis just browses the
+neighbouring specs that share it, which is exactly what would publish.
 
 ### 4. Publish — write the deliverable
 

@@ -128,11 +128,13 @@ per-spec payload embedded as JSON — name, description, and axis values — and
 `preview="file"` points at sibling `<name>.html`; `preview="route"` points at
 `/preview/<name>`. `exportable` reveals the actions only a server can honour.
 
-**Colour** is surfaced specially. Palette is one axis but the one the eye reacts to first, so
-the served viewer offers a colour bar: forcing a colour swaps the first segment of each spec
-name (palette) and re-requests the preview — an instant re-render of a neighbouring spec, not
-a live edit, so what shows is still what publishes. Disabled for the static catalogue, whose
-preview files exist only for the specs it shipped.
+**Colour and typeface** are surfaced specially. Palette and typeface are the two axes the eye
+reacts to first, so the served viewer gives each its own bar — a colour-swatch row and a
+typeface-sample row. Holding one **filters** the browse to that subset: `/api/page` takes the
+held axes as query params and returns only matching specs, so the layout count and page total
+follow the hold (`space.page`/`pages`/`total` take an optional `filters` dict). The two holds
+compose and appear in the detail view too. Disabled for the static catalogue, whose preview
+files exist only for the specs it shipped.
 
 ## `catalogue.py`
 

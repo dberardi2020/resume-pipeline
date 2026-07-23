@@ -17,17 +17,19 @@ This keeps one structured **profile** as the only thing you edit, generates a **
 editing happens through your agent: you say what to change, it changes the data. Publishing
 writes one deliverable — PDF, HTML and Markdown — from the layout you chose.
 
-![The layout viewer: a grid of resume layouts, each a live render of the same profile with
-its seven axis values shown as chips, above a colour bar for holding one palette constant and
-controls for paging and shuffling through the space](docs/assets/viewer.png)
+![The layout viewer: a row of resume layouts, each a live render of the same profile in a
+different design, its axis values shown as chips. Above them a colour bar (green held here) and
+a typeface bar hold one axis constant while the rest vary; the header shows the held subset's
+size ("1,440 layouts · holding moss") and paging controls](docs/assets/viewer.png)
 
 **Layouts are generated, not templates.** There is one renderer and seven independent
 choices — palette, typeface, header treatment, skills treatment, promotion treatment, density
 and grouping. A **spec** is one combination of the seven, and every combination renders, which
 is where 10,080 comes from. Adding a value to any one choice multiplies the catalogue instead
 of adding a single entry to it. Browse them a page at a time, **Shuffle** to land somewhere
-else in the space entirely, or hold a **colour** constant so you can judge structure without
-it swinging the decision.
+else in the space entirely, or **hold a colour or typeface** constant to judge the rest against
+it — holding an axis narrows the browse to that subset (10,080 → 1,440 for one colour), so the
+count and paging follow what you've pinned.
 
 **Not another resume generator.** That category is well served and mostly abandoned. Three
 things here do not exist elsewhere: layouts as a *design space* rather than a theme list, a
@@ -154,7 +156,7 @@ text comes back in document order.
 
 QA runs in three layers — run the ones a change touches, ship when they're green:
 
-- **Unit** — `pytest -q` (193 tests, ~30s): fast, mocked, property-based across the whole
+- **Unit** — `pytest -q` (208 tests, ~30s): fast, mocked, property-based across the whole
   10,080-layout space. The CI gate.
 - **Acceptance** — `python qa/acceptance.py`: the un-mockable surface as real processes — the
   installed CLI as a subprocess, a live `serve` server over real HTTP, a real headless-Chrome PDF,
@@ -173,8 +175,9 @@ These are not built yet:
 
 - **Import** an existing resume (PDF/DOCX → profile) — the biggest gap, since today you
   transcribe once before anything works.
-- **Faceted filtering** — narrow the space to, say, only `charter` or only `moss`. Paging,
-  shuffle and holding a colour constant exist; filtering it down by an axis is the next step.
+- **Badge-click filtering and grouping** — holding a colour or typeface already narrows the
+  browse to that subset (only `moss`, only `charter`); clicking a *card's* chip to filter, and
+  clustering the grid by an axis, are what's left.
 - **An inspector** — a live, read-only view of the profile as it is edited, showing what
   changed.
 - **Provenance** — per claim, whether it is your asserted fact or model-generated prose.

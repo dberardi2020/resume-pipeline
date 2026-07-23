@@ -25,7 +25,7 @@ hr{border:none;border-top:1px solid var(--line);margin:2em 0}
 strong{font-weight:650}
 </style></head><body><main class="wrap">
 <h1>Testing</h1>
-<p>The approach, what is covered, what is not, and how CI runs. 193 unit tests, ~30s locally, plus a separate on-demand acceptance harness (see below).</p>
+<p>The approach, what is covered, what is not, and how CI runs. 208 unit tests, ~30s locally, plus a separate on-demand acceptance harness (see below).</p>
 <pre><code>pytest -q                    # everything (the unit layer)
 pytest -q tests/test_pdf.py  # just the slow ones
 python qa/acceptance.py      # the acceptance layer — real browser + live server</code></pre>
