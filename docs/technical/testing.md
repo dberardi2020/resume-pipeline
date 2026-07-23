@@ -1,10 +1,12 @@
 # Testing
 
-The approach, what is covered, what is not, and how CI runs. 172 tests, ~30s locally.
+The approach, what is covered, what is not, and how CI runs. 191 unit tests, ~30s locally,
+plus a separate on-demand acceptance harness (see below).
 
 ```sh
-pytest -q                    # everything
+pytest -q                    # everything (the unit layer)
 pytest -q tests/test_pdf.py  # just the slow ones
+python qa/acceptance.py      # the acceptance layer — real browser + live server
 ```
 
 ## The approach
@@ -79,6 +81,18 @@ CI runs the bare `pytest` entry point, which does **not** put the working direct
 `from tests.conftest import CLEAN`, so `pythonpath = ["."]` is pinned in `pyproject.toml`.
 This was the first thing CI caught.
 
+## Acceptance layer — `qa/acceptance.py`
+
+The unit suite mocks the browser and calls `cli.main` in-process, so it cannot see whether the
+thing works end to end on a real machine. `qa/acceptance.py` is the second layer: it runs the
+command as a subprocess, drives a **live `serve` server** over HTTP, renders the viewer in a
+**real headless browser** and confirms the JavaScript actually builds the grid, exports a
+**real PDF**, and does it all against a fresh `init` workspace. It exits non-zero on failure,
+skips browser-dependent checks when none is present, and takes `--open` (watch the live viewer)
+and `--keep` (preserve the workspace to inspect outputs). It is run on demand, not in CI — and
+it was written after it caught an archive-collision bug the unit suite missed. Details:
+[`qa/README.md`](../../qa/README.md).
+
 ## Gaps
 
 Honest list.
@@ -91,7 +105,9 @@ Honest list.
   then `init`/`lint`/`catalogue`/`serve`/`publish`, was run by hand once before release and
   passed — but nothing in CI installs the built package and exercises the entry point, so a
   packaging regression could slip through.
-- **`viewer.py`'s JavaScript is untested.** It is asserted as a string, never executed. There
-  is no browser in the loop.
+- **`viewer.py`'s JavaScript is only *render*-tested.** The acceptance harness now loads the
+  viewer in a real headless browser and confirms the JS builds the grid — but **interactions**
+  (colour-pin, paging, the publish button) are still unexercised; that needs a browser-driver
+  (e.g. Playwright), a dependency the project has so far avoided.
 - **No performance guard.** `spread()` was cubic and shipped that way; nothing would have
   caught it but a slow test run.
