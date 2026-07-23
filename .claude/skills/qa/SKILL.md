@@ -1,55 +1,50 @@
 ---
 name: qa
-description: Run this repo's tests. Use when asked to test, verify, QA, or check the resume-pipeline codebase, or before shipping a change to it. Two layers — fast unit tests (pytest) and the slow end-to-end acceptance harness (real browser + live server). This is a dev skill for working ON resume-pipeline; it is not shipped to user workspaces.
+description: Run (or, on first use in a repo, scaffold) this repo's QA. Use when asked to test, verify, QA, or check the codebase, or before shipping a change to it. A self-improving, three-layer system — unit tests, a deterministic acceptance harness, and an agentic browser pass — driven by a product map the agent reads first and updates last. Generic and portable: the method is here, the repo's specifics live in qa/product-map.md. Dev skill; not shipped to end users.
 ---
 
-# QA — running resume-pipeline's tests
+# QA
 
-Two layers, run with the repo's venv. **Unset the polluted env vars first** — an installed
-`.app` on this machine leaks `PYTHONHOME`/`PYTHONPATH` into the shell and breaks the venv:
+This skill is **generic** — the same method in every repo. Everything specific to *this* repo (the
+run commands, the app's surfaces and flows, gotchas, the regression checklist) lives in
+**`qa/product-map.md`**. Keep it that way: learn once, write it to the map, not into this skill.
 
-## Unit — fast, mocked, run always
+## 1. Assess state
 
-```bash
-env -u PYTHONHOME -u PYTHONPATH .venv/bin/python -m pytest -q
-```
+- **Warm** — `qa/product-map.md` exists. **Read it first**, so you act like someone who already knows
+  the product instead of burning tokens relearning it. Then run the layers (§2), regression-check the
+  map's checklist, explore any new surface, and **update the map last**.
+- **Cold** — no `qa/` yet. Don't fake a pass. **Investigate**: what does the repo build (CLI / server
+  / browser UI / file outputs / install path)? What is the *un-mockable* surface? How do you run it?
+  Then **scaffold a minimal first version** — `qa/acceptance.*` and `qa/product-map.md` with a
+  regression checklist tailored to what you found. Minimal on purpose; later runs refine it. This
+  first run is how QA gets built here.
 
-~200 cases, in-process, browser mocked. Run after any code change. This is what CI runs.
+## 2. The three layers
 
-## Acceptance — slow, real, run before shipping user-facing changes
+Run the layers a change touches; ship only when they're green. Exact commands live in the map.
 
-```bash
-env -u PYTHONHOME -u PYTHONPATH .venv/bin/python qa/acceptance.py
-```
+1. **Unit** — fast, mocked, in-process; the CI gate.
+2. **Deterministic acceptance** (`qa/acceptance.*`) — the un-mockable surface as real processes: the
+   installed command as a subprocess, a live server over real requests, a real (headless) browser
+   render with the JS asserted, real output artifacts, a fresh setup from nothing. Non-zero exit on
+   failure; skips cleanly when a dependency (e.g. a browser) is absent; `--open`/`--keep` for
+   visibility.
+3. **Agentic browser pass** — the interactions and *looks-right* the harness can't assert. Needs
+   browser control (Claude for Chrome). Open the live UI, drive it per the map, report. **No browser
+   control → say so and stop; never claim interactions you didn't run.**
+   - *Default:* the **seasoned** pass alone — map-driven, cheap.
+   - *On request/confirmation only:* add a **fresh-eyes** persona — a separate agent with no repo
+     context that must NOT read the map (a real first-timer). Valuable for onboarding/first-impression
+     but expensive (it explores blind); reserve it for milestones. When both run, reconcile into
+     **consensus / unique / conflicts**.
 
-Runs the command as a subprocess, drives a live `serve` server over HTTP, and exports a real
-PDF through an actual browser, against a fresh `init` workspace — the un-mockable surface the
-unit suite is blind to. Non-zero exit on any failure. Run it before shipping changes to
-**publish, serve, the deliverable, PDF, or the scaffold/skills**. Needs a Chromium-family
-browser for the PDF leg (those checks skip cleanly if none is present).
+## 3. Always: teardown
 
-## Agentic browser pass — for the viewer's interactions
+A QA cleans up. Kill any server you started, remove temp workspaces, close browser tabs you opened.
 
-The acceptance harness renders the viewer in a headless browser and confirms the JS *builds the
-grid*, but it does not exercise **interactions** — colour-pin re-rendering, paging, "Make this my
-resume". Those need a real browser being driven and *watched*, which is a job for you, not for a
-harness dependency.
+## 4. Improve as you go
 
-**If you have browser control** (Claude for Chrome, computer-use, or a browser MCP), run this pass
-before shipping viewer changes:
-
-1. Bring up the live viewer on a demo profile:
-   `env -u PYTHONHOME -u PYTHONPATH .venv/bin/python qa/acceptance.py --open`
-   (it opens the viewer in a real browser and holds the server up), or run `serve` directly.
-2. Drive it: click a **palette swatch** and confirm every card recolours; **page** forward/back
-   (`[` / `]`, the arrows) and confirm the grid changes; open a card and hit **Make this my
-   resume**, then confirm the deliverable was written.
-3. **Look** — alignment, overflow, contrast in light and dark, anything a screenshot would show a
-   human. Report what is off; this catches what assertions can't.
-
-If you have no browser control, say so and stop at the deterministic harness — do not claim the
-interactions were verified.
-
-**Ship only when the layers you touched are green.** If you touched behaviour the acceptance
-harness does not yet cover, add a check to `qa/acceptance.py` in the same change — see
-`qa/README.md`.
+Touched behaviour the harness doesn't cover? Add a check to `qa/acceptance.*` in the same change.
+Learned anything — a flow, a selector, a gotcha? Add it to `qa/product-map.md`. Reading the map first
+and updating it last is what keeps the next pass cheap.
