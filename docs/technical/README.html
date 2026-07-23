@@ -8,6 +8,7 @@ body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacS
 h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
 h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
 h3{font-size:1.08rem;margin:1.8em 0 .4em}
+h1,h2,h3,h4,h5,h6{scroll-margin-top:1.2em}
 p{margin:.7em 0}
 a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
 a:hover{border-bottom-color:var(--link)}
@@ -18,14 +19,16 @@ ul,ol{padding-left:1.4em;margin:.7em 0}
 li{margin:.3em 0}
 blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
 blockquote strong{color:var(--fg)}
-table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+.tablewrap{overflow-x:auto;margin:1.1em 0}
+table{border-collapse:collapse;width:100%;font-size:.92em}
 th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+td:first-child{white-space:nowrap}
 th{background:var(--code-bg);font-weight:600}
 hr{border:none;border-top:1px solid var(--line);margin:2em 0}
 strong{font-weight:650}
 </style></head><body><main class="wrap">
-<h1>Technical docs</h1>
+<h1 id="technical-docs">Technical docs</h1>
 <p>How <code>resume-pipeline</code> is built, for working on the code. Assumes the vocabulary from <a href="../product/concepts.md">product/concepts.md</a>.</p>
-<table><thead><tr><th>Doc</th><th>Read it for</th></tr></thead><tbody><tr><td><a href="architecture.md">architecture.md</a></td><td>The shape of the code, the flow through it, and the seams that matter. Start here.</td></tr><tr><td><a href="module-reference.md">module-reference.md</a></td><td>What each module is responsible for, and the parts of its surface worth knowing.</td></tr><tr><td><a href="data-model-and-config.md">data-model-and-config.md</a></td><td>What the profile looks like, where the local extensions are, and how paths resolve.</td></tr><tr><td><a href="tech-stack.md">tech-stack.md</a></td><td>Every dependency, what it buys, and why it over the alternatives.</td></tr><tr><td><a href="testing.md">testing.md</a></td><td>The approach, what is covered, what is not, and how CI runs.</td></tr></tbody></table>
+<div class="tablewrap"><table><thead><tr><th>Doc</th><th>Read it for</th></tr></thead><tbody><tr><td><a href="architecture.md">architecture.md</a></td><td>The shape of the code, the flow through it, and the seams that matter. Start here.</td></tr><tr><td><a href="module-reference.md">module-reference.md</a></td><td>What each module is responsible for, and the parts of its surface worth knowing.</td></tr><tr><td><a href="data-model-and-config.md">data-model-and-config.md</a></td><td>What the profile looks like, where the local extensions are, and how paths resolve.</td></tr><tr><td><a href="tech-stack.md">tech-stack.md</a></td><td>Every dependency, what it buys, and why it over the alternatives.</td></tr><tr><td><a href="testing.md">testing.md</a></td><td>The approach, what is covered, what is not, and how CI runs.</td></tr></tbody></table></div>
 <p>These synthesise the <a href="../decisions/README.md">ADRs</a> — when they disagree, the ADR is right and the synthesis is stale.</p>
 </main></body></html>

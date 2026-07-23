@@ -8,6 +8,7 @@ body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacS
 h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
 h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
 h3{font-size:1.08rem;margin:1.8em 0 .4em}
+h1,h2,h3,h4,h5,h6{scroll-margin-top:1.2em}
 p{margin:.7em 0}
 a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
 a:hover{border-bottom-color:var(--link)}
@@ -18,15 +19,17 @@ ul,ol{padding-left:1.4em;margin:.7em 0}
 li{margin:.3em 0}
 blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
 blockquote strong{color:var(--fg)}
-table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+.tablewrap{overflow-x:auto;margin:1.1em 0}
+table{border-collapse:collapse;width:100%;font-size:.92em}
 th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+td:first-child{white-space:nowrap}
 th{background:var(--code-bg);font-weight:600}
 hr{border:none;border-top:1px solid var(--line);margin:2em 0}
 strong{font-weight:650}
 </style></head><body><main class="wrap">
-<h1>Decisions</h1>
+<h1 id="decisions">Decisions</h1>
 <p>Architecture decision records. Each is one decision: <strong>Context · Decision · Rationale · Consequences</strong>.</p>
 <p><strong>The ADRs carry the current decision state.</strong> <code>product/</code> and <code>technical/</code> synthesise them — when they disagree, the ADR is right and the synthesis is stale.</p>
 <p>Numbers are four-digit, allocated in order, and <strong>never renumbered or reused</strong>, even when an ADR is superseded.</p>
-<table><thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead><tbody><tr><td><a href="0001-layouts-as-a-design-space.md">0001</a></td><td>Layouts are points in a design space, not hand-written themes</td><td>Accepted</td></tr><tr><td><a href="0002-browse-not-search.md">0002</a></td><td>Browse the space with facets; no sampler, no session state</td><td>Accepted</td></tr><tr><td><a href="0003-spec-names-are-written-out-in-full.md">0003</a></td><td>Spec names spell out every axis and are stable forever</td><td>Accepted</td></tr><tr><td><a href="0004-one-viewer-two-deliveries.md">0004</a></td><td>One viewer, parameterised by delivery</td><td>Accepted</td></tr><tr><td><a href="0005-generated-files-never-sit-beside-source.md">0005</a></td><td>Generated files live in a cache; only publishing writes to the workspace</td><td>Accepted</td></tr><tr><td><a href="0006-the-linter-reports-it-never-edits.md">0006</a></td><td>The linter reports; it never edits</td><td>Accepted</td></tr><tr><td><a href="0007-keep-the-in-house-renderer.md">0007</a></td><td>Keep the in-house renderer rather than adopting RenderCV</td><td>Accepted</td></tr><tr><td><a href="0008-stints-as-a-local-schema-extension.md">0008</a></td><td>Per-title bullets as a local schema extension</td><td>Experimental</td></tr><tr><td><a href="0009-publish-remembers-your-choices.md">0009</a></td><td>Publish remembers the chosen layout and formats in a sidecar</td><td>Accepted</td></tr><tr><td><a href="0010-publish-preserves-the-previous-design.md">0010</a></td><td>Publish snapshots the previous deliverable to <code>Archive/</code> before overwriting</td><td>Accepted</td></tr><tr><td><a href="0011-skills-split-by-intent.md">0011</a></td><td>Two generic skills split by intent; personal context in the workspace; <code>init --skill-only</code> refreshes</td><td>Accepted</td></tr></tbody></table>
+<div class="tablewrap"><table><thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead><tbody><tr><td><a href="0001-layouts-as-a-design-space.md">0001</a></td><td>Layouts are points in a design space, not hand-written themes</td><td>Accepted</td></tr><tr><td><a href="0002-browse-not-search.md">0002</a></td><td>Browse the space with facets; no sampler, no session state</td><td>Accepted</td></tr><tr><td><a href="0003-spec-names-are-written-out-in-full.md">0003</a></td><td>Spec names spell out every axis and are stable forever</td><td>Accepted</td></tr><tr><td><a href="0004-one-viewer-two-deliveries.md">0004</a></td><td>One viewer, parameterised by delivery</td><td>Accepted</td></tr><tr><td><a href="0005-generated-files-never-sit-beside-source.md">0005</a></td><td>Generated files live in a cache; only publishing writes to the workspace</td><td>Accepted</td></tr><tr><td><a href="0006-the-linter-reports-it-never-edits.md">0006</a></td><td>The linter reports; it never edits</td><td>Accepted</td></tr><tr><td><a href="0007-keep-the-in-house-renderer.md">0007</a></td><td>Keep the in-house renderer rather than adopting RenderCV</td><td>Accepted</td></tr><tr><td><a href="0008-stints-as-a-local-schema-extension.md">0008</a></td><td>Per-title bullets as a local schema extension</td><td>Experimental</td></tr><tr><td><a href="0009-publish-remembers-your-choices.md">0009</a></td><td>Publish remembers the chosen layout and formats in a sidecar</td><td>Accepted</td></tr><tr><td><a href="0010-publish-preserves-the-previous-design.md">0010</a></td><td>Publish snapshots the previous deliverable to <code>Archive/</code> before overwriting</td><td>Accepted</td></tr><tr><td><a href="0011-skills-split-by-intent.md">0011</a></td><td>Two generic skills split by intent; personal context in the workspace; <code>init --skill-only</code> refreshes</td><td>Accepted</td></tr></tbody></table></div>
 </main></body></html>

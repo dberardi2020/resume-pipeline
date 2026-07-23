@@ -8,6 +8,7 @@ body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacS
 h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
 h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
 h3{font-size:1.08rem;margin:1.8em 0 .4em}
+h1,h2,h3,h4,h5,h6{scroll-margin-top:1.2em}
 p{margin:.7em 0}
 a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
 a:hover{border-bottom-color:var(--link)}
@@ -18,23 +19,25 @@ ul,ol{padding-left:1.4em;margin:.7em 0}
 li{margin:.3em 0}
 blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
 blockquote strong{color:var(--fg)}
-table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+.tablewrap{overflow-x:auto;margin:1.1em 0}
+table{border-collapse:collapse;width:100%;font-size:.92em}
 th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+td:first-child{white-space:nowrap}
 th{background:var(--code-bg);font-weight:600}
 hr{border:none;border-top:1px solid var(--line);margin:2em 0}
 strong{font-weight:650}
 </style></head><body><main class="wrap">
-<h1>0011 — Skills split by intent, generic and refreshable</h1>
+<h1 id="0011-skills-split-by-intent-generic-and-refreshable">0011 — Skills split by intent, generic and refreshable</h1>
 <p><strong>Status:</strong> Accepted · 2026-07-23</p>
-<h2>Context</h2>
+<h2 id="context">Context</h2>
 <p><code>init</code> shipped one <code>career</code> skill: a prose blob teaching the whole workflow. Two problems surfaced in use. First, the single skill mixed two distinct intents — <em>work on the resume's content</em> (edit, lint, publish) and <em>choose its look</em> (browse the layout space) — so every invocation loaded all of it. Second, the deployed copy in a real workspace had <strong>drifted</strong> from the shipped template: it listed commands that no longer existed, because a hand-customised skill and the template had no way to re-converge. The drift was possible because personal context (target roles, a specific notes path) had been baked <em>into</em> the skill, so nobody dared overwrite it.</p>
-<h2>Decision</h2>
+<h2 id="decision">Decision</h2>
 <p><strong>Two skills, split by intent, both generic; personal context lives in the workspace <code>CLAUDE.md</code>; <code>init --skill-only</code> refreshes them in place.</strong></p>
 <ul><li><code>career-resume-update</code> — resume <em>content</em>: edit, lint, publish. Carries the content-change workflow and points at <code>CLAUDE.md</code> for the anti-fabrication rule.</li><li><code>career-layouts-browse</code> — the resume's <em>look</em>: browse the design space, pick a layout, publish it.</li></ul>
 <p><strong>Names are verb-forward and prefixed.</strong> <code>career</code> alone said nothing about what the skill <em>did</em>; the names now lead with the object-and-verb (<code>resume-update</code>, <code>layouts-browse</code>) so an agent — or a human scanning the <code>/</code> menu — reads the job off the name, while the shared <code>career-</code> prefix groups them and dodges the built-in <code>/resume</code> command. Cover letters and applications are <em>not</em> in scope: the tool is resume-only, so a <code>resume-update</code>-named skill no longer claims capability it lacks.</p>
 <p>Neither skill contains anything about a particular person. Because they are generic, overwriting them is safe, so <code>init --skill-only</code> force-writes them — that command is how a workspace re-syncs to the current version rather than silently drifting.</p>
-<h2>Rationale</h2>
+<h2 id="rationale">Rationale</h2>
 <ul><li><strong>Intent-shaped.</strong> "Update my resume" and "show me other layouts" are different requests; separate skills match them precisely and keep each small and individually invocable.</li><li><strong>Generic skills, personal workspace.</strong> The rule that must never be missed — the anti-fabrication rule — lives in one place (<code>CLAUDE.md</code>), not copied across skills where it could drift. A skill that names no person is a skill any workspace can share and any <code>init</code> can overwrite.</li><li><strong>Drift becomes impossible to sustain.</strong> The whole failure was a customised skill with no re-sync path. Generic + <code>--skill-only</code> refresh closes it: the workspace's skills can always be made identical to what ships.</li></ul>
-<h2>Consequences</h2>
+<h2 id="consequences">Consequences</h2>
 <ul><li>A consuming workspace keeps its specifics (target roles, voice, open questions) in <code>CLAUDE.md</code> and <code>resume.json</code>; its two skills stay byte-identical to the shipped templates.</li><li>Splitting <code>import</code> (RP-0001) into its own skill later fits this shape — another intent, another generic skill — but is out of scope here.</li><li>The skill and workspace-<code>CLAUDE.md</code> texts are covered by the docs-match-the-code tests, so a command that stops existing fails CI rather than reaching a newcomer's quickstart.</li></ul>
 </main></body></html>

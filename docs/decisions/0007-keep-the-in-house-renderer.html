@@ -8,6 +8,7 @@ body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacS
 h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
 h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
 h3{font-size:1.08rem;margin:1.8em 0 .4em}
+h1,h2,h3,h4,h5,h6{scroll-margin-top:1.2em}
 p{margin:.7em 0}
 a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
 a:hover{border-bottom-color:var(--link)}
@@ -18,23 +19,25 @@ ul,ol{padding-left:1.4em;margin:.7em 0}
 li{margin:.3em 0}
 blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
 blockquote strong{color:var(--fg)}
-table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+.tablewrap{overflow-x:auto;margin:1.1em 0}
+table{border-collapse:collapse;width:100%;font-size:.92em}
 th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+td:first-child{white-space:nowrap}
 th{background:var(--code-bg);font-weight:600}
 hr{border:none;border-top:1px solid var(--line);margin:2em 0}
 strong{font-weight:650}
 </style></head><body><main class="wrap">
-<h1>0007 — Keep the in-house renderer rather than adopting RenderCV</h1>
+<h1 id="0007-keep-the-in-house-renderer-rather-than-adopting-rendercv">0007 — Keep the in-house renderer rather than adopting RenderCV</h1>
 <p><strong>Status:</strong> Accepted · 2026-07-21</p>
-<h2>Context</h2>
+<h2 id="context">Context</h2>
 <p>Structured data → themes → HTML/PDF has existed since 2013 and is more mature than anything worth writing from scratch. Five parallel research tracks surveyed the landscape to answer whether a home-built renderer was remaking a solved problem.</p>
 <p>The answer: the <strong>renderer</strong> is solved, comprehensively. <strong>RenderCV</strong> was the strongest candidate — Python, pip-installable, Typst rather than LaTeX since v2.0 (so no TeX toolchain), offline, nine single-column themes, tagged PDFs with clean text extraction, 17k stars.</p>
-<h2>Decision</h2>
+<h2 id="decision">Decision</h2>
 <p>Keep the in-house renderer. Adopt the <strong>JSON Resume schema</strong>; adopt nothing else.</p>
-<h2>Rationale</h2>
+<h2 id="rationale">Rationale</h2>
 <p><strong>Cover letters decided it.</strong> They do not fit RenderCV's schema, so adopting it means running <em>two</em> rendering paths — RenderCV for the resume and something else for letters. One pipeline that renders both documents from one data model beats a better resume renderer plus a bolted-on second path.</p>
 <p>Secondary: RenderCV's data model is its own YAML, so JSON Resume → RenderCV is one-way and lossy; and it is bus-factor 1.</p>
 <p>The deeper point is that <strong>the renderer was never the product.</strong> What does not exist elsewhere is a design space of layouts, a linter for the <em>layout</em>, and a workflow an agent can drive safely. Buying out of renderer maintenance would not have bought any of those.</p>
-<h2>Consequences</h2>
+<h2 id="consequences">Consequences</h2>
 <ul><li>Rendering is ours: <code>compose.render</code> plus a browser for PDF. Zero runtime dependencies.</li><li>Theme <em>designs</em> are worth stealing from RenderCV; its code and schema are not.</li><li>Building "another resume generator" is an explicit non-goal, stated in the README, because by download counts that category is a graveyard.</li><li><strong>Revisit if</strong> renderer maintenance becomes a burden, or if cover letters turn out to fit somewhere unexpected.</li></ul>
 </main></body></html>

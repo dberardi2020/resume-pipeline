@@ -8,6 +8,7 @@ body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacS
 h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
 h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
 h3{font-size:1.08rem;margin:1.8em 0 .4em}
+h1,h2,h3,h4,h5,h6{scroll-margin-top:1.2em}
 p{margin:.7em 0}
 a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
 a:hover{border-bottom-color:var(--link)}
@@ -18,13 +19,15 @@ ul,ol{padding-left:1.4em;margin:.7em 0}
 li{margin:.3em 0}
 blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
 blockquote strong{color:var(--fg)}
-table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+.tablewrap{overflow-x:auto;margin:1.1em 0}
+table{border-collapse:collapse;width:100%;font-size:.92em}
 th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+td:first-child{white-space:nowrap}
 th{background:var(--code-bg);font-weight:600}
 hr{border:none;border-top:1px solid var(--line);margin:2em 0}
 strong{font-weight:650}
 </style></head><body><main class="wrap">
-<h1>Documentation</h1>
+<h1 id="documentation">Documentation</h1>
 <p>The docs for <code>resume-pipeline</code>, routed by what you came here to do.</p>
 <p><strong>New to the project</strong> → <a href="product/overview.md"><code>product/overview.md</code></a> — the problem, the approach, and the design principles the rest of it follows.</p>
 <p><strong>Trying to understand the words</strong> → <a href="product/concepts.md"><code>product/concepts.md</code></a>. Profile, axis, spec, space, variant, deliverable. Everything else is written in those terms, so this is the doc to read second.</p>
@@ -33,9 +36,9 @@ strong{font-weight:650}
 <p><strong>Going to work on the code</strong> → <a href="technical/architecture.md"><code>technical/architecture.md</code></a> for the shape, then <a href="technical/module-reference.md"><code>technical/module-reference.md</code></a> for what each file is responsible for.</p>
 <p><strong>Wondering why something is the way it is</strong> → <a href="decisions/README.md"><code>decisions/</code></a>. The ADRs carry the current decision state; <code>product/</code> and <code>technical/</code> synthesise it. <strong>When they disagree, the ADR is right and the synthesis is stale.</strong></p>
 <p><strong>Looking for what is next</strong> → <a href="tickets/tickets.md"><code>tickets/tickets.md</code></a>.</p>
-<h2>Layout</h2>
-<table><thead><tr><th>Path</th><th>Holds</th></tr></thead><tbody><tr><td><a href="product/README.md"><code>product/</code></a></td><td>What it is, who it is for, how to use it.</td></tr><tr><td><a href="technical/README.md"><code>technical/</code></a></td><td>Architecture, modules, data model, testing.</td></tr><tr><td><a href="decisions/README.md"><code>decisions/</code></a></td><td>ADRs — numbered, never renumbered, never reused.</td></tr><tr><td><a href="tickets/tickets.md"><code>tickets/tickets.md</code></a></td><td>The backlog. No external tracker.</td></tr><tr><td><code>assets/</code></td><td>Screenshots, and <code>demo-profile.json</code> — the fictional profile every screenshot renders.</td></tr></tbody></table>
-<h2>Conventions</h2>
+<h2 id="layout">Layout</h2>
+<div class="tablewrap"><table><thead><tr><th>Path</th><th>Holds</th></tr></thead><tbody><tr><td><a href="product/README.md"><code>product/</code></a></td><td>What it is, who it is for, how to use it.</td></tr><tr><td><a href="technical/README.md"><code>technical/</code></a></td><td>Architecture, modules, data model, testing.</td></tr><tr><td><a href="decisions/README.md"><code>decisions/</code></a></td><td>ADRs — numbered, never renumbered, never reused.</td></tr><tr><td><a href="tickets/tickets.md"><code>tickets/tickets.md</code></a></td><td>The backlog. No external tracker.</td></tr><tr><td><code>assets/</code></td><td>Screenshots, and <code>demo-profile.json</code> — the fictional profile every screenshot renders.</td></tr></tbody></table></div>
+<h2 id="conventions">Conventions</h2>
 <p><strong>MD + HTML in lock-step.</strong> Prose docs exist as <code>name.md</code> (the source of truth) and <code>name.html</code> (a styled render of the same content). Regenerate after editing:</p>
 <pre><code>python docs/render.py docs/product/concepts.md</code></pre>
 <p>Rendering is selective rather than exhaustive here — the board and the long-lived product docs are paired; short internal notes need not be. <code>render.py</code> is stdlib-only.</p>

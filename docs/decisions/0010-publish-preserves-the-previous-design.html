@@ -8,6 +8,7 @@ body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacS
 h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
 h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
 h3{font-size:1.08rem;margin:1.8em 0 .4em}
+h1,h2,h3,h4,h5,h6{scroll-margin-top:1.2em}
 p{margin:.7em 0}
 a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
 a:hover{border-bottom-color:var(--link)}
@@ -18,21 +19,23 @@ ul,ol{padding-left:1.4em;margin:.7em 0}
 li{margin:.3em 0}
 blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
 blockquote strong{color:var(--fg)}
-table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+.tablewrap{overflow-x:auto;margin:1.1em 0}
+table{border-collapse:collapse;width:100%;font-size:.92em}
 th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+td:first-child{white-space:nowrap}
 th{background:var(--code-bg);font-weight:600}
 hr{border:none;border-top:1px solid var(--line);margin:2em 0}
 strong{font-weight:650}
 </style></head><body><main class="wrap">
-<h1>0010 — Publish preserves the previous design</h1>
+<h1 id="0010-publish-preserves-the-previous-design">0010 — Publish preserves the previous design</h1>
 <p><strong>Status:</strong> Accepted · 2026-07-23</p>
-<h2>Context</h2>
+<h2 id="context">Context</h2>
 <p>Publishing overwrites one fixed set of names in place (ADR-0004, ADR-0009) — that is what keeps a folder answering "which file do I send?" with a single deliverable. But overwrite-in-place is <em>destructive</em>: re-publishing after a layout or content change silently discards the version that was there, with no way back. For a document people iterate on and send to employers, losing the last-sent version is the wrong default.</p>
 <p>The workspace already has an <code>Archive/</code> folder (the scaffold creates <code>Resume/Archive/</code>, and the skill's content-change workflow snapshots the <em>source</em> <code>resume.json</code> there before an edit). Nothing snapshotted the <em>deliverable</em>.</p>
-<h2>Decision</h2>
+<h2 id="decision">Decision</h2>
 <p><strong>Before <code>publish</code> overwrites, it copies the existing deliverable into <code>Archive/&lt;YYYYMMDD-HHMMSS&gt;/</code> — the files plus the sidecar, so the snapshot is self-describing.</strong> The archive only ever grows; nothing already in it is read or touched. A first publish, with nothing to preserve, archives nothing. Both publish surfaces get this, because both go through <code>deliverable.write</code>.</p>
-<h2>Rationale</h2>
+<h2 id="rationale">Rationale</h2>
 <ul><li><strong>Non-destructive by default.</strong> The version you last sent is always recoverable, without the user having to remember to back it up.</li><li><strong>Reuses the existing convention.</strong> <code>Archive/</code> is already the workspace's snapshot location and is already created by <code>init</code>; the deliverable snapshot sits beside the source snapshots under the same <code>YYYYMMDD-…</code> scheme (a timestamped <em>folder</em>, since a deliverable is several files).</li><li><strong>The tool stays out of the archive's contents.</strong> It writes new folders and never reads or prunes what is there — the user's own archived files (some predating this tool) are inviolate.</li></ul>
-<h2>Consequences</h2>
+<h2 id="consequences">Consequences</h2>
 <ul><li>The folder accumulates one snapshot per publish. That is the price of never losing a design; deduping identical consecutive publishes and pruning old snapshots are refinements, not part of this decision.</li><li><code>publish</code> now writes to <code>Archive/</code> — the one place beyond the canonical deliverable that it touches in the workspace (ADR-0005 confined generated <em>scratch</em> to the cache; a preserved deliverable is not scratch).</li><li>Publishing remains <em>replace-in-place</em> for the live deliverable. Keeping several published designs side by side at once is a different, additive model — tracked as RP-0031, deliberately not built.</li></ul>
 </main></body></html>

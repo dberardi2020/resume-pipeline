@@ -8,6 +8,7 @@ body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacS
 h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
 h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
 h3{font-size:1.08rem;margin:1.8em 0 .4em}
+h1,h2,h3,h4,h5,h6{scroll-margin-top:1.2em}
 p{margin:.7em 0}
 a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
 a:hover{border-bottom-color:var(--link)}
@@ -18,39 +19,41 @@ ul,ol{padding-left:1.4em;margin:.7em 0}
 li{margin:.3em 0}
 blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
 blockquote strong{color:var(--fg)}
-table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+.tablewrap{overflow-x:auto;margin:1.1em 0}
+table{border-collapse:collapse;width:100%;font-size:.92em}
 th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+td:first-child{white-space:nowrap}
 th{background:var(--code-bg);font-weight:600}
 hr{border:none;border-top:1px solid var(--line);margin:2em 0}
 strong{font-weight:650}
 </style></head><body><main class="wrap">
-<h1>Concepts</h1>
+<h1 id="concepts">Concepts</h1>
 <p>The vocabulary. <strong>This is the single source for the concept model</strong> — every other doc, the CLI help, and the code use these words in this sense, and none of them redefine them.</p>
-<h2>Profile</h2>
+<h2 id="profile">Profile</h2>
 <p>The structured resume data — one file, <a href="https://jsonresume.org/schema">JSON Resume</a> schema. <strong>The only thing you edit.</strong> Everything else is derived from it.</p>
 <p>A profile is a <strong>master superset</strong>, not a finished document: it holds every skill, every role, every bullet ever written, including things no single resume would show. Curating down to what one employer sees is a <em>rendering</em> decision. <strong>Nothing is deleted from the profile to make a document shorter.</strong></p>
 <p>Schema details, including the local extensions, are in <a href="../technical/data-model-and-config.md"><code>../technical/data-model-and-config.md</code></a>.</p>
-<h2>Axis</h2>
+<h2 id="axis">Axis</h2>
 <p>One independent presentation choice. Seven of them:</p>
-<table><thead><tr><th>Axis</th><th>Values</th><th>What it varies</th></tr></thead><tbody><tr><td><code>palette</code></td><td>7</td><td>Colour scheme — <code>harbor</code>, <code>ink</code>, <code>moss</code>, <code>clay</code>, <code>plum</code>, <code>slate</code>, <code>crimson</code></td></tr><tr><td><code>typeface</code></td><td>4</td><td>Type pairing — <code>grotesk</code>, <code>humanist</code>, <code>charter</code>, <code>mixed</code></td></tr><tr><td><code>header</code></td><td>5</td><td>Name/contact block — <code>band</code>, <code>masthead</code>, <code>rule</code>, <code>split</code>, <code>minimal</code></td></tr><tr><td><code>skills</code></td><td>3</td><td>Skills section — <code>pills</code>, <code>inline</code>, <code>grid</code></td></tr><tr><td><code>promo</code></td><td>4</td><td>How a title line reads within a role — <code>ladder</code>, <code>badge</code>, <code>stacked</code>, <code>inline</code></td></tr><tr><td><code>density</code></td><td>3</td><td>Vertical rhythm — <code>airy</code>, <code>normal</code>, <code>compact</code></td></tr><tr><td><code>grouping</code></td><td>2</td><td>Whether a promotion reads as one tenure or separate roles — <code>grouped</code>, <code>flat</code> <em>(experimental)</em></td></tr></tbody></table>
+<div class="tablewrap"><table><thead><tr><th>Axis</th><th>Values</th><th>What it varies</th></tr></thead><tbody><tr><td><code>palette</code></td><td>7</td><td>Colour scheme — <code>harbor</code>, <code>ink</code>, <code>moss</code>, <code>clay</code>, <code>plum</code>, <code>slate</code>, <code>crimson</code></td></tr><tr><td><code>typeface</code></td><td>4</td><td>Type pairing — <code>grotesk</code>, <code>humanist</code>, <code>charter</code>, <code>mixed</code></td></tr><tr><td><code>header</code></td><td>5</td><td>Name/contact block — <code>band</code>, <code>masthead</code>, <code>rule</code>, <code>split</code>, <code>minimal</code></td></tr><tr><td><code>skills</code></td><td>3</td><td>Skills section — <code>pills</code>, <code>inline</code>, <code>grid</code></td></tr><tr><td><code>promo</code></td><td>4</td><td>How a title line reads within a role — <code>ladder</code>, <code>badge</code>, <code>stacked</code>, <code>inline</code></td></tr><tr><td><code>density</code></td><td>3</td><td>Vertical rhythm — <code>airy</code>, <code>normal</code>, <code>compact</code></td></tr><tr><td><code>grouping</code></td><td>2</td><td>Whether a promotion reads as one tenure or separate roles — <code>grouped</code>, <code>flat</code> <em>(experimental)</em></td></tr></tbody></table></div>
 <p>Axes are <strong>independent and categorical</strong>: changing one changes exactly one thing. That is what makes the space browsable rather than chaotic, and it is worth protecting.</p>
 <p><strong>Adding an axis is not free.</strong> <code>grouping</code> doubled the space, added a segment to every spec name, and does nothing at all for a profile with no promotion. Prefer new <em>values</em> on existing axes — they multiply the space without lengthening a name or adding a lever that is inert for some documents.</p>
-<h2>Spec</h2>
+<h2 id="spec">Spec</h2>
 <p>One point in the space — a value on every axis — named by spelling out each value in a fixed order, <code>palette-typeface-header-skills-promo-density-grouping</code>:</p>
 <pre><code>harbor-grotesk-band-pills-ladder-airy-grouped
 ink-charter-masthead-inline-stacked-compact-flat</code></pre>
 <p>A spec is <strong>pure data</strong>: no rendering, no IO. It is what you save, share and publish against, which is why the name is written out rather than encoded — it must be <strong>decodable without a legend</strong> and <strong>stable forever</strong>. See <a href="../decisions/0003-spec-names-are-written-out-in-full.md"><code>../decisions/0003-spec-names-are-written-out-in-full.md</code></a>.</p>
 <p>Four named <strong>presets</strong> (<code>default</code>, <code>plain</code>, <code>editorial</code>, <code>warm</code>) are ordinary specs with convenient names, not a separate system.</p>
-<h2>Space</h2>
+<h2 id="space">Space</h2>
 <p>The product of all axes: <strong>10,080 specs</strong>. Not a curated gallery — a combinatorial space, enumerated exhaustively and browsed with the axes as facets, so "every layout in this palette" and "this layout in any palette but this one" are the same operation.</p>
 <p><strong>Combinatorial, not curated.</strong> There are 28 hand-authored axis values over one HTML skeleton. 10,080 is what those multiply to, not a count of designs — and widening the space means adding values or a second skeleton, never raising the multiplier. Stated plainly because the number is otherwise easy to oversell.</p>
-<h2>Variant</h2>
+<h2 id="variant">Variant</h2>
 <p>A profile rendered through a spec. The thing you look at. Variants are cheap and disposable — HTML, generated on demand, never stored as source.</p>
-<h2>Deliverable</h2>
+<h2 id="deliverable">Deliverable</h2>
 <p>The one published output you send: PDF, HTML and Markdown of a single chosen variant. There is exactly one current deliverable at a time, and it is regenerated, never hand-edited. If a workspace already names its deliverable something, publishing keeps that name rather than introducing a second convention.</p>
-<h2>Workspace</h2>
+<h2 id="workspace">Workspace</h2>
 <p>The folder holding a profile, its deliverable, its archive, and eventually cover letters and applications. <code>init</code> scaffolds one. <strong>The tool never stores content itself</strong> — a workspace is someone's private data and lives wherever they keep it.</p>
 <hr>
-<h2>Terms deliberately not used</h2>
-<table><thead><tr><th>Not this</th><th>Because</th></tr></thead><tbody><tr><td><em>theme</em></td><td>Implies a hand-written artefact. Layouts are points in a space; <code>--theme</code> survives on the CLI only as a familiar flag name.</td></tr><tr><td><em>template</em></td><td>Reserved for the workspace <code>init</code> scaffolds, not for layouts.</td></tr><tr><td><em>number</em> / <em>option N</em></td><td>An ordinal is positional and catalogue-scoped. The spec name is the handle.</td></tr><tr><td><em>favourite</em>, <em>session</em></td><td>There is no session state. See <a href="../decisions/0002-browse-not-search.md"><code>../decisions/0002-browse-not-search.md</code></a>.</td></tr></tbody></table>
+<h2 id="terms-deliberately-not-used">Terms deliberately not used</h2>
+<div class="tablewrap"><table><thead><tr><th>Not this</th><th>Because</th></tr></thead><tbody><tr><td><em>theme</em></td><td>Implies a hand-written artefact. Layouts are points in a space; <code>--theme</code> survives on the CLI only as a familiar flag name.</td></tr><tr><td><em>template</em></td><td>Reserved for the workspace <code>init</code> scaffolds, not for layouts.</td></tr><tr><td><em>number</em> / <em>option N</em></td><td>An ordinal is positional and catalogue-scoped. The spec name is the handle.</td></tr><tr><td><em>favourite</em>, <em>session</em></td><td>There is no session state. See <a href="../decisions/0002-browse-not-search.md"><code>../decisions/0002-browse-not-search.md</code></a>.</td></tr></tbody></table></div>
 </main></body></html>

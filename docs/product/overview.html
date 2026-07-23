@@ -8,6 +8,7 @@ body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacS
 h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
 h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
 h3{font-size:1.08rem;margin:1.8em 0 .4em}
+h1,h2,h3,h4,h5,h6{scroll-margin-top:1.2em}
 p{margin:.7em 0}
 a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
 a:hover{border-bottom-color:var(--link)}
@@ -18,24 +19,26 @@ ul,ol{padding-left:1.4em;margin:.7em 0}
 li{margin:.3em 0}
 blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
 blockquote strong{color:var(--fg)}
-table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+.tablewrap{overflow-x:auto;margin:1.1em 0}
+table{border-collapse:collapse;width:100%;font-size:.92em}
 th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+td:first-child{white-space:nowrap}
 th{background:var(--code-bg);font-weight:600}
 hr{border:none;border-top:1px solid var(--line);margin:2em 0}
 strong{font-weight:650}
 </style></head><body><main class="wrap">
-<h1>Overview</h1>
+<h1 id="overview">Overview</h1>
 <p>What <code>resume-pipeline</code> is, the problem it addresses, and the principles the rest of the codebase follows. Read <a href="concepts.md"><code>concepts.md</code></a> next for the vocabulary.</p>
-<h2>The idea, in one paragraph</h2>
+<h2 id="the-idea-in-one-paragraph">The idea, in one paragraph</h2>
 <p>Your resume is data, not a document — but the tools treat it as a document, so the file you send drifts from the file you edit, and choosing how it <em>looks</em> means picking from a handful of themes someone else designed. This keeps one structured <strong>profile</strong> as the only thing you edit, generates a <strong>space</strong> of layouts from it, and lets you browse that space until something looks right. The editing happens through a coding agent: you say what to change and it changes the data. Publishing writes one <strong>deliverable</strong> — PDF, HTML and Markdown — from the layout you chose.</p>
-<h2>Who it is for</h2>
+<h2 id="who-it-is-for">Who it is for</h2>
 <p>Someone who already works inside a coding agent, keeps their resume under version control or wishes they did, and is tired of a <code>.docx</code> that is simultaneously the source and the output.</p>
 <p>It is <strong>not</strong> for someone who wants a web form and a template gallery. That is well served, and running a server to edit a text file is the wrong shape. See <a href="../decisions/0007-keep-the-in-house-renderer.md"><code>decisions/0007-keep-the-in-house-renderer.md</code></a> for what was evaluated and rejected.</p>
-<h2>What is actually different</h2>
+<h2 id="what-is-actually-different">What is actually different</h2>
 <p>Three things, none of which existed elsewhere when this was surveyed in July 2026:</p>
-<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><strong>Layouts as a design space</strong></td><td>Not a theme list. Seven independent axes, multiplied out, enumerated exhaustively and browsed with the axes as facets.</td></tr><tr><td><strong>A linter for the <em>layout</strong></em></td><td>Plenty of tools check your prose. Nothing open-source checks whether the layout itself survives a parser. Every generated layout is single-column and ≥10pt <em>by construction</em>, and a test re-extracts published PDFs to prove text comes back in document order.</td></tr><tr><td><strong>Built for an agent to drive</strong></td><td>The CLI is the substrate. The workflow, the rules, and the guardrails ship as a skill that installs into the workspace, so the agent knows them without being briefed.</td></tr></tbody></table>
+<div class="tablewrap"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><strong>Layouts as a design space</strong></td><td>Not a theme list. Seven independent axes, multiplied out, enumerated exhaustively and browsed with the axes as facets.</td></tr><tr><td><strong>A linter for the <em>layout</strong></em></td><td>Plenty of tools check your prose. Nothing open-source checks whether the layout itself survives a parser. Every generated layout is single-column and ≥10pt <em>by construction</em>, and a test re-extracts published PDFs to prove text comes back in document order.</td></tr><tr><td><strong>Built for an agent to drive</strong></td><td>The CLI is the substrate. The workflow, the rules, and the guardrails ship as a skill that installs into the workspace, so the agent knows them without being briefed.</td></tr></tbody></table></div>
 <p><strong>What it is not:</strong> another resume generator. That category is mature and mostly abandoned — the surveyed tools have download counts in the hundreds. Building a better renderer was never the point.</p>
-<h2>Design principles</h2>
+<h2 id="design-principles">Design principles</h2>
 <p>These are load-bearing. Where a feature and a principle disagree, the principle wins.</p>
 <p><strong>Agent-first, not agent-optional.</strong> The command line is what the agent drives. A workflow that requires a human to memorise commands has failed. If a turn would end by telling someone to run something, run it.</p>
 <p><strong>Data in one place.</strong> One profile, edited once, rendered many ways. No format is authoritative except the profile, and generated files are never hand-edited.</p>
@@ -44,10 +47,10 @@ strong{font-weight:650}
 <p><strong>The tool is public; the content never is.</strong> Every feature must be describable without reference to any particular person's resume. The tool holds no content; the workspace holds no code.</p>
 <p><strong>Never invent a career fact.</strong> The tooling actively creates pressure to break this — the linter flags unquantified bullets, and the obvious way to satisfy a linter is to supply a number. So the linter only ever reports. See <a href="../decisions/0006-the-linter-reports-it-never-edits.md"><code>decisions/0006-the-linter-reports-it-never-edits.md</code></a>.</p>
 <p><strong>Explainable in one page</strong>, or out of scope.</p>
-<h2>On applicant tracking systems</h2>
+<h2 id="on-applicant-tracking-systems">On applicant tracking systems</h2>
 <p>Layout rules here are justified by <strong>mechanism, never by magnitude</strong>. Parsers demonstrably extract text top-to-bottom and left-to-right, so a two-column layout genuinely scrambles reading order. That is verifiable and sufficient.</p>
 <p>You will not find a rejection statistic anywhere in this project. The ubiquitous "75% of resumes never reach a human" traces to a vendor that folded in 2013 without ever publishing a study, and the skeptical counter-numbers are vendor-produced too. Nobody has good public data, so nothing here rests on any.</p>
-<h2>Where things live</h2>
+<h2 id="where-things-live">Where things live</h2>
 <p>The tool holds no content. The workspace holds no code. That split is what lets the tool be published while a resume stays private.</p>
 <pre><code>resume-pipeline/                 a workspace/
   the tool. generic.               the content. private.

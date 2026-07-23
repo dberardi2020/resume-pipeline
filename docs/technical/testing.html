@@ -8,6 +8,7 @@ body{background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacS
 h1{font-size:2rem;line-height:1.2;margin:0 0 .3em;letter-spacing:-.02em}
 h2{font-size:1.35rem;margin:2.2em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
 h3{font-size:1.08rem;margin:1.8em 0 .4em}
+h1,h2,h3,h4,h5,h6{scroll-margin-top:1.2em}
 p{margin:.7em 0}
 a{color:var(--link);text-decoration:none;border-bottom:1px solid transparent}
 a:hover{border-bottom-color:var(--link)}
@@ -18,39 +19,41 @@ ul,ol{padding-left:1.4em;margin:.7em 0}
 li{margin:.3em 0}
 blockquote{margin:1em 0;padding:.6em 1.1em;border-left:3px solid var(--accent);background:var(--code-bg);border-radius:0 6px 6px 0;color:var(--muted)}
 blockquote strong{color:var(--fg)}
-table{border-collapse:collapse;width:100%;margin:1.1em 0;font-size:.92em;display:block;overflow-x:auto}
+.tablewrap{overflow-x:auto;margin:1.1em 0}
+table{border-collapse:collapse;width:100%;font-size:.92em}
 th,td{border:1px solid var(--line);padding:.5em .7em;text-align:left;vertical-align:top}
+td:first-child{white-space:nowrap}
 th{background:var(--code-bg);font-weight:600}
 hr{border:none;border-top:1px solid var(--line);margin:2em 0}
 strong{font-weight:650}
 </style></head><body><main class="wrap">
-<h1>Testing</h1>
+<h1 id="testing">Testing</h1>
 <p>The approach, what is covered, what is not, and how CI runs. 208 unit tests, ~30s locally, plus a separate on-demand acceptance harness (see below).</p>
 <pre><code>pytest -q                    # everything (the unit layer)
 pytest -q tests/test_pdf.py  # just the slow ones
 python qa/acceptance.py      # the acceptance layer — real browser + live server</code></pre>
-<h2>The approach</h2>
+<h2 id="the-approach">The approach</h2>
 <p>Three ideas do most of the work.</p>
 <p><strong>Assert over the whole space, not a sample.</strong> The claims that matter are universal — every spec renders, every name round-trips, every layout is single-column and ≥10pt. Those are checked across all 10,080 specs, or a <code>spread()</code> across them where rendering each would be slow. A property that holds for a sample and fails for one point is exactly the bug a resume tool cannot afford.</p>
 <p><strong>Test the output a machine will read, not the one a human sees.</strong> The PDF tests re-extract text with PyMuPDF and assert the content survived — including that it comes back in document order, which is the mechanism every layout rule rests on. A resume that renders beautifully and extracts as garbage is worse than useless, because the failure is invisible to the sender.</p>
 <p><strong>Test the prose too.</strong> <code>scaffold.py</code> ships documentation to users. Tests parse that prose and assert every command it mentions exists and every <code>--theme</code> value resolves. This is not belt-and-braces: it caught a shipped quickstart that documented two deleted commands and a <code>--theme</code> that errored.</p>
-<h2>Layout</h2>
-<table><thead><tr><th>File</th><th>Covers</th></tr></thead><tbody><tr><td><code>conftest.py</code></td><td>One fixture profile, deliberately <strong>clean</strong> — it trips no rule, so a lint test can break exactly one thing and attribute the finding.</td></tr><tr><td><code>test_space.py</code></td><td>Enumeration, name uniqueness, round-trip across the whole space, distance and neighbour invariants, deterministic spread.</td></tr><tr><td><code>test_compose.py</code></td><td>Every spec renders; ATS claims hold; screen inset; no multi-column CSS; no network reference; escaping; purity.</td></tr><tr><td><code>test_lint.py</code></td><td>Each rule, by breaking one thing. Plus that the linter cannot edit.</td></tr><tr><td><code>test_stints.py</code></td><td>The model, legacy normalisation, validation, and that no bullet is dropped by either grouping.</td></tr><tr><td><code>test_viewer.py</code></td><td>The embedded payload, both deliveries, and that they differ <em>only</em> in the two documented switches.</td></tr><tr><td><code>test_catalogue_and_server.py</code></td><td>Both deliveries end to end over a live loopback server; paging partitions the space; the profile is re-read on change; publish and export; that no session state exists.</td></tr><tr><td><code>test_cli.py</code></td><td>Command surface, profile resolution, layout resolution, publish, exit codes, deliverable naming.</td></tr><tr><td><code>test_pdf.py</code></td><td>PDF production, text extraction, page margins, one-page output.</td></tr></tbody></table>
-<h2>Tests worth knowing about</h2>
+<h2 id="layout">Layout</h2>
+<div class="tablewrap"><table><thead><tr><th>File</th><th>Covers</th></tr></thead><tbody><tr><td><code>conftest.py</code></td><td>One fixture profile, deliberately <strong>clean</strong> — it trips no rule, so a lint test can break exactly one thing and attribute the finding.</td></tr><tr><td><code>test_space.py</code></td><td>Enumeration, name uniqueness, round-trip across the whole space, distance and neighbour invariants, deterministic spread.</td></tr><tr><td><code>test_compose.py</code></td><td>Every spec renders; ATS claims hold; screen inset; no multi-column CSS; no network reference; escaping; purity.</td></tr><tr><td><code>test_lint.py</code></td><td>Each rule, by breaking one thing. Plus that the linter cannot edit.</td></tr><tr><td><code>test_stints.py</code></td><td>The model, legacy normalisation, validation, and that no bullet is dropped by either grouping.</td></tr><tr><td><code>test_viewer.py</code></td><td>The embedded payload, both deliveries, and that they differ <em>only</em> in the two documented switches.</td></tr><tr><td><code>test_catalogue_and_server.py</code></td><td>Both deliveries end to end over a live loopback server; paging partitions the space; the profile is re-read on change; publish and export; that no session state exists.</td></tr><tr><td><code>test_cli.py</code></td><td>Command surface, profile resolution, layout resolution, publish, exit codes, deliverable naming.</td></tr><tr><td><code>test_pdf.py</code></td><td>PDF production, text extraction, page margins, one-page output.</td></tr></tbody></table></div>
+<h2 id="tests-worth-knowing-about">Tests worth knowing about</h2>
 <p><strong><code>test_names_survive_a_new_axis_value</code></strong> inserts a value into an axis and asserts existing names are unchanged. The previous naming scheme failed this silently, and a published spec came to mean a different layout.</p>
 <p><strong><code>test_no_layout_prints_to_the_paper_edge</code></strong> forces a multi-page profile deliberately — the bug it guards was invisible on anything that fitted on one page, and invisible in the viewer, which shows page one.</p>
 <p><strong><code>test_the_two_deliveries_differ_only_in_those_switches</code></strong> normalises the two viewer outputs and asserts equality. The viewer was two implementations that had begun to drift.</p>
 <p><strong><code>test_the_linter_only_ever_reports</code></strong> asserts the profile is byte-identical after a check that fired. The anti-fabrication rule is stated in prose everywhere; this is the only place it is enforced.</p>
 <p><strong><code>test_the_scaffold_makes_no_assumptions_about_the_reader</code></strong> greps shipped prose for gendered pronouns. It exists because a shipped skill once described the author rather than a stranger.</p>
-<h2>Skips</h2>
+<h2 id="skips">Skips</h2>
 <p><code>test_pdf.py</code> skips wholesale when PyMuPDF is missing or no Chromium-family browser is present — a machine that cannot make a PDF should not fail the suite for it.</p>
 <p><strong>A skip that nobody notices is a test that stopped running</strong>, so CI has a step that fails deliberately if the PDF tests skip on a runner where they should not.</p>
-<h2>CI</h2>
+<h2 id="ci">CI</h2>
 <p><code>.github/workflows/tests.yml</code> — macOS and Ubuntu × Python 3.11 and 3.13, on push, PR and manual dispatch. Ubuntu installs Chromium so PDF export is genuinely exercised.</p>
 <p>CI runs the bare <code>pytest</code> entry point, which does <strong>not</strong> put the working directory on <code>sys.path</code> the way <code>python -m pytest</code> does. The suite shares a fixture via <code>from tests.conftest import CLEAN</code>, so <code>pythonpath = ["."]</code> is pinned in <code>pyproject.toml</code>. This was the first thing CI caught.</p>
-<h2>Acceptance layer — <code>qa/acceptance.py</code></h2>
+<h2 id="acceptance-layer-qa-acceptance-py">Acceptance layer — <code>qa/acceptance.py</code></h2>
 <p>The unit suite mocks the browser and calls <code>cli.main</code> in-process, so it cannot see whether the thing works end to end on a real machine. <code>qa/acceptance.py</code> is the second layer: it runs the command as a subprocess, drives a <strong>live <code>serve</code> server</strong> over HTTP, renders the viewer in a <strong>real headless browser</strong> and confirms the JavaScript actually builds the grid, exports a <strong>real PDF</strong>, and does it all against a fresh <code>init</code> workspace. It exits non-zero on failure, skips browser-dependent checks when none is present, and takes <code>--open</code> (watch the live viewer) and <code>--keep</code> (preserve the workspace to inspect outputs). It is run on demand, not in CI — and it was written after it caught an archive-collision bug the unit suite missed. Details: <a href="../../qa/README.md"><code>qa/README.md</code></a>.</p>
-<h2>Gaps</h2>
+<h2 id="gaps">Gaps</h2>
 <p>Honest list.</p>
 <ul><li><strong>Windows is untested.</strong> Nothing is known to be platform-specific, but nobody has run it.</li><li><strong>No visual regression.</strong> Rendering correctness is structural — content present, single column, margins, escaping. Whether a layout looks <em>good</em> is unchecked, and several real defects were found by looking rather than by testing.</li><li><strong>No <em>automated</em> clean-machine install test.</strong> A fresh venv install from the packaged repo, then <code>init</code>/<code>lint</code>/<code>catalogue</code>/<code>serve</code>/<code>publish</code>, was run by hand once before release and passed — but nothing in CI installs the built package and exercises the entry point, so a packaging regression could slip through.</li><li><strong><code>viewer.py</code>'s JavaScript is only <em>render</em>-tested.</strong> The acceptance harness now loads the viewer in a real headless browser and confirms the JS builds the grid — but <strong>interactions</strong> (colour-pin, paging, the publish button) are still unexercised; that needs a browser-driver (e.g. Playwright), a dependency the project has so far avoided.</li><li><strong>No performance guard.</strong> <code>spread()</code> was cubic and shipped that way; nothing would have caught it but a slow test run.</li></ul>
 </main></body></html>
