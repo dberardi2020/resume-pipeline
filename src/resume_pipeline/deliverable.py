@@ -17,6 +17,8 @@ sync and each folder (a tailored application, say) remembers its own.
 from __future__ import annotations
 
 import json
+import shutil
+from datetime import datetime
 from pathlib import Path
 
 from . import compose, markdown, pdf
@@ -25,6 +27,7 @@ from . import compose, markdown, pdf
 FORMATS = ("pdf", "html", "md")
 SUFFIXES = tuple(f".{fmt}" for fmt in FORMATS)
 SIDECAR = ".resume-pipeline.json"
+ARCHIVE_DIR = "Archive"
 
 
 def read_prefs(out_dir: Path) -> dict:
@@ -94,19 +97,48 @@ def default_stem(resume, out_dir: Path | None = None) -> str:
     return f"{last}_Resume".replace(" ", "_")
 
 
+def archive_existing(out_dir: Path) -> str | None:
+    """Snapshot the deliverable about to be overwritten into `Archive/<timestamp>/`.
+
+    Publishing overwrites in place, which would otherwise silently destroy the
+    previously published design. Copying it into a timestamped folder first makes
+    publish non-destructive of history — the folder only ever grows, nothing in it
+    is touched. Returns the archive folder's relative name, or None if there was
+    nothing to preserve (a first publish).
+    """
+    out_dir = Path(out_dir)
+    prev = existing_stem(out_dir)
+    if prev is None:
+        return None
+    files = [out_dir / f"{prev}.{fmt}" for fmt in FORMATS
+             if (out_dir / f"{prev}.{fmt}").is_file()]
+    if not files:
+        return None
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    dest = out_dir / ARCHIVE_DIR / stamp
+    dest.mkdir(parents=True, exist_ok=True)
+    for f in (*files, out_dir / SIDECAR):  # sidecar too, so the snapshot is self-describing
+        if f.is_file():
+            shutil.copy2(f, dest / f.name)
+    return f"{ARCHIVE_DIR}/{stamp}"
+
+
 def write(resume, spec: compose.Spec, out_dir: Path,
           stem: str | None = None, formats=None) -> str:
     """Render `spec` and write the chosen `formats` as `<stem>.<ext>`. Returns the stem.
 
-    `formats` is a subset of `FORMATS`; None means all three. The layout and
-    formats are recorded to the sidecar *first*, so the choice is remembered even
-    if PDF export (which needs a browser and is done last) fails.
+    `formats` is a subset of `FORMATS`; None means all three. Any previously
+    published deliverable is snapshotted to `Archive/` first, then the layout and
+    formats are recorded to the sidecar — both before the render — so history is
+    preserved and the choice is remembered even if PDF export (which needs a
+    browser and is done last) fails.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     formats = [f for f in FORMATS if f in formats] if formats is not None else list(FORMATS)
     stem = stem or default_stem(resume, out_dir)
 
+    archive_existing(out_dir)
     write_prefs(out_dir, spec.name, formats)
 
     html = compose.render(resume, spec)

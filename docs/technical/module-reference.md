@@ -166,6 +166,10 @@ after a content edit repeats them (ADR-0009): `write_prefs`/`read_prefs` persist
 and `recorded_layout(out_dir)` / `recorded_formats(out_dir)` return the last chosen layout id and
 format set, or None to fall back.
 
+`archive_existing(out_dir)` runs before each overwrite, copying the current deliverable (and its
+sidecar) into `Archive/<timestamp>/` so a publish never destroys the previous design (ADR-0010);
+it only ever adds folders, never touching what is already in `Archive/`.
+
 `existing_stem(out_dir)` finds the deliverable already present so publishing **reuses that name**
 instead of introducing a second convention — otherwise publishing duplicates a deliverable rather
 than replacing it. "Present" means the recorded formats are all there (all three if none

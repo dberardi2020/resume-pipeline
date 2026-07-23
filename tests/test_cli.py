@@ -228,6 +228,49 @@ def test_an_unknown_format_is_rejected(workspace, monkeypatch):
         cli.main(["publish", str(workspace / "resume.json"), "--formats", "docx"])
 
 
+# ── archiving the previous design ─────────────────────────────────────────────
+
+def test_publish_archives_the_previous_design(workspace, monkeypatch):
+    from resume_pipeline import deliverable
+    _fake_pdf(monkeypatch)
+    cli.main(["publish", str(workspace / "resume.json"), "--theme", "plain", "--name", "Out"])
+    cli.main(["publish", str(workspace / "resume.json"), "--theme", "default", "--name", "Out"])
+    snaps = list((workspace / deliverable.ARCHIVE_DIR).iterdir())
+    assert len(snaps) == 1
+    assert (snaps[0] / "Out.html").is_file() and (snaps[0] / "Out.pdf").is_file()
+
+
+def test_first_publish_has_nothing_to_archive(workspace, monkeypatch):
+    from resume_pipeline import deliverable
+    _fake_pdf(monkeypatch)
+    cli.main(["publish", str(workspace / "resume.json"), "--name", "Out"])
+    archive = workspace / deliverable.ARCHIVE_DIR
+    assert not archive.exists() or not any(archive.iterdir())
+
+
+def test_the_archived_copy_is_the_old_design_not_the_new(workspace, monkeypatch):
+    from resume_pipeline import deliverable
+    _fake_pdf(monkeypatch)
+    cli.main(["publish", str(workspace / "resume.json"), "--theme", "plain", "--name", "Out"])
+    old_html = (workspace / "Out.html").read_text()
+    cli.main(["publish", str(workspace / "resume.json"), "--theme", "editorial", "--name", "Out"])
+    snap = next((workspace / deliverable.ARCHIVE_DIR).iterdir())
+    assert (snap / "Out.html").read_text() == old_html
+    assert (workspace / "Out.html").read_text() != old_html
+
+
+def test_publish_never_touches_existing_archive_contents(workspace, monkeypatch):
+    """The user's Archive is preserved: publishing only ever adds folders."""
+    from resume_pipeline import deliverable
+    _fake_pdf(monkeypatch)
+    keepsake = workspace / deliverable.ARCHIVE_DIR / "20200101-precious.json"
+    keepsake.parent.mkdir(parents=True)
+    keepsake.write_text("do not touch", encoding="utf-8")
+    cli.main(["publish", str(workspace / "resume.json"), "--name", "Out"])
+    cli.main(["publish", str(workspace / "resume.json"), "--name", "Out"])
+    assert keepsake.read_text() == "do not touch"
+
+
 def test_lint_exit_code_reflects_errors(workspace, capsys):
     assert cli.main(["lint", str(workspace / "resume.json")]) == 0
 

@@ -188,6 +188,7 @@ def cmd_publish(args) -> int:
         formats = kept_formats or list(deliverable.FORMATS)
 
     stem = args.name or deliverable.default_stem(resume, out_dir)
+    had_previous = deliverable.existing_stem(out_dir) is not None
 
     try:
         deliverable.write(resume, spec, out_dir, stem, formats)
@@ -198,6 +199,8 @@ def cmd_publish(args) -> int:
     note = f"  (kept your last {' & '.join(kept)})" if kept else ""
     wrote = " / ".join(f"{stem}.{f}" for f in deliverable.FORMATS if f in formats)
     print(f"published {wrote} to {out_dir}  (theme: {theme.name}){note}")
+    if had_previous:
+        print(f"  the previous design is preserved in {out_dir / deliverable.ARCHIVE_DIR}/")
     if not theme.ats_safe:
         print(f"note: {theme.name!r} is not ATS-safe - do not submit it through a portal.",
               file=sys.stderr)

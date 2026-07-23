@@ -145,6 +145,10 @@ resume-pipeline publish                    # keep last layout and formats after 
 
 `--formats` takes any comma-separated subset of `pdf,html,md` (all three by default).
 
+**Publishing never destroys the previous design.** Before it overwrites, the current deliverable
+is copied into `Archive/<timestamp>/` beside the resume, so the version you last sent is always
+recoverable. The archive only grows — nothing already in it is touched (ADR-0010).
+
 From the viewer, **Make this my resume** does the same thing with no name typed.
 
 ### 5. Cover letters — not built

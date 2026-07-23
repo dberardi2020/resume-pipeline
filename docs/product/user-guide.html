@@ -80,6 +80,7 @@ resume-pipeline serve          # the same viewer, with a process behind it</code
 <pre><code>resume-pipeline publish --formats pdf     # only the PDF; html and md are skipped
 resume-pipeline publish                    # keep last layout and formats after editing content</code></pre>
 <p><code>--formats</code> takes any comma-separated subset of <code>pdf,html,md</code> (all three by default).</p>
+<p><strong>Publishing never destroys the previous design.</strong> Before it overwrites, the current deliverable is copied into <code>Archive/&lt;timestamp&gt;/</code> beside the resume, so the version you last sent is always recoverable. The archive only grows — nothing already in it is touched (ADR-0010).</p>
 <p>From the viewer, <strong>Make this my resume</strong> does the same thing with no name typed.</p>
 <h3>5. Cover letters — not built</h3>
 <p>Designed, unbuilt (RP-0009). <code>Cover Letters/</code> and <code>Applications/</code> are scaffolded and empty.</p>
