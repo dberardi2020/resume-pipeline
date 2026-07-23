@@ -255,10 +255,17 @@ a {{ color:{accent}; text-decoration:none; }}
 /* skills */
 /* Grouping is carried entirely by spacing, so the gap *between* groups has to
    decisively beat the gap *within* one: `.pills` gap applies on both axes, so a
-   wrapped second line of pills sits at that gap — keep it tighter than the row
-   margin, not equal to it, or every group melts into one field of pills. */
-.skill-row {{ display:flex; align-items:baseline; gap:9px; margin-bottom:10px; }}
-.skill-label {{ flex:0 0 8.4em; text-align:right; font-size:9.6pt;
+   wrapped second line of pills sits at that gap — keep it tighter than the grid
+   row-gap, or every group melts into one field of pills.
+   The label column is `min-content`: exactly the widest unbreakable label word,
+   so that word sits flush on the content edge and every other label right-aligns
+   to it. Any fixed basis leaves a ragged gutter instead — right-aligned text only
+   reaches the left edge when a line happens to fill the column exactly, which is
+   coincidence, not alignment. Labels still wrap freely inside the column. */
+.skill-rows {{ display:grid; grid-template-columns:min-content 1fr;
+               column-gap:9px; row-gap:10px; align-items:baseline; }}
+.skill-row {{ display:contents; }}
+.skill-label {{ text-align:right; font-size:9.6pt;
                 font-weight:700; opacity:.85; line-height:1.3; }}
 .pills {{ display:flex; flex-wrap:wrap; gap:3px 4px; }}
 .pill {{ background:{tint}; color:{accent}; border:0.5pt solid {accent}33;
@@ -400,11 +407,13 @@ def _skills(resume, spec: Spec) -> str:
     if not groups:
         return ""
     if spec.skills == "pills":
-        rows = "".join(
+        # One grid over every row, so the label column resolves against all the
+        # labels at once — per-row boxes could only size against their own.
+        rows = '<div class="skill-rows">' + "".join(
             f'<div class="skill-row"><div class="skill-label">{esc(g.get("name",""))}</div>'
             f'<div class="pills">'
             + "".join(f'<span class="pill">{esc(k)}</span>' for k in g["keywords"])
-            + "</div></div>" for g in groups)
+            + "</div></div>" for g in groups) + "</div>"
     elif spec.skills == "grid":
         rows = ('<div class="skill-grid">' + "".join(
             f'<div class="skill-inline"><b>{esc(g.get("name",""))}:</b> '
