@@ -306,6 +306,11 @@ a {{ color:{accent}; text-decoration:none; }}
                   border-left:2.5px solid {accent}; font-size:9.8pt; }}
 .promo-stacked .then {{ opacity:.65; }}
 .promo-inline {{ font-size:10pt; font-style:italic; opacity:.72; }}
+/* A promotion is worth marking, not muting — so the note carries the accent at
+   full strength. Scoped to `.note` rather than folded into `.promo-inline`,
+   because that class also lands on the *stints container* when promo=inline
+   (see `_stint_block`), where accenting a whole block of titles would be wrong. */
+.note {{ color:{accent}; font-weight:600; opacity:1; }}
 """
 
 
@@ -426,7 +431,7 @@ def _skills(resume, spec: Spec) -> str:
 
 
 def _note(entry) -> str:
-    return (f'<div class="promo-inline">{esc(entry["note"])}</div>'
+    return (f'<div class="promo-inline note">{esc(entry["note"])}</div>'
             if entry.get("note") else "")
 
 
