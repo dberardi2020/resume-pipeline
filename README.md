@@ -4,7 +4,7 @@
 pick — from inside your coding agent.**
 
 [![Tests](https://github.com/dberardi2020/resume-pipeline/actions/workflows/tests.yml/badge.svg)](https://github.com/dberardi2020/resume-pipeline/actions/workflows/tests.yml)
-![platform: macOS | Linux | Windows](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-blue)
+![platform: macOS | Linux](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-blue)
 ![python: 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
 ![license: MIT](https://img.shields.io/badge/license-MIT-green)
 

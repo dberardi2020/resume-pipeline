@@ -12,7 +12,7 @@ qualifications live.
 |---|---|
 | **macOS** | Verified end to end — developed here. CI runs Python 3.11 and 3.13. |
 | **Linux** | Verified in CI (Ubuntu, Python 3.11 and 3.13), including PDF export against Chromium. |
-| **Windows** | **Unverified.** Nothing is known to be platform-specific — `pdf.py` has Windows browser paths, and everything else is stdlib — but no one has run it. |
+| **Windows** | **Unverified**, and therefore off the platform badge for now. Nothing is known to be platform-specific — `pdf.py` has Windows browser paths, and everything else is stdlib — but no one has run it. Verifying it and restoring the badge is RP-0027. |
 
 Python 3.11 is the floor (`pyproject.toml`); the code uses `X | Y` unions and `:=`.
 
