@@ -16,6 +16,7 @@ The committed next few, in intended order.
 
 | ID | Pri | Type | Title |
 |---|---|---|---|
+| [RP-0043](#rp-0043) | P1 | Bug | Filter bar regressions — one merged row, and the nav wraps |
 | [RP-0038](#rp-0038) | P1 | Feature | A hosted GitHub Pages demo — fixture data, click-around, no backend |
 | [RP-0018](#rp-0018) | P1 | Chore | UI/UX pass on the viewer |
 | [RP-0032](#rp-0032) | P1 | Feature | Lead with a small, diverse set — the full space overwhelms |
@@ -242,6 +243,29 @@ Open questions it inherits: whether grouping is a *view* over the current filter
 **P3 · Feature · viewer**
 
 The grid is fixed at 24 live renders per page (`serve(…, count=24)`); let the user pick — e.g. 12 / 24 / 48 — from the viewer. Trade-off to surface: each card is a live iframe render, so more per page means more to render and scroll (24 was chosen as the balance). Self-contained — the page count already follows `count` (`space.pages(count)`). Interacts only with RP-0032 (the diverse default set).
+
+### RP-0043 — Filter bar regressions {#rp-0043}
+**P1 · Bug · viewer**
+
+Two misses introduced by `171f20c` ("one filter bar, Color, explainer below the controls"). Both were visible immediately in the browser and are **regressions against the state at `f8bd48f`**, which was better. Everything needed to fix them is written down here.
+
+**1. The filter bar should be two rows, not one flowing bar.** The feedback was that the filters "should not be separate from the Color" — that meant they should read as **one group**, not that they should be merged into a single wrapping row. The intended shape is:
+
+```
+row  Color   ● ● ● ● ● ● ●
+row  Type ▾  Header ▾  Skills ▾  Promo ▾  Density ▾  Group ▾   ✕ Clear all
+row  What is this?
+```
+
+Colour keeps its own row; the six dropdowns keep theirs; the two read as one group by sitting adjacent and sharing alignment, **not** by being concatenated into one `#filters` flex container. `171f20c` collapsed them into one bar, which at any width narrow enough to wrap interleaves swatches and pills across rows and looks worse than what it replaced. "What is this?" moving below the controls was correct and should stay.
+
+**Mechanically:** restore the two containers (`#palette` and `#axes` at `f8bd48f`, or two children of a shared wrapper), keep the `.swgroup` idea so a wrap can never split the label from its swatches, and keep `balanceWrap` on the dropdown row. The single-column media query below 900px still applies to both.
+
+**2. The pager must never wrap.** `« ‹ Shuffle ›` now breaks across lines at narrow widths; it did not before. `.nav` needs `flex-shrink:0` (and the row that holds it must let it keep its width) so the four controls stay on one line at every width — the same invariant RP-0018 established when the status text was moved to its own line, now broken from the other direction. Regression-checklist row 9 covers exactly this and must be re-verified.
+
+**Also open (deliberately deferred, not forgotten):** `171f20c` removed the colour-specific `Clear`, on the reasoning that swatches toggle directly and `Clear all` sits nearby. With colour back on its own row that reasoning weakens — decide whether it returns.
+
+**Not a regression, but decided here:** the UI says `Color` while the docs and comments say "colour". The repo is written in British English throughout, so a repo-wide sweep is its own call; the mixed state is intentional until then.
 
 ### RP-0038 — A hosted GitHub Pages demo {#rp-0038}
 **P1 · Feature · hosting**

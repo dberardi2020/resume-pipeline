@@ -35,7 +35,7 @@ strong{font-weight:650}
 <p><em>(none)</em></p>
 <h2 id="on-deck">On deck</h2>
 <p>The committed next few, in intended order.</p>
-<div class="tablewrap"><table><thead><tr><th>ID</th><th>Pri</th><th>Type</th><th>Title</th></tr></thead><tbody><tr><td><a href="#rp-0038">RP-0038</a></td><td>P1</td><td>Feature</td><td>A hosted GitHub Pages demo — fixture data, click-around, no backend</td></tr><tr><td><a href="#rp-0018">RP-0018</a></td><td>P1</td><td>Chore</td><td>UI/UX pass on the viewer</td></tr><tr><td><a href="#rp-0032">RP-0032</a></td><td>P1</td><td>Feature</td><td>Lead with a small, diverse set — the full space overwhelms</td></tr></tbody></table></div>
+<div class="tablewrap"><table><thead><tr><th>ID</th><th>Pri</th><th>Type</th><th>Title</th></tr></thead><tbody><tr><td><a href="#rp-0043">RP-0043</a></td><td>P1</td><td>Bug</td><td>Filter bar regressions — one merged row, and the nav wraps</td></tr><tr><td><a href="#rp-0038">RP-0038</a></td><td>P1</td><td>Feature</td><td>A hosted GitHub Pages demo — fixture data, click-around, no backend</td></tr><tr><td><a href="#rp-0018">RP-0018</a></td><td>P1</td><td>Chore</td><td>UI/UX pass on the viewer</td></tr><tr><td><a href="#rp-0032">RP-0032</a></td><td>P1</td><td>Feature</td><td>Lead with a small, diverse set — the full space overwhelms</td></tr></tbody></table></div>
 <h2 id="blocked">Blocked</h2>
 <p><em>(none)</em></p>
 <h2 id="backlog">Backlog</h2>
@@ -139,6 +139,18 @@ strong{font-weight:650}
 <h3 id="rp-0036">RP-0036 — Items-per-page control</h3>
 <p><strong>P3 · Feature · viewer</strong></p>
 <p>The grid is fixed at 24 live renders per page (<code>serve(…, count=24)</code>); let the user pick — e.g. 12 / 24 / 48 — from the viewer. Trade-off to surface: each card is a live iframe render, so more per page means more to render and scroll (24 was chosen as the balance). Self-contained — the page count already follows <code>count</code> (<code>space.pages(count)</code>). Interacts only with RP-0032 (the diverse default set).</p>
+<h3 id="rp-0043">RP-0043 — Filter bar regressions</h3>
+<p><strong>P1 · Bug · viewer</strong></p>
+<p>Two misses introduced by <code>171f20c</code> ("one filter bar, Color, explainer below the controls"). Both were visible immediately in the browser and are <strong>regressions against the state at <code>f8bd48f</code></strong>, which was better. Everything needed to fix them is written down here.</p>
+<p><strong>1. The filter bar should be two rows, not one flowing bar.</strong> The feedback was that the filters "should not be separate from the Color" — that meant they should read as <strong>one group</strong>, not that they should be merged into a single wrapping row. The intended shape is:</p>
+<pre><code>row  Color   ● ● ● ● ● ● ●
+row  Type ▾  Header ▾  Skills ▾  Promo ▾  Density ▾  Group ▾   ✕ Clear all
+row  What is this?</code></pre>
+<p>Colour keeps its own row; the six dropdowns keep theirs; the two read as one group by sitting adjacent and sharing alignment, <strong>not</strong> by being concatenated into one <code>#filters</code> flex container. <code>171f20c</code> collapsed them into one bar, which at any width narrow enough to wrap interleaves swatches and pills across rows and looks worse than what it replaced. "What is this?" moving below the controls was correct and should stay.</p>
+<p><strong>Mechanically:</strong> restore the two containers (<code>#palette</code> and <code>#axes</code> at <code>f8bd48f</code>, or two children of a shared wrapper), keep the <code>.swgroup</code> idea so a wrap can never split the label from its swatches, and keep <code>balanceWrap</code> on the dropdown row. The single-column media query below 900px still applies to both.</p>
+<p><strong>2. The pager must never wrap.</strong> <code>« ‹ Shuffle ›</code> now breaks across lines at narrow widths; it did not before. <code>.nav</code> needs <code>flex-shrink:0</code> (and the row that holds it must let it keep its width) so the four controls stay on one line at every width — the same invariant RP-0018 established when the status text was moved to its own line, now broken from the other direction. Regression-checklist row 9 covers exactly this and must be re-verified.</p>
+<p><strong>Also open (deliberately deferred, not forgotten):</strong> <code>171f20c</code> removed the colour-specific <code>Clear</code>, on the reasoning that swatches toggle directly and <code>Clear all</code> sits nearby. With colour back on its own row that reasoning weakens — decide whether it returns.</p>
+<p><strong>Not a regression, but decided here:</strong> the UI says <code>Color</code> while the docs and comments say "colour". The repo is written in British English throughout, so a repo-wide sweep is its own call; the mixed state is intentional until then.</p>
 <h3 id="rp-0038">RP-0038 — A hosted GitHub Pages demo</h3>
 <p><strong>P1 · Feature · hosting</strong></p>
 <p>Fixture data, click-around, no backend. Ship a static site (GitHub Pages, matching RP-0023's static-first lean) that serves the viewer over a <strong>fixture profile</strong>: browse the whole design space, hold colour/type, page, open layouts — nothing real behind it. First value is a shareable "try it" link that needs no install (the RP-0023 barrier). The grid already builds client-side; the one server piece is <code>/preview</code> and PDF export — for a static demo, pre-render the fixture's previews (or move rendering into the browser).</p>
