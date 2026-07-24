@@ -281,6 +281,20 @@ _PAGE = r"""<!doctype html>
          background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;
          font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
   .toast.show{opacity:1}
+  /* ── Narrow: one column ──────────────────────────────────────────────────
+     Below this the two columns starve each other. The controls cannot shrink —
+     pills don't break mid-word — so the identity column collapses and the title
+     wraps to three lines beside a half-empty control column. One column is the
+     honest answer here: taller, but nothing is crushed.
+     Kept at the END of the sheet deliberately: these override `.navwrap` and
+     `.palette`, which are declared later than `.hdr`, so an earlier media block
+     would lose the cascade despite matching. */
+  @media (max-width:900px){
+    .hdr{grid-template-columns:1fr;gap:9px}
+    .navwrap{justify-self:start}
+    .palette{justify-content:flex-start}
+    h1{font-size:16px}
+  }
 </style></head><body>
 
 <header>
