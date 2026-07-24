@@ -32,12 +32,16 @@ Use `docs/assets/demo-profile.json` (Jane Smith) as the fixture — never a real
   checks see nothing; you must render in a real browser to test it (`--dump-dom` counts cards, or
   drive it live). A full page is 24 cards.
 - **Header** is a two-column grid (`.hdr`, RP-0018): identity on the left (`h1`, `.statusline`,
-  the `#hintBtn` explainer toggle), controls on the right (`#pageMeta` + `.nav`, then the colour
-  and type bars). The explainer `<p id="hint">` sits below the grid, shown on a first visit and
-  hidden once dismissed.
-- **Colour bar** (`#palette`): a `.vchip` "Clear" (disabled when nothing selected) + 7 `.sw` swatches —
-  `harbor ink moss clay plum slate crimson`. Each swatch is `<button class="sw" data-p="moss" title="moss">`.
-- **Axis dropdowns** (`#axes`): a `.fpill.clearbtn` "Clear all" then six `.fpill` pills —
+  controls on the right (`#pageMeta` + `.nav`, then the single `#filters` bar). **Below 900px the
+  grid collapses to one left-aligned column** — the control column is `auto` and cannot shrink, so
+  two columns starve each other and the title breaks across three lines. `#hintBtn` and its
+  `<p id="hint">` sit *below* the grid, shown on a first visit and hidden once dismissed.
+- **Filter bar** (`#filters`) — *one* bar for all seven axes, right-aligned (left-aligned below
+  900px). Order: the colour `.swgroup` (label `Color` + 7 `.sw` swatches, `harbor ink moss clay
+  plum slate crimson`, each `<button class="sw" title="moss">`), then the six dropdown pills,
+  then `.fpill.clearbtn` "Clear all" last. The `.swgroup` is one flex item on purpose so a wrap
+  cannot split the label from its swatches.
+- **Axis dropdowns**: six `.fpill` pills —
   `Type Header Skills Promo Density Group` — each `<button class="fpill" data-axis="header">`
   carrying a `.ct` count badge when constrained and a `.caret` otherwise. Clicking one opens
   `#pop`, a **popover** listing that axis's values as `.val` buttons, each with a schematic

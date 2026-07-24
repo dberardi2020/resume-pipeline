@@ -219,7 +219,7 @@ def check_serve(qa: QA, tmp: Path, browser: bool, open_ui: bool = False) -> None
                                  capture_output=True, text=True, timeout=30).stdout
             cards = dom.count('class="card')
             qa.ok("viewer JS builds the grid in a real browser", cards >= 1, f"{cards} cards")
-            qa.ok("rendered grid carries the colour control", "Colour" in dom)
+            qa.ok("rendered grid carries the colour control", ">Color<" in dom)
             # RP-0037: the type bar is the colour bar's twin — its label and every
             # face's sample chip must be built into the same rendered DOM.
             # RP-0033: the six non-colour axes are dropdown pills. Assert the pills

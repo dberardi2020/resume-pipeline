@@ -64,7 +64,7 @@ def page(specs, resume, *, preview: str = "file", exportable: bool = False,
     # dropdowns, the card chips and the query string cannot disagree about what
     # an axis is called or which values it has (RP-0033).
     axes_meta = []
-    for key, label in (("palette", "Colour"), ("typeface", "Type"),
+    for key, label in (("palette", "Color"), ("typeface", "Type"),
                        ("header", "Header"), ("skills", "Skills"),
                        ("promo", "Promo"), ("density", "Density"),
                        ("grouping", "Group")):
@@ -130,8 +130,11 @@ _PAGE = r"""<!doctype html>
   .nav{display:flex;gap:6px;align-items:center}
   .nav button{padding:5px 11px}
   /* A quiet, text-weight toggle — onboarding copy a returning user doesn't need. */
-  .hintbtn{padding:2px 0;background:none;border:0;color:var(--muted);font-size:12.5px;
-           text-decoration:underline;text-underline-offset:3px;justify-self:start}
+  /* Below the controls, next to the copy it toggles — beside the filter bar it
+     read as another control competing with them. */
+  .hintbtn{display:block;margin-top:11px;padding:2px 0;background:none;border:0;
+           color:var(--muted);font-size:12.5px;text-decoration:underline;
+           text-underline-offset:3px;cursor:pointer}
   .hintbtn:hover{color:var(--accent)}
 
   button{font:inherit;font-size:13px;font-weight:500;color:var(--ink);
@@ -273,9 +276,12 @@ _PAGE = r"""<!doctype html>
      which no label can improve on, so colour keeps swatches while every other
      axis collapses into a dropdown (RP-0033). Selection is multi-select — two
      swatches are an OR. */
-  .palette{display:flex;align-items:center;gap:7px;margin:0;flex-wrap:wrap;
+  .filters{display:flex;align-items:center;gap:8px;margin:0;flex-wrap:wrap;
            justify-content:flex-end}
-  .palette .lbl{font-size:12px;color:var(--muted)}
+  /* Label + swatches move as one: a wrap that split them would read as two
+     controls, and balanceWrap counts children, so this must be a single item. */
+  .swgroup{display:inline-flex;align-items:center;gap:7px}
+  .filters .lbl{font-size:12px;color:var(--muted)}
 
   .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
          background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;
@@ -292,7 +298,7 @@ _PAGE = r"""<!doctype html>
   @media (max-width:900px){
     .hdr{grid-template-columns:1fr;gap:9px}
     .navwrap{justify-self:start}
-    .palette{justify-content:flex-start}
+    .filters{justify-content:flex-start}
     h1{font-size:16px}
   }
 </style></head><body>
@@ -314,12 +320,12 @@ _PAGE = r"""<!doctype html>
     </span>
 
     <div class="meta statusline" id="meta"></div>
-    <div class="palette" id="palette"></div>
-
-    <button class="hintbtn" id="hintBtn" aria-expanded="true" aria-controls="hint">What is this?</button>
-    <div class="palette" id="axes"></div>
+    <!-- Colour is not a separate system from the other axes — it just wears
+         swatches instead of a dropdown, so it sits in the same bar. -->
+    <div class="filters" id="filters"></div>
   </div>
   <div class="pop" id="pop" hidden></div>
+  <button class="hintbtn" id="hintBtn" aria-expanded="true" aria-controls="hint">What is this?</button>
   <p class="hint" id="hint">Layouts are <b>generated</b>, not templates — each is one combination of
   seven independent choices, so there are __TOTAL__ of them. The arrows walk the space in
   order; <b>Shuffle</b> jumps somewhere else entirely. Pick a <b>colour</b> or <b>typeface</b>
@@ -592,45 +598,50 @@ function clearBtn(axis, cls){
   return b;
 }
 
-// Colour keeps its own chrome: a swatch *is* the value, which no label can beat.
-function paletteBar(el){
+// One bar, every axis. Colour is not a separate system — it just wears swatches
+// rather than a dropdown, because a swatch *is* the value and no label beats it.
+// The other six are words either way, so they collapse into dropdowns whose count
+// badge keeps the header from growing with the size of the selection.
+function filterBar(el){
   if(!CAN_FILTER){ el.hidden = true; return; }
-  const axis = AXES.find(a => a.key === "palette");
   el.textContent = "";
-  const lbl = document.createElement("span"); lbl.className = "lbl"; lbl.textContent = "Colour";
-  el.append(lbl, clearBtn("palette", "vchip"));
-  axis.values.forEach(v => {
+
+  const palette = AXES.find(a => a.key === "palette");
+  // Label and swatches travel as one item: a wrap that split them would read as
+  // two controls, and balanceWrap counts children.
+  const group = document.createElement("span"); group.className = "swgroup";
+  const lbl = document.createElement("span"); lbl.className = "lbl";
+  lbl.textContent = palette.label;
+  group.append(lbl);
+  palette.values.forEach(v => {
     const on = FILTERS.palette.has(v);
     const b = document.createElement("button");
     b.className = "sw" + (on ? " on" : "");
     b.style.background = ACCENT[v]; b.title = v;
     b.setAttribute("aria-label", v); b.setAttribute("aria-pressed", on);
     b.onclick = () => toggleFilter("palette", v);
-    el.append(b);
+    group.append(b);
   });
-  balanceWrap(el);
-}
+  el.append(group);
 
-// The other six axes are words either way, so they collapse into dropdowns: a
-// fixed number of pills carrying a count, which is what keeps the header from
-// growing with the size of the selection.
-function axisBar(el){
-  if(!CAN_FILTER){ el.hidden = true; return; }
-  el.textContent = "";
-  el.append(clearBtn(null, "fpill clearbtn"));
   AXES.filter(a => a.key !== "palette").forEach(axis => {
     const n = FILTERS[axis.key].size, live = OPEN_AXIS === axis.key;
     const b = document.createElement("button");
     b.className = "fpill" + (n ? " on" : "") + (live ? " live" : "");
     b.append(document.createTextNode(axis.label));
     const tag = document.createElement("span");
-    if(n){ tag.className = "ct"; tag.textContent = n; } else { tag.className = "caret"; tag.textContent = "▾"; }
+    if(n){ tag.className = "ct"; tag.textContent = n; }
+    else { tag.className = "caret"; tag.textContent = "\u25be"; }
     b.append(tag);
     b.dataset.axis = axis.key;
     b.setAttribute("aria-expanded", live);
     b.onclick = () => { OPEN_AXIS = live ? null : axis.key; drawFilters(); };
     el.append(b);
   });
+
+  // Last: an action on everything before it. Always present, disabled when there
+  // is nothing to clear, so the row never shifts as the first value is picked.
+  el.append(clearBtn(null, "fpill clearbtn"));
   balanceWrap(el);
 }
 
@@ -657,7 +668,7 @@ function popover(){
     vals.append(b);
   });
   pop.append(head, vals);
-  const btn = $("#axes").querySelector(`[data-axis="${axis.key}"]`);
+  const btn = $("#filters").querySelector(`[data-axis="${axis.key}"]`);
   if(btn){
     const hd = $("header").getBoundingClientRect(), r = btn.getBoundingClientRect();
     pop.style.top = (r.bottom - hd.top + 8) + "px";
@@ -666,20 +677,20 @@ function popover(){
   }
 }
 
-function drawFilters(){ paletteBar($("#palette")); axisBar($("#axes")); popover(); }
+function drawFilters(){ filterBar($("#filters")); popover(); }
 
 // Close an open dropdown on a click elsewhere. The origin is recorded during
 // CAPTURE because redrawing detaches the very button that was clicked — by the
 // bubble phase "was this inside?" would answer no, closing what just opened.
 let clickInside = false;
 document.addEventListener("click", e => {
-  clickInside = $("#axes").contains(e.target) || $("#pop").contains(e.target);
+  clickInside = $("#filters").contains(e.target) || $("#pop").contains(e.target);
 }, true);
 document.addEventListener("click", () => {
   if(OPEN_AXIS && !clickInside){ OPEN_AXIS = null; popover(); }
 });
 window.addEventListener("resize", () => {
-  balanceWrap($("#axes")); balanceWrap($("#palette")); popover();
+  balanceWrap($("#filters")); popover();
 });
 
 function open(v){
