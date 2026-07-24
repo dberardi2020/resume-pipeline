@@ -33,6 +33,7 @@ The committed next few, in intended order.
 | [RP-0007](#rp-0007) | P1 | Feature | Provenance model — asserted fact vs. model-generated prose |
 | [RP-0025](#rp-0025) | P1 | Feature | `import` as a skill, not a parser |
 | [RP-0039](#rp-0039) | P1 | Feature | Publish a subset of skills without deleting from the profile |
+| [RP-0041](#rp-0041) | P1 | Feature | Bundle deterministic fonts — the typeface axis resolves differently per machine |
 | [RP-0003](#rp-0003) | P2 | Feature | Remix — pin a layout and vary one axis at a time |
 | [RP-0004](#rp-0004) | P2 | Feature | Global style locks + loadouts |
 | [RP-0008](#rp-0008) | P2 | Feature | Explain what an ATS actually is, evidence-first |
@@ -285,6 +286,39 @@ What to decide:
 - **Or admit a note is not a promotion treatment at all** and give it its own axis. Honest to the model, but widens the space for a single line of text.
 
 Check for an upstream JSON Resume field before either (same caution as RP-0014). Sits with **RP-0014** and **RP-0024** as the unsettled promotion-model cluster; none of the three should be resolved without the other two in view.
+
+### RP-0041 — Bundle deterministic fonts {#rp-0041}
+**P1 · Feature · render**
+
+Every typeface value is a **system font stack**, so the same spec renders in a different font on a different machine. Measured in a real browser on the author's Mac, 2026-07-23:
+
+| Value | Resolves to on macOS | Resolves to on Windows |
+|---|---|---|
+| `grotesk` | Helvetica (`Segoe UI` absent) | Segoe UI |
+| `humanist` | Optima | Candara (`Optima` absent) |
+| `charter` | Charter | Georgia (`Charter` absent) |
+
+**Why this is a correctness bug, not a polish item.** ADR-0003 makes spec names *stable and shareable* — "save it, share it, publish against it". But `harbor-charter-band-…` is a Charter document on macOS and a Georgia document on Windows: **same name, materially different resume**. The guarantee is only skin-deep. `pdf.py` shells out to the *local* Chrome, so the published PDF embeds whatever resolved on the machine that ran it — two people publishing the same layout get different deliverables.
+
+**Fix — ship the fonts, embed only what a document uses.** Pre-subset open-licensed (OFL) WOFF2 faces into the package; at render time base64 the two or three faces the chosen spec actually needs. `base64` is stdlib, so **"zero runtime dependencies" survives** — the subsetting happens once, offline, not at render time (no `fonttools` at runtime). Embedding as `data:` URIs keeps the HTML deliverable **self-contained**, which ADR-0004's "one file you send" requires; referencing external font files would break a resume the moment it is emailed. Budget: ~4 faces ≈ 150KB inlined per document.
+
+**Candidate set** — keeps the existing names honest where an open equivalent exists:
+
+| Value | Font | Note |
+|---|---|---|
+| `grotesk` | Public Sans | neutral grotesk |
+| `humanist` | Source Sans 3 | replaces the Optima / Candara lottery |
+| `charter` | XCharter or Charis SIL | open Charter derivatives — the name stays true |
+| `garamond` | EB Garamond | old-style serif; new value |
+| `slab` | Zilla Slab | a texture the set lacks; new value |
+| `plex` | IBM Plex Sans + Serif | strong pairing; new value |
+| `mixed` | serif display / sans body | as today, but deterministic |
+
+**Cost to weigh:** each typeface multiplies the whole space — 4 → 7 values takes 10,080 → 17,640 layouts. On-thesis ("adding a value multiplies the catalogue"), but it makes **RP-0032**'s overwhelm problem larger, not smaller. Adding values is also the exact scenario ADR-0003's naming scheme was designed to survive, so it should cost nothing structurally.
+
+**Interacts with:** **RP-0038** — a hosted demo renders per-visitor-machine until this lands, so the demo would not show what you actually get. **RP-0027** (verify on Windows) — this is the class of divergence that pass would have caught. **RP-0033** — the typeface filter's sample chips can only depict a face the renderer will actually use. **RP-0028** (custom palettes) is the colour-axis sibling of the same "closed set vs open input" question.
+
+**Open:** licence review per face (OFL attribution requirements in the published artefact), whether italics are needed or synthesised, and whether the `mixed` pairing should be re-chosen once the set changes.
 
 ## Conventions
 
