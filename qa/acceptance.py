@@ -178,8 +178,35 @@ def check_serve(qa: QA, tmp: Path, browser: bool, open_ui: bool = False) -> None
             base + "/api/page?i=0&palette=moss", timeout=3).read())
         narrowed = held["total"] < full_total and held["pages"] < full_pages
         all_moss = all(o["axes"]["palette"] == "moss" for o in held["options"])
-        qa.ok("holding a palette narrows the browse (filter, not overlay)",
+        qa.ok("filtering an axis narrows the browse (filter, not overlay)",
               narrowed and all_moss, f"total {full_total}->{held['total']}, all_moss={all_moss}")
+        # RP-0033: an axis holds a *set*. Two values are an OR, so twice the subset;
+        # a second axis ANDs on top. Repeated query params carry the selection.
+        from resume_pipeline import compose, space
+        two = json.loads(urllib.request.urlopen(
+            base + "/api/page?i=0&palette=moss&palette=plum", timeout=3).read())
+        both_seen = {o["axes"]["palette"] for o in two["options"]} <= {"moss", "plum"}
+        qa.ok("two values on one axis are an OR",
+              two["total"] == 2 * held["total"] and both_seen,
+              f"{held['total']} -> {two['total']}")
+        anded = json.loads(urllib.request.urlopen(
+            base + "/api/page?i=0&palette=moss&palette=plum&typeface=charter", timeout=3).read())
+        qa.ok("a second axis ANDs on top",
+              anded["total"] == two["total"] // len(compose.TYPEFACES),
+              f"{two['total']} -> {anded['total']}")
+        # Every value of an axis is the same as none — the degenerate case that made
+        # `grouping` look like it needed a control of its own. It does not.
+        every = "&".join(f"grouping={v}" for v in space.axis_values("grouping"))
+        allv = json.loads(urllib.request.urlopen(
+            base + f"/api/page?i=0&{every}", timeout=3).read())
+        qa.ok("selecting every value of an axis is no filter",
+              allv["total"] == full_total, f"{allv['total']} vs {full_total}")
+        # A nonsense value must be ignored, not narrow the browse to nothing —
+        # "no layouts exist" is a much worse lie than "that filter was dropped".
+        junk = json.loads(urllib.request.urlopen(
+            base + "/api/page?i=0&palette=NOTACOLOUR", timeout=3).read())
+        qa.ok("an unknown filter value is ignored, not fatal",
+              junk["total"] == full_total, f"{junk['total']} vs {full_total}")
         spec = page["options"][0]["name"]
         preview = urllib.request.urlopen(base + f"/preview/{spec}", timeout=3).read().decode()
         qa.ok("/preview renders a layout", "<html" in preview.lower())
@@ -195,10 +222,14 @@ def check_serve(qa: QA, tmp: Path, browser: bool, open_ui: bool = False) -> None
             qa.ok("rendered grid carries the colour control", "Colour" in dom)
             # RP-0037: the type bar is the colour bar's twin — its label and every
             # face's sample chip must be built into the same rendered DOM.
-            faces = [t[0] for t in compose.TYPEFACES]
-            has_type = ">Type<" in dom and all(f">{f}<" in dom for f in faces)
-            qa.ok("rendered grid carries the typeface control", has_type,
-                  f"faces found: {[f for f in faces if f'>{f}<' in dom]}")
+            # RP-0033: the six non-colour axes are dropdown pills. Assert the pills
+            # themselves, not the axis *values* — those also appear on every card's
+            # chips, so a values-only check passes even with the control deleted.
+            labels = ["Type", "Header", "Skills", "Promo", "Density", "Group"]
+            pills = [l for l in labels if f'data-axis=' in dom and f">{l}<" in dom]
+            qa.ok("rendered grid carries a dropdown per axis", len(pills) == len(labels),
+                  f"found {pills}")
+            qa.ok("rendered grid carries Clear all", "Clear all" in dom)
         else:
             qa.skip("viewer JS builds the grid in a real browser", "no browser")
         if browser:

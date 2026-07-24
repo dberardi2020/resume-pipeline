@@ -170,35 +170,83 @@ def _axis_value(spec: Spec, axis: str) -> str:
     return getattr(spec, axis)  # header, skills, promo, grouping are stored as strings
 
 
-def matches(spec: Spec, filters: dict[str, str]) -> bool:
-    """True if the spec holds every filtered axis at the required value."""
-    return all(_axis_value(spec, axis) == value for axis, value in filters.items())
+# The filterable values of every axis, as the strings that appear in spec names,
+# on the cards' chips and in a filter. `AXES` stores palette/typeface/density as
+# indices into their tables, so it cannot answer this on its own — and the viewer,
+# the server's query validation and the tests all need the same list.
+AXIS_VALUES: dict[str, list[str]] = {
+    "palette": [p[0] for p in PALETTES],
+    "typeface": [t[0] for t in TYPEFACES],
+    "header": list(HEADERS),
+    "skills": list(SKILLS),
+    "promo": list(PROMOS),
+    "density": [d[0] for d in DENSITIES],
+    "grouping": list(GROUPINGS),
+}
 
 
-def _order(filters: dict[str, str] | None) -> list[Spec]:
+def axis_values(axis: str) -> list[str]:
+    """The values one axis can be filtered to. Empty for an unknown axis."""
+    return AXIS_VALUES.get(axis, [])
+
+
+Filter = str | list[str] | tuple[str, ...] | set[str]
+
+
+def _active(filters: dict[str, Filter] | None) -> bool:
+    """True if any axis is actually constrained. A dict of empty sets is not a
+    filter — the viewer leaves emptied axes in place rather than deleting keys."""
+    return bool(filters) and any(bool(v) for v in filters.values())
+
+
+def matches(spec: Spec, filters: dict[str, Filter]) -> bool:
+    """True if the spec satisfies every filtered axis.
+
+    An axis may be constrained to one value or to several: several is an OR
+    (`palette in {moss, plum}`), and axes combine with AND. A single string is
+    the same thing with one member, so a one-value filter and the old scalar
+    form mean exactly the same query.
+
+    An empty collection means *unconstrained*, not *matches nothing* — the
+    viewer clears an axis by emptying it, and an empty set narrowing the browse
+    to zero results would make "clear" look like "no layouts found".
+    """
+    for axis, wanted in filters.items():
+        if not wanted:          # empty string / list / set: this axis is unconstrained
+            continue
+        value = _axis_value(spec, axis)
+        if isinstance(wanted, str):
+            if value != wanted:
+                return False
+        elif wanted and value not in wanted:
+            return False
+    return True
+
+
+def _order(filters: dict[str, Filter] | None) -> list[Spec]:
     """Browse order, narrowed to the specs that match every filter. Filtering is a
     view over the enumeration, not a separate space — holding an axis constant just
     hides the rest, which is what makes 'hold this colour/type' shrink the browse
     instead of paging the same layout in seven shades."""
     order = browse_order()
-    if not filters:
+    if not _active(filters):
         return order
     return [s for s in order if matches(s, filters)]
 
 
-def total(filters: dict[str, str] | None = None) -> int:
+def total(filters: dict[str, Filter] | None = None) -> int:
     """How many layouts are in the (optionally filtered) browse set."""
-    return TOTAL if not filters else len(_order(filters))
+    return TOTAL if not _active(filters) else len(_order(filters))
 
 
-def pages(count: int, filters: dict[str, str] | None = None) -> int:
+def pages(count: int, filters: dict[str, Filter] | None = None) -> int:
     """How many pages of `count` the (optionally filtered) space divides into."""
     if count <= 0:
         return 0
     return -(-total(filters) // count)
 
 
-def page(index: int, count: int, filters: dict[str, str] | None = None) -> list[Spec]:
+def page(index: int, count: int, filters: dict[str, Filter] | None = None) -> list[Spec]:
     """One page of `count` layouts from the (optionally filtered) space. Wraps, so
     any index is valid."""
     if count <= 0:

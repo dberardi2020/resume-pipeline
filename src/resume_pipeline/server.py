@@ -97,11 +97,19 @@ class Handler(BaseHTTPRequestHandler):
         if route == "/api/page":
             query = parse_qs(urlparse(self.path).query)
             index = int((query.get("i") or ["0"])[0] or 0)
-            # A held axis (colour/type) arrives as a query param named for the axis,
-            # and narrows the browse to that value — so paging walks only matching
-            # layouts, not the whole space re-tinted (RP-0033).
-            filters = {axis: query[axis][0] for axis, _ in space.AXES
-                       if query.get(axis) and query[axis][0]}
+            # A filtered axis arrives as a query param named for the axis, repeated
+            # once per selected value — `?palette=moss&palette=plum` is an OR within
+            # the axis, and axes combine with AND. Paging then walks only matching
+            # layouts rather than the whole space (RP-0033).
+            #
+            # Values are checked against the axis before use: an unknown one would
+            # otherwise silently narrow the browse to nothing, which reads as "no
+            # layouts exist" rather than "that filter is nonsense".
+            filters = {}
+            for axis, _ in space.AXES:
+                wanted = [v for v in query.get(axis, []) if v in space.axis_values(axis)]
+                if wanted:
+                    filters[axis] = wanted
             total_pages = space.pages(ctx["count"], filters)
             specs = space.page(index, ctx["count"], filters)
             return self._json({

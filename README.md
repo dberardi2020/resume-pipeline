@@ -18,10 +18,10 @@ editing happens through your agent: you say what to change, it changes the data.
 writes one deliverable — PDF, HTML and Markdown — from the layout you chose.
 
 ![The layout viewer: a row of resume layouts, each a live render of the same profile in a
-different design, its axis values shown as chips beneath it. The header keeps identity on the
-left — the title and the held subset's size ("1,440 layouts · holding moss") — and the controls
-on the right: paging, a colour bar (green held here) and a typeface bar, each holding one axis
-constant while the rest vary](docs/assets/viewer.png)
+different design, its axis values shown as chips beneath it — the active filter's chip
+highlighted on every card. The header keeps identity on the left (the title, and the filtered
+size "1,440 of 10,080 layouts") and the controls on the right: paging, a colour swatch bar with
+green selected, and a dropdown per remaining axis](docs/assets/viewer.png)
 
 **Layouts are generated, not templates.** There is one renderer and seven independent
 choices — palette, typeface, header treatment, skills treatment, promotion treatment, density
@@ -29,8 +29,9 @@ and grouping. A **spec** is one combination of the seven, and every combination 
 is where 10,080 comes from. Adding a value to any one choice multiplies the catalogue instead
 of adding a single entry to it. Browse them a page at a time, **Shuffle** to land somewhere
 else in the space entirely, or **hold a colour or typeface** constant to judge the rest against
-it — holding an axis narrows the browse to that subset (10,080 → 1,440 for one colour), so the
-count and paging follow what you've pinned.
+it. **Every axis filters**: pick two colours and a typeface and the browse narrows to just
+those (10,080 → 720), with the count and paging following what you picked. Filter from the
+header, or click any chip on a card to say "more like this one".
 
 **Not another resume generator.** That category is well served and mostly abandoned. Three
 things here do not exist elsewhere: layouts as a *design space* rather than a theme list, a
@@ -176,9 +177,8 @@ These are not built yet:
 
 - **Import** an existing resume (PDF/DOCX → profile) — the biggest gap, since today you
   transcribe once before anything works.
-- **Badge-click filtering and grouping** — holding a colour or typeface already narrows the
-  browse to that subset (only `moss`, only `charter`); clicking a *card's* chip to filter, and
-  clustering the grid by an axis, are what's left.
+- **Grouping the grid by an axis** — filtering landed (every axis is a multi-select, driven
+  from the header or by clicking a card's chip), but clustering the grid *by* an axis has not.
 - **An inspector** — a live, read-only view of the profile as it is edited, showing what
   changed.
 - **Provenance** — per claim, whether it is your asserted fact or model-generated prose.

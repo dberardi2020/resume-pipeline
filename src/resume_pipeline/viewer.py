@@ -60,7 +60,24 @@ def page(specs, resume, *, preview: str = "file", exportable: bool = False,
     # it earns its own "hold this constant" bar too — but sample chips rather than
     # swatches, each rendered in its own face, since a font can't be a dot. (RP-0037.)
     typefaces = [{"name": t[0], "font": t[1]} for t in compose.TYPEFACES]
+    # Every axis, with the values it can be filtered to. One structure so the
+    # dropdowns, the card chips and the query string cannot disagree about what
+    # an axis is called or which values it has (RP-0033).
+    axes_meta = []
+    for key, label in (("palette", "Colour"), ("typeface", "Type"),
+                       ("header", "Header"), ("skills", "Skills"),
+                       ("promo", "Promo"), ("density", "Density"),
+                       ("grouping", "Group")):
+        entry = {"key": key, "label": label, "values": space.axis_values(key)}
+        if key == "typeface":
+            # Body and display faces differ on `mixed` alone, and that difference is
+            # the only thing distinguishing it from `charter` — so a sample has to
+            # show both. (Both resolve per machine until RP-0041 lands.)
+            entry["fonts"] = {t[0]: {"body": t[1], "display": t[2]}
+                              for t in compose.TYPEFACES}
+        axes_meta.append(entry)
     return _PAGE.replace("__PAGES__", str(pages)) \
+                .replace("__AXES__", json.dumps(axes_meta)) \
                 .replace("__TITLE__", title) \
                 .replace("__TOTAL__", f"{space.TOTAL:,}") \
                 .replace("__TOTAL_N__", str(space.TOTAL)) \
@@ -125,6 +142,78 @@ _PAGE = r"""<!doctype html>
   button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
   button.primary:hover{filter:brightness(1.08);color:#fff}
 
+
+  /* ── Filtering (RP-0033) ─────────────────────────────────────────────────
+     Every axis holds a set: empty is unconstrained, several values are an OR,
+     axes combine with AND. Colour keeps swatches because a swatch *is* the
+     value; the rest are dropdowns, since they are words either way. */
+  .brk{flex-basis:100%;width:100%;height:0;margin:0;padding:0;border:0}
+  .lbl{font-size:12px;color:var(--muted)}
+  .sw{width:20px;height:20px;border-radius:50%;border:2px solid transparent;padding:0;
+      cursor:pointer;background-clip:padding-box;
+      transition:transform .12s,box-shadow .12s,border-color .12s}
+  /* Hover is neutral and selection is the accent — sharing one colour made
+     "might click" and "did click" identical. */
+  .sw:hover{transform:scale(1.15);box-shadow:0 0 0 2px var(--card),0 0 0 3px var(--muted)}
+  .sw.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--card),0 0 0 3px var(--ink)}
+  .fpill{font:inherit;font-size:12.5px;font-weight:500;line-height:1;
+         padding:7px 13px;border-radius:20px;background:var(--btn);
+         border:1px solid var(--btn-line);cursor:pointer;color:var(--ink);
+         display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
+         transition:border-color .12s,background .12s,color .12s}
+  .fpill:hover:not(:disabled){border-color:var(--muted);color:var(--ink)}
+  .fpill.on{border-color:var(--accent);color:var(--accent);font-weight:600;
+            background:color-mix(in srgb,var(--accent) 12%,transparent)}
+  .fpill.live{border-color:var(--muted)}
+  .ct{font-size:10.5px;font-weight:700;background:var(--accent);color:var(--card);
+      border-radius:9px;padding:1px 6px;min-width:16px;text-align:center;
+      font-family:ui-monospace,Menlo,monospace}
+  .caret{font-size:9px;opacity:.55}
+  .clearbtn{background:none;border-color:transparent;color:var(--muted);padding:7px 10px}
+  .clearbtn:hover:not(:disabled){border-color:var(--muted);color:var(--ink)}
+  .clearbtn:disabled,.vchip:disabled{opacity:.34;cursor:default}
+  .clearbtn:disabled:hover{border-color:transparent}
+  .vchip{font-size:11.5px;line-height:1;padding:4px 10px;border-radius:20px;background:none;
+         border:1px solid transparent;cursor:pointer;color:var(--muted);
+         display:inline-flex;align-items:center;gap:5px}
+  .vchip:hover:not(:disabled){border-color:var(--muted);color:var(--ink)}
+  .x{font-size:11px;opacity:.8}
+
+  .pop{position:absolute;z-index:60;background:var(--card);border:1px solid var(--line);
+       border-radius:12px;padding:13px 15px;box-shadow:var(--shadow);max-width:min(560px,92vw)}
+  .pop[hidden]{display:none}
+  .poptitle{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+            font-weight:700;margin-bottom:9px;display:flex;gap:9px;align-items:center}
+  .axvals{display:flex;flex-wrap:wrap;gap:6px}
+  .val{display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 8px 6px;
+       border-radius:9px;border:1px solid var(--btn-line);background:var(--btn);
+       cursor:pointer;color:var(--ink);width:68px;
+       transition:border-color .12s,background .12s}
+  .val:hover{border-color:var(--muted)}
+  .val.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+  .val .cap{font-size:10.5px;line-height:1.2;color:var(--muted)}
+  .val.on .cap{color:var(--accent);font-weight:650}
+
+  /* The icons depict a printed page — always white stock, always dark ink — so
+     their palette is fixed and does not follow the UI theme. */
+  .thumb{--ic:#0b6fa4;width:46px;height:31px;background:#fff;border:1px solid #d7dce4;
+         border-radius:3px;padding:4px;display:flex;flex-direction:column;gap:2px;
+         overflow:hidden}
+  .t-type{align-items:center;justify-content:center;gap:0}
+  .t-hr{height:1px;width:78%;background:#d7dce4;margin:2.5px 0;flex:none}
+  .t-l{height:2px;border-radius:1px;background:#d7dce4;flex:none}
+  .t-f{height:2px;border-radius:1px;background:#eaedf2;flex:none}
+  .t-a{height:3px;border-radius:1px;background:var(--ic);flex:none}
+  .t-row{display:flex;gap:3px;align-items:center;flex:none}
+  .t-pill{height:4.5px;border-radius:3px;background:var(--ic);opacity:.65;flex:1}
+  .t-blk{height:6px;border-radius:1px;background:var(--ic);opacity:.34;flex:1}
+  .t-rule{height:2.6px;border-radius:1px;background:var(--ic);flex:none}
+  .t-band{background:#14181f;margin:-4px -4px 0;padding:4px;display:flex;
+          flex-direction:column;gap:2px;flex:none}
+  .t-band .t-w{height:3.4px;border-radius:1px;background:#fff;width:62%}
+  .t-band .t-w2{height:2px;border-radius:1px;background:#fff;opacity:.55;width:80%}
+  .t-sp{flex:1}
+
   .grid{display:grid;gap:18px;padding:20px;
         grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
@@ -150,8 +239,13 @@ _PAGE = r"""<!doctype html>
   .nm{font-size:12px;font-weight:700;letter-spacing:-.1px;
       overflow-wrap:anywhere;word-break:normal;line-height:1.35}
   .chips{display:flex;flex-wrap:wrap;gap:4px}
-  .chip{font-size:10.5px;background:var(--bg);border:1px solid var(--line);
-        border-radius:20px;padding:1px 7px;color:var(--muted)}
+  .chip{font:inherit;font-size:10.5px;background:var(--bg);border:1px solid var(--line);
+        border-radius:20px;padding:2px 8px;color:var(--muted);cursor:pointer;
+        transition:border-color .12s,background .12s,color .12s}
+  .chip:hover:not(:disabled){border-color:var(--muted);color:var(--ink)}
+  .chip.on{border-color:var(--accent);color:var(--accent);font-weight:650;
+           background:color-mix(in srgb,var(--accent) 12%,transparent)}
+  .chip:disabled{cursor:default}
   /* Pinned to the bottom: cards in a row are as tall as the tallest, and chip
      rows wrap to different heights, so without this the buttons sit at a
      different height on every card. */
@@ -175,32 +269,13 @@ _PAGE = r"""<!doctype html>
   body.modal-open{overflow:hidden}
 
   /* Colour bar. Palette is one axis but the one people react to first, so it is
-     lifted out of the chips into its own always-visible control: pick a colour
-     and every layout re-renders in it, so structure can be judged with colour
-     held constant. Purely a re-render of a neighbouring spec — no live edit. */
+     lifted out of the chips into a control of its own: a swatch *is* the value,
+     which no label can improve on, so colour keeps swatches while every other
+     axis collapses into a dropdown (RP-0033). Selection is multi-select — two
+     swatches are an OR. */
   .palette{display:flex;align-items:center;gap:7px;margin:0;flex-wrap:wrap;
            justify-content:flex-end}
   .palette .lbl{font-size:12px;color:var(--muted)}
-  .sw{width:20px;height:20px;border-radius:50%;border:2px solid transparent;
-      cursor:pointer;padding:0;background-clip:padding-box;transition:transform .1s}
-  .sw:hover{transform:scale(1.15)}
-  .sw.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--card),0 0 0 3px var(--ink)}
-  .sw-varied{width:auto;height:auto;border-radius:20px;padding:2px 10px;font-size:12px;
-             border:1px solid var(--btn-line);background:var(--btn);color:var(--ink)}
-  .sw-varied.on{border-color:var(--accent);color:var(--accent);font-weight:600}
-  .dlg-palette{padding:8px 14px;border-bottom:1px solid var(--line)}
-
-  /* Type bar. Typeface is the second axis and the second name segment — the same
-     "hold one constant while the rest vary" control as colour, but a font is not a
-     dot: each chip is a text sample rendered in its own face, so you pick by the
-     look of the letters, not a label. Only four faces, so it costs less room than
-     the colour swatches. */
-  .tf{font-size:12.5px;line-height:1;padding:4px 11px;border-radius:20px;
-      border:1px solid var(--btn-line);background:var(--btn);color:var(--ink);
-      cursor:pointer;transition:border-color .12s,color .12s}
-  .tf:hover{border-color:var(--accent);color:var(--accent)}
-  .tf.on{border-color:var(--accent);color:var(--accent);font-weight:600}
-  .dlg-typeface{padding:8px 14px;border-bottom:1px solid var(--line)}
 
   .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
          background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;
@@ -228,8 +303,9 @@ _PAGE = r"""<!doctype html>
     <div class="palette" id="palette"></div>
 
     <button class="hintbtn" id="hintBtn" aria-expanded="true" aria-controls="hint">What is this?</button>
-    <div class="palette" id="typeface"></div>
+    <div class="palette" id="axes"></div>
   </div>
+  <div class="pop" id="pop" hidden></div>
   <p class="hint" id="hint">Layouts are <b>generated</b>, not templates — each is one combination of
   seven independent choices, so there are __TOTAL__ of them. The arrows walk the space in
   order; <b>Shuffle</b> jumps somewhere else entirely. Pick a <b>colour</b> or <b>typeface</b>
@@ -252,8 +328,6 @@ _PAGE = r"""<!doctype html>
       <button id="dlgClose">Close</button>
     </div>
   </div>
-  <div class="palette dlg-palette" id="dlgPalette"></div>
-  <div class="palette dlg-typeface" id="dlgTypeface"></div>
   <iframe id="dlgFrame" title="preview"></iframe>
 </dialog>
 
@@ -265,31 +339,64 @@ let   PAGES      = __PAGES__;   // updated as filtering narrows the set
 let   PAGE_INDEX = 0;
 const PREVIEW    = "__PREVIEW__";
 const EXPORTABLE = __EXPORTABLE__;
-let   TOTAL      = __TOTAL_N__; // the (filtered) layout count, a number
+let   TOTAL      = __TOTAL_N__;       // the *filtered* layout count, a number
+const SPACE_TOTAL = __TOTAL_N__;      // the whole space, for "N of TOTAL"
 const PALETTES   = __PALETTES__;
 const TYPEFACES  = __TYPEFACES__;
-let   PALETTE    = null;   // null = as generated; otherwise a forced palette
-let   TYPEFACE   = null;   // null = as generated; otherwise a forced typeface
+const ACCENT     = Object.fromEntries(PALETTES.map(p => [p.name, p.accent]));
+const AXES       = __AXES__;
+// One set per axis. Empty means unconstrained; several values mean OR within that
+// axis; axes combine with AND. A "hold" is now just a selection of size one, so
+// RP-0037's colour/type holds are the same mechanism as every other facet.
+const FILTERS    = Object.fromEntries(AXES.map(a => [a.key, new Set()]));
+const ACTIVE     = () => AXES.reduce((n, a) => n + FILTERS[a.key].size, 0);
+let   OPEN_AXIS  = null;   // which dropdown is showing, if any
 
 const $ = s => document.querySelector(s);
 const previewUrl = name =>
   PREVIEW === "route" ? "/preview/" + encodeURIComponent(name) : name + ".html";
 
-// Palette and typeface are the first two segments of a spec name. Holding one
-// constant is therefore just swapping its segment — a different, equally-valid
-// spec, rendered the same way, so what you see stays exactly what would publish.
-const pin = name => {
-  if(!PALETTE && !TYPEFACE) return name;
-  const parts = name.split("-");
-  if(PALETTE)  parts[0] = PALETTE;   // palette is segment 0
-  if(TYPEFACE) parts[1] = TYPEFACE;  // typeface is segment 1
-  return parts.join("-");
-};
+// Filtering narrows the browse server-side, so it needs a server to page the
+// subset. The static catalogue is a fixed sample already written to disk, so the
+// controls are absent there rather than present and inert.
+const CAN_FILTER = PREVIEW === "route";
 
-// The static catalogue writes previews as sibling files, only for the specs it
-// shipped — so a pinned name may have no file. Holding an axis is a served-viewer
-// affordance; disable it when previews come from disk.
-const CAN_PIN = PREVIEW === "route";
+// Flex wraps greedily — it packs the first line and drops the remainder, so six
+// pills break 5+1. There is no CSS for balanced wrapping, so measure and insert
+// explicit breaks: the fewest rows that fit, split as evenly as those rows allow.
+function balanceWrap(box){
+  if(!box) return;
+  box.querySelectorAll(".brk").forEach(b => b.remove());
+  const items = [...box.children];
+  if(items.length < 2) return;
+  const cs = getComputedStyle(box), gap = parseFloat(cs.columnGap || cs.gap) || 0;
+  const W = box.clientWidth, w = items.map(i => i.getBoundingClientRect().width);
+  const lineW = a => a.reduce((x, y) => x + y, 0) + gap * (a.length - 1);
+  if(lineW(w) <= W + 0.5) return;
+  for(let rows = 2; rows <= items.length; rows++){
+    const base = Math.floor(items.length / rows), rem = items.length % rows;
+    const sizes = Array.from({length: rows}, (_, i) => base + (i < rem ? 1 : 0));
+    let ok = true, at = 0;
+    for(const sz of sizes){ if(lineW(w.slice(at, at + sz)) > W){ ok = false; break } at += sz }
+    if(ok){
+      at = 0;
+      for(let i = 0; i < sizes.length - 1; i++){
+        at += sizes[i];
+        const br = document.createElement("span"); br.className = "brk";
+        box.insertBefore(br, items[at]);
+      }
+      return;
+    }
+  }
+}
+
+function toggleFilter(axis, value){
+  const set = FILTERS[axis];
+  set.has(value) ? set.delete(value) : set.add(value);
+  goto(0);                      // a changed filter is a different browse: start at its first page
+}
+function clearAxis(axis){ if(FILTERS[axis].size){ FILTERS[axis].clear(); goto(0); } }
+function clearAll(){ if(ACTIVE()){ AXES.forEach(a => FILTERS[a.key].clear()); goto(0); } }
 
 let toastTimer;
 function toast(msg){
@@ -328,15 +435,14 @@ $("#hintBtn").addEventListener("click", () => {
 });
 
 function render(){
-  paletteBar($("#palette"));
-  typefaceBar($("#typeface"));
-  // Served, the count follows the held axes: hold a colour and "10,080 layouts"
-  // becomes the size of that filtered subset, with the page counter tracking where
-  // you are in it. The static catalogue is a fixed sample, so it keeps "N of TOTAL".
+  drawFilters();
+  // The count follows the filters: narrow an axis and "10,080 layouts" becomes the
+  // size of that subset. The controls already say *what* is filtered, so repeating
+  // it here would be redundant — this says only how much (RP-0033/0035).
   if(PREVIEW === "route"){
-    const held = [PALETTE, TYPEFACE].filter(Boolean);
-    $("#meta").textContent = `${TOTAL.toLocaleString()} layout${TOTAL===1?"":"s"}`
-                           + (held.length ? ` · holding ${held.join(" · ")}` : "");
+    $("#meta").textContent = ACTIVE()
+      ? `${TOTAL.toLocaleString()} of ${SPACE_TOTAL.toLocaleString()} layouts`
+      : `${TOTAL.toLocaleString()} layout${TOTAL===1?"":"s"}`;
     $("#nav").hidden = PAGES <= 1;
     $("#pageMeta").textContent =
       PAGES > 1 ? `page ${PAGE_INDEX + 1} of ${PAGES.toLocaleString()}` : "";
@@ -347,19 +453,19 @@ function render(){
   const grid = $("#grid");
   grid.innerHTML = "";
   OPTIONS.forEach((v, i) => {
-    const name = pin(v.name);
-    // The palette/typeface chips reflect a forced value, since that is what shows.
-    const axes = { ...v.axes };
-    if(PALETTE)  axes.palette  = PALETTE;
-    if(TYPEFACE) axes.typeface = TYPEFACE;
+    const name = v.name;
+    const axes = v.axes;
     const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `
       <div class="shot"><iframe loading="lazy" src="${previewUrl(name)}"
            title="${name}" scrolling="no"></iframe><div class="veil"></div></div>
       <div class="info">
-        <div class="chips">${Object.values(axes)
-          .map(val => `<span class="chip">${val}</span>`).join("")}</div>
+        <div class="chips">${Object.entries(axes).map(([ax, val]) =>
+          `<button class="chip${FILTERS[ax] && FILTERS[ax].has(val) ? " on" : ""}"
+                   data-ax="${ax}" data-v="${val}"
+                   title="${CAN_FILTER ? "Filter to " + val : val}"
+                   ${CAN_FILTER ? "" : "disabled"}>${val}</button>`).join("")}</div>
         <div class="acts">
           <button class="o">Open</button>
           <button class="c">Copy Name</button>
@@ -371,58 +477,204 @@ function render(){
     card.querySelector(".shot").onclick = ()=>{ cursor=i; open(v); };
     card.querySelector(".o").onclick = ()=>{ cursor=i; open(v); };
     card.querySelector(".c").onclick = ()=>copy(name);
+    // A chip is the fastest route into a filter: you are looking at a layout you
+    // like, and "more like this one" starts here rather than in the header.
+    if(CAN_FILTER) card.querySelectorAll(".chips .chip").forEach(chip =>
+      chip.onclick = ()=>toggleFilter(chip.dataset.ax, chip.dataset.v));
     grid.appendChild(card);
   });
 }
 
+// Every value control depicts what it does. Typeface already did — a chip set in
+// its own face — and the rest follow: a schematic of the treatment, abstract on
+// purpose. Enough to tell `band` from `masthead`; deliberately not a second
+// renderer to keep in step with compose.py.
+function icon(axis, value){
+  const t = document.createElement("span"); t.className = "thumb";
+  const L = (w, cls) => { const l = document.createElement("span");
+    l.className = cls || "t-l"; if(w) l.style.width = w; return l; };
+  const row = (...kids) => { const r = document.createElement("span");
+    r.className = "t-row"; kids.forEach(k => r.append(k)); return r; };
+  const sp = h => { const e = document.createElement("span");
+    e.style.cssText = h ? `height:${h};flex:none` : "flex:1"; return e; };
+
+  if(axis === "typeface"){
+    const f = (AXES.find(a => a.key === "typeface").fonts || {})[value] || {};
+    t.classList.add("t-type");
+    const mk = (size, weight, colour, fam) => { const e = document.createElement("span");
+      e.textContent = "Rag";
+      e.style.cssText = `font:${weight} ${size}px/1.05 ${fam || "inherit"};color:${colour}`;
+      return e; };
+    // Same glyphs in both rows so the face is the only variable: `charter` is one
+    // face throughout, `mixed` is a serif display over a sans body.
+    const hr = document.createElement("span"); hr.className = "t-hr";
+    t.append(mk(12.5, 600, "#12151a", f.display), hr, mk(11, 400, "#3d444e", f.body));
+    return t;
+  }
+  if(axis === "header"){
+    if(value === "band"){ const b = document.createElement("span"); b.className = "t-band";
+      const w1 = document.createElement("span"); w1.className = "t-w";
+      const w2 = document.createElement("span"); w2.className = "t-w2";
+      b.append(w1, w2); t.append(b, L("85%"), L("62%", "t-f")); }
+    if(value === "masthead"){ const n = L("58%", "t-a"); n.style.alignSelf = "center";
+      const r = L("74%"); r.style.alignSelf = "center";
+      t.append(n, r, L("90%", "t-f"), L("70%", "t-f")); }
+    if(value === "rule") t.append(L("50%", "t-a"), L("100%", "t-rule"), L("88%", "t-f"), L("66%", "t-f"));
+    if(value === "split"){ const a = L("100%", "t-a"); a.style.flex = "1.3";
+      const c = L("100%"); c.style.flex = "1";
+      t.append(row(a, c), L("100%"), L("84%", "t-f"), L("62%", "t-f")); }
+    if(value === "minimal") t.append(L("46%", "t-a"), sp(), L("88%", "t-f"), L("70%", "t-f"));
+    return t;
+  }
+  if(axis === "skills"){
+    const many = (n, cls) => { const w = document.createElement("span"); w.className = "t-row";
+      for(let i = 0; i < n; i++){ const q = document.createElement("span"); q.className = cls; w.append(q) }
+      return w; };
+    if(value === "pills") t.append(L("34%", "t-f"), many(3, "t-pill"), many(3, "t-pill"));
+    if(value === "inline") t.append(L("34%", "t-f"), L("96%"), L("90%"), L("74%"));
+    if(value === "grid") t.append(L("34%", "t-f"), many(2, "t-blk"), many(2, "t-blk"));
+    return t;
+  }
+  if(axis === "promo"){
+    if(value === "ladder"){ ["34%", "46%", "58%"].forEach((w, i) =>
+        t.append(row(sp((i * 5) + "px"), L(w, "t-a")))); t.append(L("80%", "t-f")); }
+    if(value === "badge"){ const bg = document.createElement("span"); bg.className = "t-pill";
+      bg.style.cssText += ";flex:0 0 13px;opacity:.85";
+      t.append(row(L("52%", "t-a"), bg), L("92%", "t-f"), L("74%", "t-f"), L("60%", "t-f")); }
+    if(value === "stacked") t.append(L("58%", "t-a"), L("46%", "t-a"), L("92%", "t-f"), L("72%", "t-f"));
+    if(value === "inline") t.append(row(L("100%", "t-a"), L("100%")), L("90%", "t-f"), L("70%", "t-f"));
+    return t;
+  }
+  if(axis === "density"){
+    t.style.gap = ({airy: 5, normal: 3, compact: 1.2}[value] || 2) + "px";
+    const n = {airy: 4, normal: 5, compact: 8}[value] || 4;
+    for(let i = 0; i < n; i++) t.append(L((72 + ((i * 19) % 24)) + "%"));
+    return t;
+  }
+  if(axis === "grouping"){
+    if(value === "grouped"){
+      const g = (a, b, c) => { const box = document.createElement("span");
+        box.style.cssText = "display:flex;flex-direction:column;gap:2px";
+        box.append(L(a, "t-a"), L(b), L(c)); return box; };
+      t.append(g("38%", "92%", "76%"), sp("4px"), g("44%", "88%", "70%"));
+    }
+    if(value === "flat") for(let i = 0; i < 6; i++) t.append(L((88 - ((i * 11) % 26)) + "%"));
+    return t;
+  }
+  return t;
+}
+
+// One verb for every reset. Always present, disabled when there is nothing to
+// clear, so it never shifts the row it sits in by appearing and vanishing.
+function clearBtn(axis, cls){
+  const n = axis ? FILTERS[axis].size : ACTIVE();
+  const b = document.createElement("button");
+  b.className = cls;
+  b.disabled = !n;
+  b.title = n ? "Clear " + n + " selected" : "Nothing selected";
+  const x = document.createElement("span"); x.className = "x"; x.textContent = "✕";
+  b.append(x, document.createTextNode(axis ? "Clear" : "Clear all"));
+  b.onclick = () => axis ? clearAxis(axis) : clearAll();
+  return b;
+}
+
+// Colour keeps its own chrome: a swatch *is* the value, which no label can beat.
 function paletteBar(el){
-  if(!CAN_PIN){ el.hidden = true; return; }
-  el.innerHTML = `<span class="lbl">Colour</span>` +
-    `<button class="sw-varied${PALETTE?"":" on"}" data-p="">Varied</button>` +
-    PALETTES.map(p =>
-      `<button class="sw${PALETTE===p.name?" on":""}" data-p="${p.name}"
-               style="background:${p.accent}" title="${p.name}"></button>`).join("");
-  el.querySelectorAll("[data-p]").forEach(b => b.onclick = ()=>{
-    PALETTE = b.dataset.p || null;
-    onPin();
+  if(!CAN_FILTER){ el.hidden = true; return; }
+  const axis = AXES.find(a => a.key === "palette");
+  el.textContent = "";
+  const lbl = document.createElement("span"); lbl.className = "lbl"; lbl.textContent = "Colour";
+  el.append(lbl, clearBtn("palette", "vchip"));
+  axis.values.forEach(v => {
+    const on = FILTERS.palette.has(v);
+    const b = document.createElement("button");
+    b.className = "sw" + (on ? " on" : "");
+    b.style.background = ACCENT[v]; b.title = v;
+    b.setAttribute("aria-label", v); b.setAttribute("aria-pressed", on);
+    b.onclick = () => toggleFilter("palette", v);
+    el.append(b);
   });
+  balanceWrap(el);
 }
 
-// The typeface counterpart of the colour bar: same "hold one constant" idea on the
-// second name segment, but each chip is a sample rendered in its own face (a font
-// can't be a swatch), so you pick by how the letters look.
-function typefaceBar(el){
-  if(!CAN_PIN){ el.hidden = true; return; }
-  el.innerHTML = `<span class="lbl">Type</span>` +
-    `<button class="tf${TYPEFACE?"":" on"}" data-t="">Varied</button>` +
-    TYPEFACES.map(t =>
-      `<button class="tf${TYPEFACE===t.name?" on":""}" data-t="${t.name}"
-               style="font-family:${t.font.replace(/"/g,"&quot;")}" title="${t.name}">${t.name}</button>`).join("");
-  el.querySelectorAll("[data-t]").forEach(b => b.onclick = ()=>{
-    TYPEFACE = b.dataset.t || null;
-    onPin();
+// The other six axes are words either way, so they collapse into dropdowns: a
+// fixed number of pills carrying a count, which is what keeps the header from
+// growing with the size of the selection.
+function axisBar(el){
+  if(!CAN_FILTER){ el.hidden = true; return; }
+  el.textContent = "";
+  el.append(clearBtn(null, "fpill clearbtn"));
+  AXES.filter(a => a.key !== "palette").forEach(axis => {
+    const n = FILTERS[axis.key].size, live = OPEN_AXIS === axis.key;
+    const b = document.createElement("button");
+    b.className = "fpill" + (n ? " on" : "") + (live ? " live" : "");
+    b.append(document.createTextNode(axis.label));
+    const tag = document.createElement("span");
+    if(n){ tag.className = "ct"; tag.textContent = n; } else { tag.className = "caret"; tag.textContent = "▾"; }
+    b.append(tag);
+    b.dataset.axis = axis.key;
+    b.setAttribute("aria-expanded", live);
+    b.onclick = () => { OPEN_AXIS = live ? null : axis.key; drawFilters(); };
+    el.append(b);
   });
+  balanceWrap(el);
 }
 
-// The description is "palette · typeface · header header · …"; reflect any held
-// axis so the dialog subtitle matches the render on screen.
-function pinnedDesc(v){
-  if(!PALETTE && !TYPEFACE) return v.description;
-  const parts = v.description.split(" · ");
-  if(PALETTE)  parts[0] = PALETTE;
-  if(TYPEFACE) parts[1] = TYPEFACE;
-  return parts.join(" · ");
+// A popover, not a panel: it is positioned rather than laid out, so opening a
+// dropdown cannot move the header or push the grid down.
+function popover(){
+  const pop = $("#pop");
+  if(!CAN_FILTER || !OPEN_AXIS){ pop.hidden = true; return; }
+  const axis = AXES.find(a => a.key === OPEN_AXIS);
+  pop.hidden = false;
+  pop.textContent = "";
+  const head = document.createElement("div"); head.className = "poptitle";
+  const nm = document.createElement("span"); nm.textContent = axis.label;
+  head.append(nm, clearBtn(axis.key, "vchip"));
+  const vals = document.createElement("div"); vals.className = "axvals";
+  axis.values.forEach(v => {
+    const on = FILTERS[axis.key].has(v);
+    const b = document.createElement("button");
+    b.className = "val" + (on ? " on" : "");
+    b.setAttribute("aria-pressed", on);
+    const cap = document.createElement("span"); cap.className = "cap"; cap.textContent = v;
+    b.append(icon(axis.key, v), cap);
+    b.onclick = () => toggleFilter(axis.key, v);
+    vals.append(b);
+  });
+  pop.append(head, vals);
+  const btn = $("#axes").querySelector(`[data-axis="${axis.key}"]`);
+  if(btn){
+    const hd = $("header").getBoundingClientRect(), r = btn.getBoundingClientRect();
+    pop.style.top = (r.bottom - hd.top + 8) + "px";
+    const left = Math.max(14, Math.min(r.left - hd.left, hd.width - pop.offsetWidth - 14));
+    pop.style.left = left + "px";
+  }
 }
+
+function drawFilters(){ paletteBar($("#palette")); axisBar($("#axes")); popover(); }
+
+// Close an open dropdown on a click elsewhere. The origin is recorded during
+// CAPTURE because redrawing detaches the very button that was clicked — by the
+// bubble phase "was this inside?" would answer no, closing what just opened.
+let clickInside = false;
+document.addEventListener("click", e => {
+  clickInside = $("#axes").contains(e.target) || $("#pop").contains(e.target);
+}, true);
+document.addEventListener("click", () => {
+  if(OPEN_AXIS && !clickInside){ OPEN_AXIS = null; popover(); }
+});
+window.addEventListener("resize", () => {
+  balanceWrap($("#axes")); balanceWrap($("#palette")); popover();
+});
 
 function open(v){
   CURRENT = v;
-  const name = pin(v.name);
+  const name = v.name;
   $("#dlgName").textContent = name;
-  $("#dlgDesc").textContent = pinnedDesc(v);
+  $("#dlgDesc").textContent = v.description;
   $("#dlgFrame").src = previewUrl(name);
   $("#dlgCopy").onclick = ()=>copy(name);
-  paletteBar($("#dlgPalette"));
-  typefaceBar($("#dlgTypeface"));
 
   const post = (path, body) => fetch(path, {
     method:"POST", headers:{"Content-Type":"application/json"},
@@ -452,12 +704,12 @@ function open(v){
   }
 }
 
-// Held axes travel with every page request, so paging walks only the filtered
-// subset and the server reports its true size.
+// Filters travel with every page request — one param per selected value, so
+// `?palette=moss&palette=plum` is an OR — and paging walks only the matching
+// subset while the server reports its true size.
 function filterQuery(){
   const p = new URLSearchParams();
-  if(PALETTE)  p.set("palette",  PALETTE);
-  if(TYPEFACE) p.set("typeface", TYPEFACE);
+  AXES.forEach(a => FILTERS[a.key].forEach(v => p.append(a.key, v)));
   const q = p.toString();
   return q ? "&" + q : "";
 }
@@ -469,15 +721,9 @@ async function goto(index){
   nav.style.opacity = "1";
   if(r.error){ toast("Could not load page: " + r.error); return; }
   OPTIONS = r.options; PAGE_INDEX = r.index; PAGES = r.pages; TOTAL = r.total; cursor = 0;
+  OPEN_AXIS = null;          // the dropdown's job is done once the browse has moved
   render();
   scrollTo({ top: 0, behavior: "smooth" });
-}
-
-// Holding or releasing an axis re-queries from the top of the now-filtered set,
-// so the layouts, the page count and the total all move together (RP-0033/0035).
-function onPin(){
-  goto(0);
-  if($("#dlg").open && CURRENT) open(CURRENT);  // keep an open preview in sync
 }
 
 if(PAGES > 1){

@@ -35,13 +35,22 @@ Use `docs/assets/demo-profile.json` (Jane Smith) as the fixture — never a real
   the `#hintBtn` explainer toggle), controls on the right (`#pageMeta` + `.nav`, then the colour
   and type bars). The explainer `<p id="hint">` sits below the grid, shown on a first visit and
   hidden once dismissed.
-- **Colour bar** (`#palette`): a `.sw-varied` "Varied" button (default) + 7 `.sw` swatches —
+- **Colour bar** (`#palette`): a `.vchip` "Clear" (disabled when nothing selected) + 7 `.sw` swatches —
   `harbor ink moss clay plum slate crimson`. Each swatch is `<button class="sw" data-p="moss" title="moss">`.
-- **Type bar** (`#typeface`): its twin. A `.tf` "Varied" button (default) + 4 `.tf` sample chips —
-  `grotesk humanist charter mixed` — each rendered *in its own face*. Each chip is
-  `<button class="tf" data-t="charter" title="charter">`. Both bars appear in the detail dialog too
-  (`#dlgPalette`, `#dlgTypeface`).
-- **Holds FILTER the browse, server-side (RP-0033, changed 2026-07-23 — was an in-place overlay).**
+- **Axis dropdowns** (`#axes`): a `.fpill.clearbtn` "Clear all" then six `.fpill` pills —
+  `Type Header Skills Promo Density Group` — each `<button class="fpill" data-axis="header">`
+  carrying a `.ct` count badge when constrained and a `.caret` otherwise. Clicking one opens
+  `#pop`, a **popover** listing that axis's values as `.val` buttons, each with a schematic
+  `.thumb` icon. A popover is positioned, not laid out: **opening one must not change the
+  header's height**. The detail dialog no longer carries filter bars — a filter belongs to the
+  browse, not to one layout.
+- **Every axis is a multi-select (RP-0033).** An axis holds a *set*: empty is unconstrained,
+  several values are an OR, and axes combine with AND. A "hold" is just a selection of one.
+  Selections ride on repeated query params (`?palette=moss&palette=plum`). Card chips are
+  `<button class="chip" data-ax data-v>` and toggle the same filter. Two degenerate cases that
+  must behave: selecting **every** value of an axis equals selecting none, and an **unknown**
+  value is ignored rather than narrowing the browse to zero.
+- **Filters FILTER the browse, server-side (RP-0033, changed 2026-07-23 — was an in-place overlay).**
   Clicking a swatch/chip sends the held axis as a query param to `/api/page`, which returns only
   matching layouts. So the browse **narrows**: hold `moss` → 1,440 layouts / 60 pages, `moss`+`charter`
   → 360 / 15; every card matches; **no 7×/4× redundancy** (the old overlay paged the full 10,080
@@ -82,15 +91,20 @@ Re-verify each; expected result in parens. Add new rows as surface grows.
 | # | Behaviour | Expected | Last verified |
 |---|---|---|---|
 | 1 | Grid renders in a real browser | 24 cards from an empty `#grid` | 2026-07-23 ✅ |
-| 2 | Colour hold = **filter** | click `moss` → header "1,440 layouts · holding moss · page 1 of 60", every card moss | 2026-07-23 ✅ (driven live) |
-| 3 | Hold persists + no redundancy across paging | page 2 still all moss, different layouts (not the same design re-tinted) | 2026-07-23 ✅ (driven live) |
+| 2 | Colour filter | click `moss` → header "1,440 of 10,080 layouts", "page 1 of 60", every card moss | 2026-07-23 ✅ (driven live) |
+| 3 | Filter persists + no redundancy across paging | page 2 still all moss, different layouts (not the same design re-tinted) | 2026-07-23 ✅ (driven live) |
 | 4 | Paging | `›` → "page 2 of 420" unfiltered, new layouts | 2026-07-23 ✅ |
 | 5 | Detail modal | full-page render + publish controls | 2026-07-23 ✅ |
 | 6 | Viewer publish | deliverable + real PDF + sidecar records the picked layout + archive-on-overwrite | 2026-07-23 ✅ |
-| 7 | Typeface hold + compose (RP-0037) | click `charter` → all cards that face; `moss`+`charter` → "360 layouts · page 1 of 15", both held; release → back to 10,080/420 | 2026-07-23 ✅ (driven live) |
+| 7 | Typeface filter + compose | `Type ▾ charter` → all cards that face; `moss`+`charter` → "360 of 10,080 layouts", page 1 of 15; clear → back to 10,080/420 | 2026-07-23 ✅ (driven live) |
 | 8 | Counts follow the filter (RP-0035) | header total & page count recompute per hold; `/api/page` returns live `total` | 2026-07-23 ✅ (driven live + acceptance) |
-| 9 | Header holds its shape under long status | with both axes held (long "holding … · …" text) the `« ‹ Shuffle ›` nav stays on row 1; status is on its own line (`.statusline`) | 2026-07-23 ✅ (re-measured live at 1500 / 760 / 620px after the RP-0018 two-column rebuild) |
+| 9 | Header holds its shape | with several axes filtered the `« ‹ Shuffle ›` nav stays on row 1; status is on its own line (`.statusline`) | 2026-07-23 ✅ (re-measured live at 1500 / 760 / 620px after the RP-0018 two-column rebuild) |
 | 10 | Explainer collapses and stays collapsed (RP-0018) | `#hintBtn` toggles `#hint` and flips its label between "What is this?" and "Hide"; the choice persists across a reload via `localStorage["resume-pipeline:hint-hidden"]` | 2026-07-23 ✅ (driven live) |
+| 11 | **Multi-select is an OR** (RP-0033) | two densities → total = 2/3 of the single-density set; the `Density` pill shows a `2` badge; both values appear in the grid | 2026-07-23 ✅ (driven live + acceptance) |
+| 12 | **A dropdown must not move the header** | opening any `#axes` pill leaves the header height unchanged — a popover is positioned, not laid out. Measured delta `0px` | 2026-07-23 ✅ (measured live) |
+| 13 | **Card chip filters** | click a card's `clay` chip → "1,440 of 10,080 layouts", the chip goes `.on`, `Clear all` enables | 2026-07-23 ✅ (driven live) |
+| 14 | **Clear all resets everything** | one click → 10,080, no `.on` chip or swatch anywhere, the button re-disables, header returns to its resting height | 2026-07-23 ✅ (driven live) |
+| 15 | **Degenerate filters behave** | selecting *every* value of an axis == no filter (10,080); an unknown value is ignored rather than yielding "0 layouts" | 2026-07-23 ✅ (acceptance) |
 
 ## Teardown (always — a QA cleans up)
 

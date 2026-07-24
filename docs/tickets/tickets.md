@@ -17,7 +17,6 @@ The committed next few, in intended order.
 | ID | Pri | Type | Title |
 |---|---|---|---|
 | [RP-0038](#rp-0038) | P1 | Feature | A hosted GitHub Pages demo — fixture data, click-around, no backend |
-| [RP-0033](#rp-0033) | P1 | Feature | Filter and group by badge (axis facet) |
 | [RP-0018](#rp-0018) | P1 | Chore | UI/UX pass on the viewer |
 | [RP-0032](#rp-0032) | P1 | Feature | Lead with a small, diverse set — the full space overwhelms |
 
@@ -34,6 +33,7 @@ The committed next few, in intended order.
 | [RP-0025](#rp-0025) | P1 | Feature | `import` as a skill, not a parser |
 | [RP-0039](#rp-0039) | P1 | Feature | Publish a subset of skills without deleting from the profile |
 | [RP-0041](#rp-0041) | P1 | Feature | Bundle deterministic fonts — the typeface axis resolves differently per machine |
+| [RP-0042](#rp-0042) | P2 | Feature | Group the grid by an axis |
 | [RP-0003](#rp-0003) | P2 | Feature | Remix — pin a layout and vary one axis at a time |
 | [RP-0004](#rp-0004) | P2 | Feature | Global style locks + loadouts |
 | [RP-0008](#rp-0008) | P2 | Feature | Explain what an ATS actually is, evidence-first |
@@ -65,6 +65,7 @@ living numbers are in the docs.*
 
 | ID | Title | Closed |
 |---|---|---|
+| RP-0033 | **Every axis is a multi-select filter.** An axis now holds a *set*: empty is unconstrained, several values are an OR, and axes combine with AND — so a "hold" is just a selection of one, which generalises RP-0037 rather than replacing it. Driven from the header (a colour swatch bar, plus a dropdown per remaining axis, each carrying a count badge) **or by clicking any chip on a card** — the real "more like this one" gesture. `space.matches` accepts a list per axis, `/api/page` takes repeated params (`?palette=moss&palette=plum`), and the vestigial `pin()` name-rewriting from the overlay era is gone. Chrome decisions: **colour keeps swatches** (a swatch *is* the value); everything else is a dropdown, because they are words either way. **A popover, not a panel** — opening one moves the header **0px**, measured. One verb for reset (`Clear` per axis, `Clear all`), always present but disabled, so the row never shifts. Pill rows **wrap evenly** (7 items go 4+3, then 3+2+2) since flex wraps greedily. Header costs +14px at rest (115→129). 215 unit tests, 38 acceptance checks. | 2026-07-23 |
 | RP-0035 | **Counts follow the filtered set.** The header total and page count were derived from the full enumeration (`space.TOTAL`, 10,080 / 420 pages) and so were static under a hold. Now `space.total(filters)`/`space.pages(count, filters)` compute over the filtered subset, `/api/page` returns the live `total`, and the viewer updates both as holds change — "1,440 layouts · holding moss · page 1 of 60", back to 10,080 / 420 on release. Landed with the RP-0033 hold-as-filter slice. Unit-tested in `test_space.py`; acceptance asserts the HTTP total/pages drop under a hold. | 2026-07-23 |
 | RP-0037 | **Typeface hold — the colour pin's twin.** A second always-on "hold this axis" bar (`#typeface`) mirroring the colour bar, on the second name segment. Typeface is a closed four-value axis, so no font picker is needed: four `.tf` **sample chips** (`grotesk humanist charter mixed`), each rendered *in its own face*, plus "Varied". Clicking one swaps the typeface segment of every card's spec and re-renders in place; the pin **persists across paging** and **composes with the colour pin**; the detail dialog carries the same bar. Colour and typeface now share one `pin()` that swaps name segments 0/1 (was `recolor`; `CAN_RECOLOR`→`CAN_PIN`). Covered by two unit tests (offers-every-typeface, typeface-segment-swap) and a real-browser dump-DOM acceptance check; live click-through driven in-browser (charter re-typed the grid, moss+charter composed and held across paging). | 2026-07-23 |
 | RP-0012 | **Publish decision — went public.** The repo was `kebab-case` and named for its destination, so publishing was a visibility flip, not a rename. Ran `taking-a-repo-public.md` end to end: a secrets scan and private-content sweep across the tree *and* full history (every commit's author and committer reauthored to the GitHub noreply — a `user@hostname` default had crept in), the structural pre-flight (LICENSE, description, CI, prose README title, absolute `llms.txt` links), and a polish pass — all clean. Flipped with `gh repo edit --visibility public`, then verified the three paths that only exist once public: an unauthenticated clone, `pip install git+https://…` into a clean 3.11+ venv, and the Tests badge rendering. Recorded the flip in `.meta/code-manifest.md`. | 2026-07-23 |
@@ -225,16 +226,12 @@ A planned "brand kit builder" (separate, larger project) produces named sets of 
 
 10,080 layouts across 420 pages is too much to meet at once. The per-page count is not the problem — the grid already shows 24 at a time (RP-0036 makes that adjustable) — the *haystack* is: paging linearly through 420 pages of near-identical neighbours is not how anyone picks a resume. Land instead on a **maximally-diverse handful**: `space.spread(n)` already samples across every axis, so the first screen can be ~20 layouts chosen to span palette/typeface/header/density rather than the first 20 of enumeration order. Pair that with filtering (RP-0033) and named styles (RP-0034) as the real navigation — *narrow, then browse*, instead of browsing everything. This is the umbrella UX ticket those two serve.
 
-### RP-0033 — Filter and group by badge (axis facet) {#rp-0033}
-**P1 · Feature · explore**
+### RP-0042 — Group the grid by an axis {#rp-0042}
+**P2 · Feature · explore**
 
-Every card shows its axis chips (palette, typeface, header, …); make them **controls**, not just labels — click a badge to constrain that axis (only `moss`, only `charter`), and offer **grouping** so the grid clusters by an axis. This is the concrete UI for the filtering model RP-0004 already describes (pinning axes = a filter over the enumeration) and the README's "faceted filtering" roadmap item, and it shares the axis-control surface with RP-0003 (vary one axis) and RP-0022 (merge two specs) — build it once. Whether badge-filtering subsumes "styles" is answered by RP-0034: a style is a *named bundle* of exactly these filters.
+The half of RP-0033 that did not ship. Filtering landed — every axis is a multi-select, driven from the header or a card's chip — but **clustering the grid by an axis** did not: showing the page broken into labelled runs ("all the `band` headers, then all the `masthead`"), so structure can be compared rather than scanned.
 
-**Hold ≠ filter (2026-07-23, superseded):** the colour/type *holds* (RP-0037) were display **overrides**, not filters — they rewrote each shown card's segment but kept paging the full 10,080, so every distinct held layout recurred N× across the walk (**4× for typeface, 7× for palette**) and the counts never dropped. **Decision taken: a hold implies a filter.**
-
-**Landed 2026-07-23:** holds now filter server-side — holding a colour/type narrows the browse to that subset (`moss` → 1,440 layouts / 60 pages, `moss`+`charter` → 360 / 15), paging walks only matches, and the header count follows (closed RP-0035).
-
-**Still open here:** clicking a *card's* badge to filter (not just the header holds), and **axis grouping**.
+Open questions it inherits: whether grouping is a *view* over the current filtered page or a re-query that returns a page per group; whether more than one axis can group at once (probably not — two nested groupings is a pivot table, not a browse); and how it interacts with paging, since a group can straddle a page boundary. Sits on the axis-control surface RP-0033 built, so the values and labels already exist.
 
 ### RP-0034 — Named styles / archetypes as browse entry points {#rp-0034}
 **P2 · Feature · explore**
